@@ -489,12 +489,28 @@ textarea.input { resize: vertical; min-height: 74px; }
 .pop-enter-from, .pop-leave-to { opacity: 0; transform: translateY(8px); }
 
 /* ---------- scrollbars ---------- */
-/* W29i: "thin" se veía diminuto en Gecko (Mypal/XP): ancho normal y
-   pulgar claro, para que la barra se vea de verdad. */
+/* W72: barras PROPIAS de la app con los colores del tema en los dos
+   motores. Gecko (FF64+/Mypal) → scrollbar-width/color: se mantiene
+   "auto" porque "thin" quedaba diminuto en Mypal/XP (W29i) — el color
+   es lo que hace la barra de la app. Chromium/Safari → estilo webkit
+   completo: sin botones de flecha (ese es el look del sistema), pulgar
+   redondeado con gutter transparente que aclara al pasar el mouse, y
+   track transparente para convivir con cada fondo (panel, chat, modales). */
 * { scrollbar-width: auto; scrollbar-color: var(--t2) transparent; }
-*::-webkit-scrollbar { width: 12px; height: 12px; }
-*::-webkit-scrollbar-thumb { background: var(--t2); border-radius: 6px; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--t2);
+  border: 2px solid transparent;
+  border-radius: 5px;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--t0);
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-button { display: none; }
+*::-webkit-scrollbar-corner { background: transparent; }
 
 /* W56: con "reducir movimiento" del sistema, las animaciones de una sola
    pasada se acortan a 1 ms, pero los indicadores que comunican actividad
