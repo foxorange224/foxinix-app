@@ -6909,6 +6909,7 @@ const ChatInfoPanel = {
       dotClass, statusOf, profileQuote, joinedLine, mediaUrl, md: mdToHtml,
       bannerStyle, viewMedia: openMediaViewer,
       titleOf: chatTitle,
+      openGroupProfile,
       /* W28c/W29l */
       pins, pinsLoading, openPins, closePins, goPin,
       /* W28d/W29l */
@@ -6921,9 +6922,9 @@ const ChatInfoPanel = {
   },
   components: { AvatarEditor, BioText },
   template: `
-    <aside class="profile-panel" v-if="store.infoOpen && chat" :aria-label="t(chat.type === 'dm' ? 'Info del usuario' : 'Info del chat')">
+    <aside class="profile-panel" v-if="store.infoOpen && chat" :aria-label="t(chat.type === 'dm' ? 'Info del usuario' : 'Info del grupo')">
       <header class="pp-head">
-        <b>{{ t(chat.type === 'dm' ? 'Info del usuario' : 'Info del chat') }}</b>
+        <b>{{ t(chat.type === 'dm' ? 'Info del usuario' : 'Info del grupo') }}</b>
         <button class="icon-btn pp-more" type="button" :title="t('Administrar')"
           @click.stop="infoMenu($event)">
           <svg class="ic"><use href="#i-dots"></use></svg>
@@ -6998,7 +6999,7 @@ const ChatInfoPanel = {
               <svg class="ic ic-sm"><use href="#i-image"></use></svg>
             </button>
           </div>
-          <div class="mi-head">
+          <div class="mi-head" @click="openGroupProfile(chat.id)">
             <b>{{ titleOf(chat) }}</b>
             <span>{{ t('{n} miembro{p}', { n: members.length, p: members.length === 1 ? '' : 's' }) }}<i v-if="onlineCount"> · {{ t('{n} en línea', { n: onlineCount }) }}</i></span>
           </div>
@@ -10269,7 +10270,7 @@ export const ChatShell = {
           '</button>' +
           /* W7: botón del panel derecho (info del chat / miembros) */
           '<button class="icon-btn" :class="{ on: store.infoOpen }" type="button" ' +
-            ':title="store.infoOpen ? t(\'Ocultar info del chat\') : t(activeChat.type === \'dm\' ? \'Info del usuario\' : \'Info del chat\')" @click="toggleInfo">' +
+            ':title="store.infoOpen ? t(\'Ocultar info del grupo\') : t(activeChat.type === \'dm\' ? \'Info del usuario\' : \'Info del grupo\')" @click="toggleInfo">' +
             '<svg class="ic"><use href="#i-info"></use></svg>' +
           '</button>' +
         '</header>' +
