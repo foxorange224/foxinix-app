@@ -3025,20 +3025,20 @@ const SettingsModal = {
     const tabs = [
       { val: 'apariencia', name: 'Apariencia', group: 'Preferencias', icon: 'i-palette',
         desc: 'Tema, color, fondo y tamaño de letra' },
-      { val: 'notificaciones', name: 'Notificaciones', icon: 'i-bell',
+      { val: 'notificaciones', name: 'Notificaciones', group: 'Preferencias', icon: 'i-bell',
         desc: 'Avisos, sonidos y tonos' },
-      { val: 'chat', name: 'Chat', icon: 'i-chat',
+      { val: 'chat', name: 'Chat', group: 'Preferencias', icon: 'i-chat',
         desc: 'Mensajes, micrófono y permisos' },
-      { val: 'privacidad', name: 'Privacidad', icon: 'i-shield',
+      { val: 'privacidad', name: 'Privacidad', group: 'Preferencias', icon: 'i-shield',
         desc: 'Bloqueo con contraseña de Archivados' },
-      { val: 'descargas', name: 'Descargas', icon: 'i-download',
+      { val: 'descargas', name: 'Descargas', group: 'Preferencias', icon: 'i-download',
         desc: 'Descargas automáticas y archivos guardados' },
-      { val: 'atajos', name: 'Atajos', icon: 'i-key',
+      { val: 'atajos', name: 'Atajos', group: 'Preferencias', icon: 'i-key',
         desc: 'Atajos de teclado' },
-      { val: 'cuenta', name: 'Cuenta', group: 'Cuenta', icon: 'i-user',
-        desc: 'Correo, contraseña y sesión' },
       { val: 'accessibility', name: 'Accesibilidad', group: 'Preferencias',
         icon: 'i-a11y', desc: 'Animaciones y estímulos visuales' },
+      { val: 'cuenta', name: 'Cuenta', group: 'Cuenta', icon: 'i-user',
+        desc: 'Correo, contraseña y sesión' },
     ];
 
     const settingsMobile = Vue.ref(window.innerWidth <= 760);
@@ -3790,8 +3790,9 @@ const SettingsModal = {
              orden se conservan: Cuenta siempre la ÚLTIMA pestaña. -->
         <div class="st-cols" v-if="!settingsMobile || !settingsHome">
         <div class="m-tabs" role="tablist">
-          <template v-for="tb in tabs">
-            <div class="st-group" v-if="tb.group" :key="'g-' + tb.val">{{ t(tb.group) }}</div>
+          <template v-for="(tb, i) in tabs">
+            <div class="st-group" v-if="tb.group && (i === 0 || tabs[i - 1].group !== tb.group)"
+              :key="'g-' + tb.group">{{ t(tb.group) }}</div>
             <button class="m-tab" type="button" :key="tb.val"
               :class="{ on: store.settingsTab === tb.val }" @click="setTab(tb.val)">{{ t(tb.name) }}</button>
           </template>
