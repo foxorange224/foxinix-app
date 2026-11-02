@@ -440,7 +440,7 @@ textarea.input { resize: vertical; min-height: 74px; }
 /* código de verificación */
 .code-input {
   width: 100%;
-  min-height: 62px;
+  min-height: 64px;
   text-align: center;
   font-size: 32px;
   font-weight: 700;
@@ -1721,7 +1721,7 @@ audio.b-audio { display: none; }
              calc(8px + var(--sab, 0px))
              calc(10px + env(safe-area-inset-left, 0px));
   }
-  .composer-input { min-height: 42px; padding: 10px 14px; }
+  .composer-input { min-height: 44px; padding: 10px 14px; }
   .send-btn { width: 40px; height: 40px; }
   .msgs { padding-left: calc(12px + env(safe-area-inset-left, 0px));
           padding-right: calc(12px + env(safe-area-inset-right, 0px)); }
@@ -1975,7 +1975,7 @@ audio.b-audio { display: none; }
   grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
 }
 .ep-e {
-  min-height: 38px;
+  min-height: 40px;
   border: 0;
   background: none;
   display: flex;
@@ -6041,7 +6041,7 @@ body { font-size: calc(15px * var(--fs)); }
   .perm-card { padding: 22px 18px 18px; max-height: calc(100vh - 24px); }
   .perm-icon { width: 78px; height: 78px; margin-bottom: 13px; }
   .perm-icon .ic { width: 38px; height: 38px; }
-  .perm-actions .btn { min-height: 42px; }
+  .perm-actions .btn { min-height: 44px; }
 }
 
 /* W54d: teclado de Android. boot.js detecta el viewport visual más
