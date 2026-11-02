@@ -223,6 +223,9 @@ _STATIC_FILES = (
     "js/theme-detect.js",
     "js/main.js",
     "vendor/vue.global.prod.js",
+    # favicon: sin ?v= la URL no cambia y la caché de favicon del navegador
+    # (que Ctrl+Shift+R NO limpia) seguía sirviendo el icono viejo.
+    "icon.svg",
 )
 
 
