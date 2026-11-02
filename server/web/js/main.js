@@ -11,7 +11,7 @@ import {
 import { ChatShell } from './views/chat.js';
 import { BootScreen } from './views/bootscreen.js';
 import { dlDirective, startDownload } from './mediadl.js';
-import { startWS, stopWS } from './realtime.js';
+import { startWS, stopWS, reconnectNow } from './realtime.js';
 import { markChatRead } from './actions.js';
 import {
   dlCategory, saveDownload, saveDownloadToDevice, listDownloads,
@@ -41,12 +41,13 @@ const Root = {
     const offlineVisible = Vue.ref(false);
     const offlineReason = Vue.ref('server'); // 'server' | 'internet'
     let offlineTimer = null;
-    /* Distinguir "sin internet" de "servidor caído": si hay internet
-       (ping a Google responde), el problema es del servidor. */
+    /* Distinguir "sin internet" de "servidor caído": sin red lo dice
+       navigator.onLine. W70: antes hacía fetch a Google, pero la CSP
+       (connect-src 'self'…) lo bloqueaba SIEMPRE: salía un aviso en
+       consola en cada overlay y el motivo quedaba en 'internet'. */
     const checkInternet = function () {
-      return fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' })
-        .then(() => true)
-        .catch(() => false);
+      return Promise.resolve(typeof navigator === 'undefined' ||
+                              navigator.onLine !== false);
     };
     Vue.watch(() => store.ws, (val) => {
       if (val === 'on' || val === 'connecting') {
@@ -228,6 +229,14 @@ document.addEventListener('visibilitychange', refreshTitle);
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) return;
   if (store.activeChatId) markChatRead(store.activeChatId);
+});
+
+/* W70: al volver la red no hay por qué esperar al backoff de la WS (hasta
+   30 s): si el arranque quedó colgado sin usuario cacheado se relanza, y
+   la conexión se reintenta de inmediato. */
+window.addEventListener('online', function () {
+  if (store.hasSession && !store.user && store.route !== 'verify') bootstrap();
+  reconnectNow();
 });
 
 /* W30b: tras iniciar sesión se precacenan los SVG del selector de

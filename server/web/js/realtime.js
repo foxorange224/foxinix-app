@@ -102,6 +102,14 @@ export function stopWS() {
   store.ws = 'off';
 }
 
+/* W70: reintento inmediato al volver la red (evento 'online' en main.js):
+   limpia el backoff pendiente para no esperar hasta los 30 s. */
+export function reconnectNow() {
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  backoff = 1000;
+  connect();   // connect() se protege solo: stopped o socket vivo
+}
+
 function connect() {
   if (stopped || ws) return;
   if (!session.access) {
@@ -112,7 +120,14 @@ function connect() {
       /* Si el refresh rechazó el token, la sesión terminó de verdad.
          Un 5xx/red se reintenta con backoff (no cerrar la sesión). */
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) authLost();
-      else scheduleReconnect();
+      else {
+        /* W70: sin red el access nunca llega y store.ws se quedaba en su
+           valor inicial 'connecting' (no hubo socket que cerrar): el watch
+           del overlay offline no disparaba y "Sin conexión" no salía
+           nunca. Se marca 'off' igual que al cerrarse el socket. */
+        store.ws = 'off';
+        scheduleReconnect();
+      }
     });
     return;
   }
@@ -152,6 +167,14 @@ function connect() {
       /* Primera conexión: si bootAll ya terminó y hay un chat abierto,
          lo que llegó entre la carga inicial y este handshake se recupera
          con el mismo catch-up. Durante el arranque, bootAll sigue en vuelo. */
+      /* W70: si la app ARRANCÓ sin conexión, bootAll terminó con la lista
+         vacía (y sin gente): esta primera conexión real es el único
+         evento que se entera de que volvió la red, así que carga lo que
+         faltó. Si bootAll sigue en vuelo (booting), él lo hace ya. */
+      if (!store.booting) {
+        if (!store.chatsReady) loadChats();
+        if (!store.people) loadPeople();
+      }
       const firstActive = store.activeChatId;
       if (store.bootPhase === 'ready' && firstActive && store.loaded[firstActive]) {
         catchUpChat(firstActive).catch(function () {});

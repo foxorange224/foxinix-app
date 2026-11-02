@@ -459,8 +459,21 @@ function resourcesReady() {
   ]);
 }
 
+/* W70: reintento del arranque cuando falló por red y la sesión sigue
+   abierta pero todavía no hay usuario cacheado (no hay nada que
+   mostrar). El listener de 'online' en main.js también lo relanza. */
+let bootRetryTimer = 0;
+function scheduleBootRetry() {
+  if (bootRetryTimer) return;
+  bootRetryTimer = setTimeout(function () {
+    bootRetryTimer = 0;
+    bootstrap();
+  }, 4000);
+}
+
 export async function bootstrap() {
   loadSession();
+  if (bootRetryTimer) { clearTimeout(bootRetryTimer); bootRetryTimer = 0; }
   if (!store.hasSession) {
     const fb = authFallback();
     if (fb) goReplace(fb);
@@ -501,6 +514,21 @@ export async function bootstrap() {
     } else if (e.status === 401) {
       const fb = authFallback();
       goReplace(fb || 'login');
+    } else if ((e.status === 0 || e.status >= 500) && store.hasSession) {
+      /* W70: sin conexión (status 0) o el server respondió 5xx con la
+         sesión abierta: ANTES esto mandaba al login — "perder" la sesión
+         por un fallo de red. Ahora el usuario cacheado entra al chat en
+         modo offline (el overlay "Sin conexión" avisa y la lista se
+         recarga al volver la red); sin usuario cacheado no hay nada que
+         mostrar todavía: se queda en el arranque y se reintenta. La
+         verificación pendiente se respeta (su flujo decide). */
+      if (store.user) {
+        if (store.route !== 'app') goReplace('app');
+      } else if (store.route !== 'verify') {
+        scheduleBootRetry();
+      } else {
+        toast(e.detail, 'err');
+      }
     } else {
       const fb = authFallback();
       goReplace(fb || 'login');

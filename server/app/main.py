@@ -229,6 +229,10 @@ _STATIC_FILES = (
     "js/views/auth.js",
     "js/views/chat.js",
     "js/views/bootscreen.js",
+    # W70 (fix offline): bootstrap()/realtime.js cambiaron; van en la lista
+    # para que su hash dispare el auto-reload de las pestañas abiertas.
+    "js/api.js",
+    "js/realtime.js",
     # favicon: sin ?v= la URL no cambia y la caché de favicon del navegador
     # (que Ctrl+Shift+R NO limpia) seguía sirviendo el icono viejo.
     "icon.svg",

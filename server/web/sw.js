@@ -8,7 +8,7 @@
      aleatorio por subida → el contenido de una ruta nunca cambia.
    Firefox 78 (Mypal) lo soporta; en orígenes http no seguros el registro
    falla en main.js y la app sigue funcionando sin SW. */
-const SHELL_CACHE = 'foxinix-shell-v114';  // v114: logo mark sin viewBox duplicado (punta no recortada)
+const SHELL_CACHE = 'foxinix-shell-v115';  // v115: fix offline (W70): con la sesión activa ya no se va al login sin red; ws→'off', recarga de lista en la 1.ª conexión y theme-detect precacheado
 /* Los emojis Twemoji/Noto viven en su PROPIO caché: cambiar la versión
    del shell ya no obliga a volver a descargar cientos de SVG. */
 const EMOJI_CACHE = 'foxinix-emoji-v1';
@@ -28,6 +28,7 @@ const SHELL = [
   '/static/css/app.css',
   '/static/vendor/vue.global.prod.js',
   '/static/js/boot.js',       // W14: tema/pre-paint sin <script> inline (CSP)
+  '/static/js/theme-detect.js',  // W70: en index.html; sin precachear se caía en la PWA offline
   '/static/js/main.js',
   '/static/js/store.js',
   '/static/js/i18n.js',
