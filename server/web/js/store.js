@@ -137,6 +137,7 @@ export const store = reactive({
   /* ---- W7: info del chat, menú contextual, picker de reacciones ---- */
   infoOpen: false,        // panel derecho "info del chat" (default: pantalla ancha)
   info: null,             // {chatId, loading, members: [], error} | null
+  groupProfile: null,     // W78: {chat, members[], gallery[]} para el modal de perfil de grupo
   pinsModal: false,       // W29l: modal "Mensajes fijados" (abre desde la info)
   galModal: false,        // W29l: modal "Archivos y medios" (abre desde la info)
   ctx: null,              // menú contextual {x, y, items: [{label, danger, fn}]}
@@ -179,6 +180,15 @@ export const store = reactive({
     emo: (function (v) {
       return (v === 'noto' || v === 'twemoji') ? v : 'system';
     })(readLs('fm.p.emo')),
+    /* W78: desactiva TODAS las animaciones/transiciones/desenfoques de la
+       UI para PCs de gama baja o fatiga visual. Se lee al arranque y se
+       persiste como fm.p.noAnim. */
+    noAnim: readLs('fm.p.noAnim') === '1',
+    /* W78: desactiva la reproducción automática de GIFs, stickers
+       animados y efectos de pantalla completa para evitar distracciones
+       o crisis de fotosensibilidad (TDAH, autismo, epilepsia).
+       Persiste como fm.p.reduceStimuli. */
+    reduceStimuli: readLs('fm.p.reduceStimuli') === '1',
   },
   drafts: {},             // chatId → borrador de entrada
   /* W17: el selector de emojis del composer vive aquí para que solo
@@ -519,11 +529,11 @@ watch(
 
 /* ---------- toasts ---------- */
 let tid = 0;
-export function toast(msg, kind = 'info') {
+export function toast(msg, kind = 'info', onRetry) {
   const id = ++tid;
   /* Máximo 1 toast visible a la vez */
   store.toasts.splice(0, store.toasts.length);
-  store.toasts.push({ id, msg, kind });
+  store.toasts.push({ id, msg, kind, onRetry });
   setTimeout(() => {
     const i = store.toasts.findIndex((t) => t.id === id);
     if (i >= 0) store.toasts.splice(i, 1);

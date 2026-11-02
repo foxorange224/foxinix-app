@@ -1,3 +1,10 @@
+/* W77: toast de error que traduce detalles técnicos de la API a lenguaje
+   natural mediante humanError(). fallback es el mensaje genérico si no hay
+   error de API. */
+const toastErr = function (err, fallback) {
+  toast(humanError(err || { detail: fallback || '' }), 'err');
+};
+
 /* Foxinix — pantalla principal: lista de chats + conversación (W2). */
 import {
   store, toast, toggleTheme, setTheme, setAccent, setWall, setPref, setFont,
@@ -7,8 +14,10 @@ import {
   syncUrl,      /* W68: modal join vuelve a la URL real al cancelar */
 } from '../store.js';
 import { logout, api, session, saveSession, uploadMedia,
-  uploadChatAvatar, ensurePreview } from '../api.js';
+  uploadChatAvatar, ensurePreview, humanError } from '../api.js';
 import { t, setLang, LANGS } from '../i18n.js';
+/* W78: utilidades de accesibilidad para lectores de pantalla. */
+import { formatEmojisForA11y } from '../a11y.js';
 /* W63: catálogo y reproducción de tonos de mensaje/llamada. */
 import { MESSAGE_TONES, CALL_TONES, customTone, toneSrc } from '../tones.js';
 /* W28h: llamadas de voz/video 1:1 (WebRTC) */
@@ -232,6 +241,35 @@ async function openProfile(username) {
     store.profile = {
       loading: false, user: null, error: (e && e.detail) || 'No se pudo cargar el perfil',
       username: username,
+    };
+  }
+}
+
+/* W78: abre el modal de perfil de grupo con descripción, miembros y
+   archivos compartidos. Carga los datos del endpoint /api/chats/:id. */
+async function openGroupProfile(chatId) {
+  if (!chatId) return;
+  const cur = store.groupProfile;
+  if (cur && cur.chat && cur.chat.id === chatId) {
+    store.groupProfile = null;
+    return;
+  }
+  store.groupProfile = { loading: true, chat: null, members: [], gallery: [], error: '' };
+  try {
+    const r = await api('GET', '/api/chats/' + chatId,
+      undefined, { retry401: true });
+    store.groupProfile = {
+      loading: false,
+      chat: r,
+      members: r.members || [],
+      gallery: r.gallery || [],
+      error: '',
+    };
+  } catch (e) {
+    store.groupProfile = {
+      loading: false,
+      chat: null, members: [], gallery: [],
+      error: (e && e.detail) || 'No se pudo cargar la información del grupo',
     };
   }
 }
@@ -512,7 +550,7 @@ function chatMenu(e, c, key) {
       Promise.resolve(archiveChat(c.id, want)).then(function () {
         toast(want ? 'Chat archivado' : 'Chat desarchivado', 'ok');
       }).catch(function (err) {
-        toast((err && err.detail) || 'No se pudo archivar el chat', 'err');
+        toastErr(err, 'No se pudo archivar el chat');
       });
     },
   });
@@ -552,7 +590,7 @@ function personMenu(e, u) {
   }
   const run = function (fn) {
     Promise.resolve(fn()).catch(function (err) {
-      toast((err && err.detail) || 'No se pudo completar la acción', 'err');
+      toastErr(err, 'No se pudo completar la acción');
     });
   };
   const items = [];
@@ -876,7 +914,7 @@ const toggleStickerAsset = function (m) {
         if (r && r.asset) store.userAssets.stickers = [r.asset].concat(store.userAssets.stickers || []);
       });
   p.catch(function (e) {
-    toast((e && e.detail) || t('No se pudo guardar el favorito'), 'err');
+    toastErr(e, 'No se pudo guardar el favorito');
   });
 };
 /* W62: un GIF puede estar guardado por media_id (subido) o por nombre
@@ -2207,6 +2245,8 @@ const MessageRow = {
       onAvatarError,   /* W66c: faltaba en el return; el @error del avatar
                           reventaba en consola en vez de mostrar la inicial */
       bodySegs,
+      /* W78: etiqueta accesible para lectores de pantalla (emojis agrupados) */
+      formatEmojisForA11y,
       /* W35a–c: enlaces, imagen inline y tarjetas */
       imgInline, linkCards,
       /* W36c: reproductores propios de video y audio adjunto */
@@ -2247,7 +2287,7 @@ const MessageRow = {
     };
   },
   template:
-    '<div class="msg" :data-msg-id="row.ref.id" :class="{ mine: row.mine, tight: row.tight, system: row.ref.kind === \'system\', reacts: !!(row.ref.reactions && row.ref.reactions.length), anim: !!row.ref._in, \'has-av\': row.avCol && (row.mine ? row.showTime : (row.showTime || row.showSender)) }" @animationend="animEnd">' +
+    '<div class="msg" role="message" :data-msg-id="row.ref.id" :aria-label="formatEmojisForA11y(row.ref.body || \'\')" :class="{ mine: row.mine, tight: row.tight, system: row.ref.kind === \'system\', reacts: !!(row.ref.reactions && row.ref.reactions.length), anim: !!row.ref._in, \'has-av\': row.avCol && (row.mine ? row.showTime : (row.showTime || row.showSender)) }" @animationend="animEnd">' +
       /* W66: avatar del remitente junto a cada mensaje (propios y ajenos,
          grupos y MDs). En los entrantes aparece cuando hay nombre (primero
          de la tanda) u hora —nunca un nombre sin cara—; en los propios,
@@ -2300,9 +2340,13 @@ const MessageRow = {
             '<svg class="ic ic-sm"><use :href="stickerAssetOn() ? \'#i-star-fill\' : \'#i-star\'"></use></svg>' +
           '</button>' +
           /* W17: ⋯ abre el mismo menú del clic derecho, anclado a la
-             burbuja (no tapa el mensaje). */
+             burbuja (no tapa el mensaje). Accesible también con Enter/
+             Espacio desde el teclado o un pulsador (Switch). */
           '<button class="b-act b-more" type="button" :title="t(\'Más opciones\')" ' +
-            '@click.stop="openMenu(row, $event)">' +
+            '@click.stop="openMenu(row, $event)" ' +
+            '@keydown.enter.stop="openMenu(row, $event)" ' +
+            '@keydown.space.stop="openMenu(row, $event)" ' +
+            '>' +
             '<svg class="ic ic-sm"><use href="#i-dots"></use></svg>' +
           '</button>' +
         '</div>' +
@@ -2775,7 +2819,7 @@ const NewChatModal = {
           await addMember(store.activeChatId, u.username);
           close();
         } catch (e) {
-          toast((e && e.detail) || 'No se pudo agregar', 'err');
+          toastErr(e, 'No se pudo agregar');
         }
         return;
       }
@@ -2794,7 +2838,7 @@ const NewChatModal = {
             q.value = '';
             results.value = [];
           } catch (e) {
-            toast((e && e.detail) || 'No se pudo aceptar la solicitud', 'err');
+              toastErr(e, 'No se pudo aceptar la solicitud');
           }
           return;
         }
@@ -2809,14 +2853,14 @@ const NewChatModal = {
             display_name: u.display_name || u.username,
           };
         } catch (e) {
-          toast((e && e.detail) || 'No se pudo enviar la solicitud', 'err');
+          toastErr(e, 'No se pudo enviar la solicitud');
         }
         return;
       }
       try {
         await createDm(u.username);
       } catch (e) {
-        toast((e && e.detail) || 'No se pudo crear el chat', 'err');
+        toastErr(e, 'No se pudo crear el chat');
       }
     };
 
@@ -2840,7 +2884,7 @@ const NewChatModal = {
         const names = picked.value.map(function (u) { return u.username; });
         await createGroup(gname, names);
       } catch (e) {
-        toast((e && e.detail) || 'No se pudo crear el grupo', 'err');
+        toastErr(e, 'No se pudo crear el grupo');
       }
     };
 
@@ -2993,6 +3037,8 @@ const SettingsModal = {
         desc: 'Atajos de teclado' },
       { val: 'cuenta', name: 'Cuenta', group: 'Cuenta', icon: 'i-user',
         desc: 'Correo, contraseña y sesión' },
+      { val: 'accessibility', name: 'Accesibilidad', group: 'Preferencias',
+        icon: 'i-a11y', desc: 'Animaciones y estímulos visuales' },
     ];
 
     const settingsMobile = Vue.ref(window.innerWidth <= 760);
@@ -4104,6 +4150,25 @@ const SettingsModal = {
               <div class="kbd-row"><span class="kbd">Shift + Enter</span><span>{{ t('Salto de línea') }}</span></div>
               <div class="kbd-row"><span class="kbd">Ctrl + Enter</span><span>{{ t('Enviar con “Enter para enviar” apagado') }}</span></div>
               <div class="kbd-row"><span class="kbd">Esc</span><span>{{ t('Cerrar ventanas y paneles') }}</span></div>
+            </div>
+          </template>
+
+          <!-- ============ accesibilidad ============ -->
+          <template v-else-if="store.settingsTab === 'accessibility'">
+            <div class="st-title">{{ t('Accesibilidad') }}</div>
+            <div class="st-sec">
+              <div class="st-h">{{ t('Animaciones y efectos') }}</div>
+              <div class="st-row">
+                <div class="st-col"><b>{{ t('Quitar animaciones') }}</b><span>{{ t('Desactiva los movimientos visuales, transiciones y efectos de la interfaz para mejorar el rendimiento del equipo o reducir la fatiga visual.') }}</span></div>
+                <label class="tgl"><input type="checkbox" :checked="store.prefs.noAnim" @change="toggle('noAnim')"><span class="tgl-track"><span class="tgl-knob"></span></span></label>
+              </div>
+            </div>
+            <div class="st-sec">
+              <div class="st-h">{{ t('Estímulos visuales') }}</div>
+              <div class="st-row">
+                <div class="st-col"><b>{{ t('Reducir estímulos visuales') }}</b><span>{{ t('Desactiva la reproducción automática de GIFs, stickers animados y efectos de pantalla completa para evitar distracciones o crisis de fotosensibilidad (TDAH, autismo, epilepsia).') }}</span></div>
+                <label class="tgl"><input type="checkbox" :checked="store.prefs.reduceStimuli" @change="toggle('reduceStimuli')"><span class="tgl-track"><span class="tgl-knob"></span></span></label>
+              </div>
             </div>
           </template>
         </div><!-- /.st-body -->
@@ -5654,8 +5719,8 @@ const CallBox = {
       const text = callText.value.trim();
       if (!c || !text) return;
       callText.value = '';
-      sendText(c.chatId, text).catch(function () {
-        toast(t('No se pudo enviar el mensaje'), 'err');
+      sendText(c.chatId, text).catch(function (e) {
+        toastErr(e, 'No se pudo enviar el mensaje');
       });
       Vue.nextTick(function () { scrollChat(true); });
     };
@@ -6170,7 +6235,7 @@ const ProfilePanel = {
           await acceptFriendRequest(req.id);
           toast(t('Solicitud aceptada'), 'ok');
         } catch (e) {
-          toast((e && e.detail) || 'No se pudo aceptar la solicitud', 'err');
+            toastErr(e, 'No se pudo aceptar la solicitud');
         }
         return;
       }
@@ -6180,7 +6245,7 @@ const ProfilePanel = {
           await sendFriendRequest(username);
           toast(t('Solicitud enviada'), 'ok');
         } catch (e) {
-          toast((e && e.detail) || 'No se pudo enviar la solicitud', 'err');
+          toastErr(e, 'No se pudo enviar la solicitud');
         }
         return;
       }
@@ -6188,7 +6253,7 @@ const ProfilePanel = {
       try {
         await createDm(username);
       } catch (e) {
-        toast((e && e.detail) || 'No se pudo abrir el chat', 'err');
+        toastErr(e, 'No se pudo abrir el chat');
       }
     };
 
@@ -6373,6 +6438,104 @@ const JoinGroupModal = {
             store.joinPrompt && store.joinPrompt.joining ? t('Uniéndote…')
             : t('Unirse') }}</button>
         </div>
+      </div>
+    </div>`,
+};
+
+/* --------------------------------------------------- GroupProfileModal (W78)
+   Modal de información de un grupo: avatar con zoom, nombre, descripción,
+   lista de miembros con rol y galería de archivos compartidos. Se abre
+   desde la cabecera del chat al pulsar el nombre/avatar del grupo. */
+const GroupProfileModal = {
+  setup: function () {
+    const close = function () { store.groupProfile = null; };
+    const isGroup = function () {
+      const p = store.groupProfile;
+      return p && p.chat && p.chat.type === 'group';
+    };
+    const memberLine = function (m) {
+      const role = m.role || 'member';
+      return role === 'owner' ? t('Dueño') : role === 'admin' ? t('Administrador') : t('Miembro');
+    };
+    return { store, close, isGroup, memberLine, mediaUrl, viewMedia: openMediaViewer };
+  },
+  components: { BioText },
+  template: `
+    <div class="modal-veil" v-if="store.groupProfile" @click.self="close" role="dialog" :aria-label="t('Info del grupo')">
+      <div class="modal pmodal">
+        <header>{{ isGroup() ? t('Info del grupo') : t('Info del chat') }}
+          <button class="icon-btn pp-more" type="button" :title="t('Administrar')"
+            v-if="isGroup() && store.groupProfile.chat && store.user && store.groupProfile.chat.my_role"
+            @click.stop="infoMenu($event)">
+            <svg class="ic"><use href="#i-dots"></use></svg>
+          </button>
+          <button class="icon-btn" type="button" :title="t('Cerrar')" @click="close">
+            <svg class="ic"><use href="#i-x"></use></svg>
+          </button>
+        </header>
+        <div class="pp-loading" v-if="store.groupProfile.loading">
+          <span class="cubes"><span class="cube"></span><span class="cube"></span></span>
+        </div>
+        <div class="pp-loading" v-else-if="store.groupProfile.error">{{ t(store.groupProfile.error) }}</div>
+        <template v-else-if="store.groupProfile.chat">
+          <div class="pp-body pf-body">
+            <div class="pf-banner" :class="{ 'is-empty': !store.groupProfile.chat.avatar_url }">
+              <img v-if="store.groupProfile.chat.avatar_url"
+                :src="store.groupProfile.chat.avatar_url" alt="" loading="lazy"
+                class="pf-zoom" :title="t('Ver foto')"
+                @click="viewMedia(store.groupProfile.chat.avatar_url, 'foto')">
+              <span v-else class="pf-banner-art" aria-hidden="true">
+                <svg class="fox"><use href="#i-logo-mark"></use></svg>
+              </span>
+            </div>
+            <div class="pf-idrow">
+              <span class="av-wrap pf-avwrap">
+                <span class="avatar pp-av" :class="{ 'has-photo': !!store.groupProfile.chat.avatar_url }">
+                  <img v-if="store.groupProfile.chat.avatar_url"
+                    :src="store.groupProfile.chat.avatar_url" alt="" loading="lazy"
+                    class="pf-zoom" :title="t('Ver foto')"
+                    @click="viewMedia(store.groupProfile.chat.avatar_url, 'foto')">
+                  <span v-else>{{ store.groupProfile.chat.title ? store.groupProfile.chat.title.charAt(0).toUpperCase() : '?' }}</span>
+                </span>
+              </span>
+              <div class="pf-status-wrap">
+                <div class="pf-quote pf-quote-static">
+                  <span class="pf-quote-text">{{ store.groupProfile.chat.title }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="pf-idbelow">
+              <div class="pp-name">{{ store.groupProfile.chat.title }}</div>
+              <div class="pp-user">{{ t('{n} miembro{p}', { n: store.groupProfile.member_count || store.groupProfile.members.length, p: (store.groupProfile.member_count || store.groupProfile.members.length) === 1 ? '' : 's' }) }}</div>
+              <div class="pp-user">{{ t('Tu rol: {n}', { n: memberLine(store.groupProfile.chat) }) }}</div>
+            </div>
+            <div class="pp-rows pf-rows" v-if="store.groupProfile.members.length">
+              <div class="pp-row"><b>{{ t('Miembros') }}</b></div>
+              <div class="pp-row" v-for="m in store.groupProfile.members" :key="m.id">
+                <span class="av-wrap"><span class="avatar av24" :class="{ 'has-photo': !!m.avatar_url }">
+                  <img v-if="m.avatar_url" :src="m.avatar_url" alt="" loading="lazy">
+                  <span v-else>{{ (m.display_name || m.username).charAt(0).toUpperCase() }}</span>
+                </span></span>
+                <span>{{ m.display_name || m.username }}</span>
+                <span class="pp-row-meta">{{ memberLine(m) }}</span>
+              </div>
+            </div>
+            <div class="pp-rows pf-rows" v-if="store.groupProfile.gallery.length">
+              <div class="pp-row"><b>{{ t('Archivos compartidos') }}</b></div>
+              <div class="gal-row" v-for="g in store.groupProfile.gallery" :key="g.id">
+                <img v-if="g.thumb_url" :src="g.thumb_url" class="gal-thumb" alt=""
+                  @click="viewMedia(g.media_url, g.kind)">
+                <span v-else class="gal-thumb gal-noimg" @click="viewMedia(g.media_url, g.kind)">
+                  <svg class="ic ic-sm"><use href="#i-file"></use></svg>
+                </span>
+                <span class="gal-name">{{ g.sender }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="pp-foot">
+            <button class="btn btn-full" type="button" @click="close">{{ t('Cerrar') }}</button>
+          </div>
+        </template>
       </div>
     </div>`,
 };
@@ -6600,7 +6763,7 @@ const ChatInfoPanel = {
                  : t('Enlace de invitación desactivado'), 'ok');
       }).catch(function (err) {
         e.target.checked = !on;   // revertir el toggle visual
-        toast((err && err.detail) || t('No se pudo cambiar el ajuste'), 'err');
+        toastErr(err, 'No se pudo cambiar el ajuste');
       });
     };
     const copyInvite = function () {
@@ -6636,7 +6799,7 @@ const ChatInfoPanel = {
         saveCropState('chat-' + c.id, st);
         toast('Foto del grupo actualizada', 'ok');
       }).catch(function (err) {
-        toast((err && err.detail) || 'No se pudo subir la foto', 'err');
+        toastErr(err, 'No se pudo subir la foto');
       });
     };
 
@@ -7227,7 +7390,7 @@ const PeoplePanel = {
       Promise.resolve(fn()).then(function () {
         if (okMsg) toast(okMsg, 'ok');
       }).catch(function (err) {
-        toast((err && err.detail) || 'No se pudo completar la acción', 'err');
+        toastErr(err, 'No se pudo completar la acción');
       });
     };
 
@@ -7429,7 +7592,7 @@ const PeoplePanel = {
 /* ------------------------------------------------------- ChatShell */
 
 export const ChatShell = {
-  components: { MessageRow, NewChatModal, SettingsModal, MeProfileModal, MeProfileEditModal, UsernameModal, ArchiveLockModal, DownloadViewer, ConfirmBox, RequestSentModal, JoinGroupModal, PermissionGate, ReadsBox, CallBox, ProfilePanel, ChatInfoPanel, EmojiPicker, SpamBox, WallPanel, WallPreview, PeoplePanel, RenameGroupModal },
+  components: { MessageRow, NewChatModal, SettingsModal, MeProfileModal, MeProfileEditModal, UsernameModal, ArchiveLockModal, DownloadViewer, ConfirmBox, RequestSentModal, JoinGroupModal, PermissionGate, ReadsBox, CallBox, ProfilePanel, ChatInfoPanel, GroupProfileModal, EmojiPicker, SpamBox, WallPanel, WallPreview, PeoplePanel, RenameGroupModal },
   setup: function () {
     const scroller = Vue.ref(null);
     const input = Vue.ref(null);
@@ -8722,7 +8885,7 @@ export const ChatShell = {
         const a = await uploadUserAsset(kind, f);
         if (a) toast(kind === 'gif' ? t('GIF agregado') : t('Sticker agregado'), 'ok');
       } catch (e) {
-        toast((e && e.detail) || t('No se pudo subir el archivo'), 'err');
+        toastErr(e, 'No se pudo subir el archivo');
       } finally {
         assetBusy.value = false;
       }
@@ -8736,12 +8899,12 @@ export const ChatShell = {
         media_id: a.media_id,
         client_msg_id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
       }).catch(function (e) {
-        toast((e && e.detail) || t('No se pudo enviar el archivo'), 'err');
+        toastErr(e, 'No se pudo enviar el archivo');
       });
     };
     const delAsset = function (kind, a) {
       removeUserAsset(kind, a).catch(function (e) {
-        toast((e && e.detail) || t('No se pudo borrar el archivo'), 'err');
+        toastErr(e, 'No se pudo borrar el archivo');
       });
     };
     const favGifSrc = function (f) {
@@ -8919,7 +9082,7 @@ export const ChatShell = {
       const c = activeChat.value;
       if (!c) return;
       if (c.type === 'dm') openPeerProfile();
-      else toggleInfo();
+      else openGroupProfile(c.id);
     };
 
     const toggleInfo = function () {
@@ -9864,7 +10027,7 @@ export const ChatShell = {
       open: openChat, close: closeChat,
       toggleTheme, logout, startNewChat, openAddMember, mediaUrl, wsLabel,
       /* W6 */
-      myStatusLine, openSettings, openProfile, openPeerProfile,
+      myStatusLine, openSettings, openProfile, openPeerProfile, openGroupProfile,
       goRequests,
       onComposerKey, askLogout,
       /* W7 */
@@ -10057,7 +10220,7 @@ export const ChatShell = {
           '</button>' +
           '<span class="av-wrap" :class="headDotClass" :title="headTitle" @click="onHeadClick">' +
             '<span class="avatar av36" :class="{ \'has-photo\': !!avatarOf(activeChat) }">' +
-              '<img v-if="avatarOf(activeChat)" :src="avatarOf(activeChat)" alt="">' +
+              '<img v-if="avatarOf(activeChat)" :src="avatarOf(activeChat)" alt="" class="pf-zoom" :title="t(\'Ver foto\')" @click.stop="viewMedia(avatarOf(activeChat), \'foto\')">' +
               '<span v-else>{{ initialsOf(activeChat) }}</span>' +
             '</span>' +
           '</span>' +

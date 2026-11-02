@@ -183,6 +183,10 @@ const Root = {
            :class="'toast-' + tw.kind" role="status">
         <svg class="ic ic-sm"><use :href="tw.kind === 'err' ? '#i-alert' : (tw.kind === 'ok' ? '#i-check' : '#i-info')"></use></svg>
         <span>{{ t(tw.msg) }}</span>
+        <button v-if="tw.kind === 'err' && tw.onRetry" class="btn btn-sm btn-ghost" type="button"
+          :title="t('Intentar de nuevo')" @click="tw.onRetry()">
+          {{ t('Intentar de nuevo') }}
+        </button>
       </div>
     </transition-group>`,
 };
@@ -271,6 +275,20 @@ if ('serviceWorker' in navigator) {
     prefetchEmojis();
   });
 }
+
+/* W78: toggle global de animaciones. Cuando store.prefs.noAnim se activa
+   se añade la clase .no-anim a <html> y el CSS anula transitions,
+   animations y backdrop-filter con !important. Se respeta al arranque y
+   ante cada cambio del usuario en Ajustes. */
+function applyNoAnim() {
+  if (store.prefs.noAnim) {
+    document.documentElement.classList.add('no-anim');
+  } else {
+    document.documentElement.classList.remove('no-anim');
+  }
+}
+applyNoAnim();
+Vue.watch(function () { return store.prefs.noAnim; }, applyNoAnim);
 
 /* Ayuda de prueba/desarrollo: permite conducir la UI desde fuera
    (herramientas de screenshot, tests). No usar en lógica de producto. */

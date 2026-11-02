@@ -29,6 +29,27 @@ export class ApiError extends Error {
   }
 }
 
+/* W77: traduce errores técnicos de red/servidor a mensajes humanos
+   para mostrar al usuario en lugar de códigos crudos como "Error 500"
+   o "Fallo de red". Devuelve una cadena ya traducida (vía t()). */
+export function humanError(e) {
+  if (!(e instanceof ApiError)) return t('Algo salió mal. Inténtalo de nuevo.');
+  /* status 0 = fallo de red / timeout / sin conexión */
+  if (e.status === 0) {
+    if (e.detail && e.detail.includes('tiempo')) return t('El servidor tardó demasiado en responder. Inténtalo de nuevo.');
+    return t('No se pudo conectar con el servidor. Revisa tu conexión a internet.');
+  }
+  /* 5xx = caída del servidor */
+  if (e.status >= 500) {
+    return t('Algo salió mal en nuestros servidores. Por favor, inténtalo de nuevo más tarde.');
+  }
+  /* 4xx (excepto 401/403 que se manejan aparte) -> usar el detalle si es legible */
+  if (e.detail && e.detail.length > 0 && !e.detail.includes('Error')) {
+    return e.detail;
+  }
+  return t('Algo salió mal. Inténtalo de nuevo.');
+}
+
 /* ---------- persistencia ---------- */
 /* W30e: el refresh ya NO se guarda en localStorage — vive en una cookie
    HttpOnly del servidor (fm_rt); el access solo en memoria. En el
@@ -527,12 +548,12 @@ export async function bootstrap() {
       } else if (store.route !== 'verify') {
         scheduleBootRetry();
       } else {
-        toast(e.detail, 'err');
+        toast(humanError(e), 'err');
       }
     } else {
       const fb = authFallback();
       goReplace(fb || 'login');
-      toast(e.detail, 'err');
+      toast(humanError(e), 'err');
     }
   }
 }

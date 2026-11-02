@@ -175,6 +175,21 @@ const EN = {
     'The message is deleted for you and everyone in the chat.\nThis action cannot be undone.',
   'Eliminar': 'Delete',
 
+  /* ---------- errores humanos (W77) — lenguaje natural en lugar de códigos técnicos ---------- */
+  'No se pudo conectar con el servidor. Revisa tu conexión a internet.':
+    'Could not connect to the server. Check your internet connection.',
+  'El servidor tardó demasiado en responder. Inténtalo de nuevo.':
+    'The server took too long to respond. Try again.',
+  'Algo salió mal en nuestros servidores. Por favor, inténtalo de nuevo más tarde.':
+    'Something went wrong on our servers. Please try again later.',
+  'No se pudo cargar la información del chat. Inténtalo de nuevo.':
+    'Could not load the chat information. Try again.',
+  'No se pudo cargar tu perfil. Inténtalo de nuevo.':
+    'Could not load your profile. Try again.',
+  'No se pudo enviar el mensaje. [Intentar de nuevo]':
+    'Could not send the message. [Try again]',
+  'Intentar de nuevo': 'Try again',
+
   /* ---------- acceso (auth.js) — español neutro ---------- */
   'Inicia sesión en tu cuenta': 'Sign in to your account',
   'Completa el usuario y la contraseña': 'Enter your username and password',
@@ -452,6 +467,14 @@ const EN = {
   'Avisos, sonidos y tonos': 'Alerts, sounds and tones',
   'Mensajes, micrófono y permisos': 'Messages, microphone and permissions',
   'Tema, color, fondo y tamaño de letra': 'Theme, color, background and font size',
+  /* ---------- accesibilidad ---------- */
+  'Accesibilidad': 'Accessibility',
+  'Animaciones y efectos': 'Animations and effects',
+  'Estímulos visuales': 'Visual stimuli',
+  'Quitar animaciones': 'Turn off animations',
+  'Desactiva los movimientos visuales, transiciones y efectos de la interfaz para mejorar el rendimiento del equipo o reducir la fatiga visual.': 'Deactivates visual movements, transitions and interface effects to improve equipment performance or reduce visual fatigue.',
+  'Reducir estímulos visuales': 'Reduce visual stimuli',
+  'Desactiva la reproducción automática de GIFs, stickers animados y efectos de pantalla completa para evitar distracciones o crisis de fotosensibilidad (TDAH, autismo, epilepsia).': 'Deactivates automatic playback of GIFs, animated stickers and full-screen effects to avoid distractions or photosensitive seizures (ADHD, autism, epilepsy).',
   'Tu cuenta': 'Your account',
   'Usuario': 'Username',
   'Correo': 'Email',

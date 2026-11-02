@@ -827,6 +827,54 @@ def list_chats(user: dict = Depends(current_user)) -> dict[str, Any]:
     return {"chats": out}
 
 
+@router.get("/{chat_id}")
+def get_chat(chat_id: int, user: dict = Depends(current_user)) -> dict[str, Any]:
+    """W78: info completa de un chat/grupo para el modal de perfil.
+
+    Devuelve los datos del chat (chat_brief), la lista de miembros con
+    rol y fecha de unión, y una galería reducida de archivos compartidos.
+    """
+    chat = _require_member(chat_id, user["id"])
+    brief = chat_brief(chat, user["id"])
+
+    members = db.rows(
+        "SELECT u.*, cm.role AS member_role, cm.joined_at"
+        " FROM chat_members cm JOIN users u ON u.id = cm.user_id"
+        " WHERE cm.chat_id = ? ORDER BY cm.joined_at, u.id",
+        (chat_id,),
+    )
+    members_out = []
+    for r in members:
+        m = {**user_brief(r), "role": r["member_role"], "joined_at": r["joined_at"]}
+        m["avatar_url"] = medialink.media_url_by_id(r.get("avatar_media_id"), "profile")
+        members_out.append(m)
+
+    gallery_rows = db.rows(
+        "SELECT m.*, u.username, u.display_name"
+        " FROM messages m JOIN users u ON u.id = m.sender_id"
+        " WHERE m.chat_id = ? AND m.kind IN ('image', 'file', 'video')"
+        " ORDER BY m.seq DESC LIMIT 20",
+        (chat_id,),
+    )
+    gallery_out = []
+    for g in gallery_rows:
+        gallery_out.append({
+            "id": g["id"],
+            "kind": g["kind"],
+            "body": g["body"],
+            "created_at": g["created_at"],
+            "sender": g["username"] or g["display_name"],
+            "media_url": medialink.media_url_by_id(g.get("media_id"), g["kind"]),
+            "thumb_url": medialink.media_url_by_id(g.get("thumb_media_id"), g["kind"]),
+        })
+
+    return {
+        **brief,
+        "members": members_out,
+        "gallery": gallery_out,
+    }
+
+
 @router.post("/dm", status_code=201)
 def create_dm(body: CreateDmIn, user: dict = Depends(current_user)) -> dict[str, Any]:
     peer = db.one(
