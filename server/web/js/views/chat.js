@@ -6923,7 +6923,7 @@ const ChatInfoPanel = {
   components: { AvatarEditor, BioText },
   template: `
     <aside class="profile-panel" v-if="store.infoOpen && chat" :aria-label="t(chat.type === 'dm' ? 'Info del usuario' : 'Info del grupo')">
-      <header class="pp-head">
+      <header class="pp-head" @click.stop="openGroupProfile(chat.id)">
         <b>{{ t(chat.type === 'dm' ? 'Info del usuario' : 'Info del grupo') }}</b>
         <button class="icon-btn pp-more" type="button" :title="t('Administrar')"
           @click.stop="infoMenu($event)">
@@ -6988,7 +6988,8 @@ const ChatInfoPanel = {
             :initial="store.grpEdit.initial"
             @confirm="onGrpPhoto" @cancel="onGrpPhotoCancel"></avatar-editor>
           <div class="grp-av" v-else-if="chat.type === 'group'">
-            <span class="av-wrap">
+            <span class="av-wrap pf-zoom" :title="t('Ver foto')"
+              @click="grpAvatar ? viewMedia(grpAvatar, 'foto') : openGroupProfile(chat.id)">
               <span class="avatar av72 grp-av-img" :class="{ 'has-photo': !!grpAvatar }">
                 <img v-if="grpAvatar" :src="grpAvatar" alt="" loading="lazy">
                 <span v-else>{{ titleOf(chat).charAt(0).toUpperCase() }}</span>
