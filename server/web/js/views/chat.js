@@ -10026,6 +10026,7 @@ export const ChatShell = {
       rec, recTime, startRec, stopRec, recWave, recBar,
       open: openChat, close: closeChat,
       toggleTheme, logout, startNewChat, openAddMember, mediaUrl, wsLabel,
+      viewMedia: openMediaViewer,
       /* W6 */
       myStatusLine, openSettings, openProfile, openPeerProfile, openGroupProfile,
       goRequests,
