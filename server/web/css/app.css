@@ -337,7 +337,7 @@ textarea.input { resize: vertical; min-height: 74px; }
   border-radius: 4px;
   transform-origin: left center;
   transform: scaleX(.15);
-  transition: transform .4s ease;
+  transition: transform .2s ease;
 }
 .bp-status {
   margin-top: 12px;
@@ -618,7 +618,7 @@ textarea.input { resize: vertical; min-height: 74px; }
   /* W37c: contraer/expandir con animación — el ancho transiciona y el
      chat se reacomoda en cada frame (sin el "salto" de antes). */
   .sidebar {
-    transition: width .22s ease, min-width .22s ease;
+    transition: width .2s ease, min-width .2s ease;
   }
   html.side-collapsed .sidebar { width: 0; min-width: 0; border-right: 0; }
   html.side-collapsed .icon-btn.side-open { display: inline-flex; }
@@ -1156,11 +1156,11 @@ button.load-older:hover { color: var(--t1); background: var(--row-hover); }
 /* W29c: fila de "escribiendo…" con nombre (+ avatares apilados) */
 .typ-row { align-items: flex-end; }
 /* W37a: aparece/desaparece con desvanecido + leve impulso (sin brusco) */
-.typ-enter-active { transition: opacity .22s ease, transform .22s ease; }
-.typ-leave-active { transition: opacity .18s ease, transform .18s ease; }
+.typ-enter-active { transition: opacity .2s ease, transform .2s ease; }
+.typ-leave-active { transition: opacity .2s ease, transform .2s ease; }
 .typ-enter-from, .typ-leave-to { opacity: 0; transform: translateY(8px); }
 .typ-enter-to, .typ-leave-from { opacity: 1; transform: none; }
-.typ-move { transition: transform .22s ease; }
+.typ-move { transition: transform .2s ease; }
 .typing-line { display: flex; align-items: center; }
 .typ-txt { margin-left: 8px; font-size: 13px; color: var(--t2); }
 .typ-avs { position: relative; width: 34px; height: 24px; margin-right: 6px; flex: none; }
@@ -1647,16 +1647,16 @@ audio.b-audio { display: none; }
   border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--shadow);
-  animation: modal-in .16s ease-out;
+  animation: modal-in .15s ease-out;
 }
 @keyframes modal-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
 /* W37c: TODOS los modales animan apertura (modal-in) Y cierre (modal-out)
    — la velada hace fade con <transition name="veil"> y el cuadro escala. */
-.veil-enter-active { transition: opacity .16s ease; }
-.veil-leave-active { transition: opacity .14s ease; }
+.veil-enter-active { transition: opacity .15s ease; }
+.veil-leave-active { transition: opacity .15s ease; }
 .veil-enter-from, .veil-leave-to { opacity: 0; }
 .veil-leave-active .modal,
-.veil-leave-active .profile-panel { animation: modal-out .14s ease-in forwards; }
+.veil-leave-active .profile-panel { animation: modal-out .15s ease-in forwards; }
 @keyframes modal-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.97); } }
 .modal header {
   display: flex;
@@ -1893,7 +1893,7 @@ audio.b-audio { display: none; }
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  animation: modal-in .14s ease-out;
+  animation: modal-in .15s ease-out;
 }
 .ep-search {
   display: flex;
@@ -2064,7 +2064,7 @@ audio.b-audio { display: none; }
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  animation: modal-in .12s ease-out;
+  animation: modal-in .15s ease-out;
 }
 .mm-row {
   display: flex; align-items: center;
@@ -2253,7 +2253,7 @@ audio.b-audio { display: none; }
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  animation: modal-in .14s ease-out;
+  animation: modal-in .15s ease-out;
 }
 /* W29g: panel unificado (3 pestañas) — el picker embebido va en flujo
    normal: el tamaño y el clamp (clampPanel) los lleva este panel. */
@@ -2356,7 +2356,7 @@ audio.b-audio { display: none; }
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  animation: modal-in .12s ease-out;
+  animation: modal-in .15s ease-out;
 }
 .emo-ac-row {
   display: flex;
@@ -2779,7 +2779,7 @@ html.wallimg .chat-pane.people-pane::after { content: none; }
   background: var(--panel);
   border-left: 1px solid var(--border);
   overflow: hidden;
-  animation: pp-in .18s ease-out;
+  animation: pp-in .2s ease-out;
 }
 @keyframes pp-in {
   from { opacity: 0; transform: translateX(24px); }
@@ -3132,7 +3132,7 @@ html.wallimg .chat-pane.people-pane::after { content: none; }
 .dl-group-head b { font-size: 14px; }
 .dl-gcount { margin-left: 5px; color: var(--t2); font-size: 12px; }
 .dl-gsize { margin-left: auto; margin-right: 8px; color: var(--t2); font-size: 12px; }
-.dl-gchev { color: var(--t2); transition: transform .14s; }
+.dl-gchev { color: var(--t2); transition: transform .15s; }
 .dl-gchev.open { transform: rotate(180deg); }
 .dl-group-body { padding-left: 20px; }
 .dl-group-body .dl-item:first-child { border-top: 0; }
@@ -3610,7 +3610,7 @@ body { font-size: calc(15px * var(--fs)); }
      de quedar cortada; también cubre el menú de escritorio a 360 px. */
   max-height: calc(100vh - 8px);
   overflow-y: auto;
-  animation: modal-in .12s ease-out;
+  animation: modal-in .15s ease-out;
 }
 .ctx-item {
   display: flex;
@@ -3670,7 +3670,7 @@ body { font-size: calc(15px * var(--fs)); }
      pantalla y no se podía llegar a las últimas opciones. */
   max-height: calc(100vh - env(safe-area-inset-top, 0px) - 8px);
   overflow-y: auto;
-  animation: sheet-up .18s ease-out;
+  animation: sheet-up .2s ease-out;
 }
 @keyframes sheet-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @keyframes ctx-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -3741,7 +3741,7 @@ body { font-size: calc(15px * var(--fs)); }
   justify-content: center;
   padding: 20px;
   background: rgba(0, 0, 0, .72);
-  animation: modal-in .14s ease-out;
+  animation: modal-in .15s ease-out;
 }
 .spam-box {
   width: min(430px, 92vw);
@@ -4114,7 +4114,7 @@ body { font-size: calc(15px * var(--fs)); }
    micrófono: la animación falsa se apaga y el transform lo pone el JS. */
 .rec-wave.live i {
   animation: none;
-  transition: transform .09s linear;
+  transition: transform .1s linear;
 }
 
 /* etiqueta de mensaje reenviado */
@@ -4487,7 +4487,7 @@ body { font-size: calc(15px * var(--fs)); }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.pf-quote-chev { flex: none; margin-left: 4px; color: var(--t2); transition: transform .14s; }
+.pf-quote-chev { flex: none; margin-left: 4px; color: var(--t2); transition: transform .15s; }
 .pf-quote-chev.open { transform: rotate(180deg); }
 .pf-status-wrap .sdot { margin-right: 6px; }
 .pf-status-menu {
@@ -5370,7 +5370,7 @@ body { font-size: calc(15px * var(--fs)); }
   font-size: 14px;
   text-align: center;
   cursor: default;
-  animation: modal-in .18s ease-out;
+  animation: modal-in .15s ease-out;
 }
 .v-err .ic { width: 28px; height: 28px; margin-bottom: 8px; color: var(--warn, #e0a800); }
 .v-time {

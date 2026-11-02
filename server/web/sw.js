@@ -8,7 +8,7 @@
      aleatorio por subida → el contenido de una ruta nunca cambia.
    Firefox 78 (Mypal) lo soporta; en orígenes http no seguros el registro
    falla en main.js y la app sigue funcionando sin SW. */
-const SHELL_CACHE = 'foxinix-shell-v121';  // v121: sombras por tokens (W76): elevaciones lift/float/up en los 3 temas
+const SHELL_CACHE = 'foxinix-shell-v122';  // v122: motion unificado (W77): duraciones .1/.12/.15/.2, modal-in a .15s
 /* Los emojis Twemoji/Noto viven en su PROPIO caché: cambiar la versión
    del shell ya no obliga a volver a descargar cientos de SVG. */
 const EMOJI_CACHE = 'foxinix-emoji-v1';
