@@ -68,7 +68,10 @@ export const LoginView = {
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-logo"><svg class="auth-logo-img" viewBox="0 0 500 200" role="img" aria-label="Foxinix"><use href="#i-logo-word"></use></svg></div>
-      <p class="auth-sub">{{ t('Inicia sesión en tu cuenta') }}</p>
+      <!-- W71: el login era la ÚNICA vista auth sin h1 (solo la línea gris
+           de sub): con la marca mandando arriba, el título real de la
+           pantalla sube a auth-title y hereda la jerarquía del resto. -->
+      <h1 class="auth-title">{{ t('Inicia sesión en tu cuenta') }}</h1>
 
       <form @submit.prevent="submit" novalidate>
         <div v-if="err" class="form-err" role="alert">
@@ -86,7 +89,7 @@ export const LoginView = {
           <label for="l-pw">{{ t('Contraseña') }}</label>
           <div class="input-wrap">
             <input id="l-pw" class="input has-eye" :type="show ? 'text' : 'password'"
-                   v-model="password" autocomplete="current-password" placeholder="••••••••">
+                   v-model="password" autocomplete="current-password">
             <button type="button" class="eye-btn" @click="show = !show"
                     :aria-label="show ? t('Ocultar contraseña') : t('Mostrar contraseña')">
               <svg class="ic ic-sm"><use :href="show ? '#i-eye-off' : '#i-eye'"></use></svg>
@@ -193,7 +196,7 @@ export const RegisterView = {
         <div class="field">
           <label for="r-pw2">{{ t('Repetir contraseña') }}</label>
           <input id="r-pw2" class="input" type="password" v-model="confirm"
-                 autocomplete="new-password" placeholder="••••••••">
+                 autocomplete="new-password">
         </div>
         <button class="btn btn-full" type="submit" :disabled="busy">
           <span v-if="busy" class="spin"></span><span v-else>{{ t('Continuar') }}</span>
@@ -603,7 +606,7 @@ export const ResetView = {
         <div class="field">
           <label for="rs-pw2">{{ t('Repetir contraseña') }}</label>
           <input id="rs-pw2" class="input" type="password" v-model="confirm"
-                 autocomplete="new-password" placeholder="••••••••">
+                 autocomplete="new-password">
         </div>
         <button class="btn btn-full" type="submit" :disabled="busy">
           <span v-if="busy" class="spin"></span><span v-else>{{ t('Guardar contraseña') }}</span>

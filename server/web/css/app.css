@@ -225,6 +225,16 @@ html.kb-focus :focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .input:focus { border-color: var(--accent); }
 .input::placeholder { color: var(--t2); opacity: .75; }
 .input.has-eye { padding-right: 44px; }
+/* W71: Chrome/Safari pintan los autofill con fondo amarillo/azul y rompen
+   el tema en pleno login; se recolorea el fondo con el del input y el
+   texto con el color normal. Gecko ignora -webkit-* sin efecto. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--panel2) inset;
+  -webkit-text-fill-color: var(--t1);
+  caret-color: var(--t1);
+}
 
 textarea.input { resize: vertical; min-height: 74px; }
 
@@ -362,6 +372,10 @@ textarea.input { resize: vertical; min-height: 74px; }
 .auth-logo-img { height: 56px; width: auto; display: block; }
 
 .auth-title { text-align: center; margin: 0 0 2px; font-size: 23px; }
+/* W71: el login no tiene línea de sub bajo el título (manda la marca):
+   el formulario hereda el ritmo vertical aquí (2px del margen del
+   título + 16 = 18px, como el par título→sub→form de las demás vistas). */
+.auth-title + form { margin-top: 16px; }
 .auth-sub { text-align: center; margin: 0 0 22px; color: var(--t2); font-size: 14px; }
 
 .form-err {
