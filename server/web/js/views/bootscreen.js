@@ -22,7 +22,7 @@ export const BootScreen = {
   },
   template:
     '<div class="bp-screen">' +
-      '<svg class="bp-logo" viewBox="-7 -30 334 362" role="img" aria-label="Foxinix">' +
+      '<svg class="bp-logo" role="img" aria-label="Foxinix">' +
         '<use href="#i-logo-mark"></use></svg>' +
       '<div class="bp-bar"><i :style="{ transform: \'scaleX(\' + prog + \')\' }"></i></div>' +
       '<div class="bp-status">{{ t(txt) }}</div>' +

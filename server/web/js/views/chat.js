@@ -4269,7 +4269,7 @@ const ArchiveLockModal = {
     <div class="archive-lock-veil" role="dialog" aria-modal="true" :aria-label="t('Archivados bloqueados')"
       @click.self="close">
       <div class="al-top">
-        <svg class="mobile-page-logo" viewBox="-7 -30 334 362" aria-hidden="true"><use href="#i-logo-mark"></use></svg>
+        <svg class="mobile-page-logo" aria-hidden="true"><use href="#i-logo-mark"></use></svg>
         <b>{{ t('Archivados') }}</b>
       </div>
       <div class="archive-lock-card">
@@ -4515,7 +4515,7 @@ const MeProfileModal = {
                 :style="bannerStyle(store.user)" alt="" class="pf-zoom"
                 :title="t('Ver portada')" @click="viewMedia(store.user.banner_url, 'portada')">
               <span v-else class="pf-banner-art" aria-hidden="true">
-                <svg class="fox" viewBox="-7 -30 334 362"><use href="#i-logo-mark"></use></svg>
+                <svg class="fox"><use href="#i-logo-mark"></use></svg>
               </span>
             </div>
             <div class="pf-idrow">
@@ -4860,7 +4860,7 @@ const MeProfileEditModal = {
                 :src="mediaUrl(store.user.banner_url)" :style="bannerPosStyle"
                 alt="" draggable="false">
               <span v-else class="pf-banner-art" aria-hidden="true">
-                <svg class="fox" viewBox="-7 -30 334 362"><use href="#i-logo-mark"></use></svg>
+                <svg class="fox"><use href="#i-logo-mark"></use></svg>
               </span>
               <span class="pf-pos-hint" v-if="hasBanner">{{ t('Arrastra para encuadrar') }}</span>
             </div>
@@ -6250,7 +6250,7 @@ const ProfilePanel = {
                 class="pf-zoom" :title="t('Ver portada')"
                 @click="viewMedia(store.profile.user.banner_url, 'portada')">
               <span v-else class="pf-banner-art" aria-hidden="true">
-                <svg class="fox" viewBox="-7 -30 334 362"><use href="#i-logo-mark"></use></svg>
+                <svg class="fox"><use href="#i-logo-mark"></use></svg>
               </span>
             </div>
             <div class="pf-idrow">
@@ -6777,7 +6777,7 @@ const ChatInfoPanel = {
               class="pf-zoom" :title="t('Ver portada')"
               @click="viewMedia(peer.banner_url, 'portada')">
             <span v-else class="pf-banner-art" aria-hidden="true">
-              <svg class="fox" viewBox="-7 -30 334 362"><use href="#i-logo-mark"></use></svg>
+              <svg class="fox"><use href="#i-logo-mark"></use></svg>
             </span>
           </div>
           <div class="pf-idrow">
@@ -9915,7 +9915,7 @@ export const ChatShell = {
       '<aside class="sidebar" v-if="!store.wallPanelOpen">' +
         '<header class="side-head">' +
           '<svg class="side-logo side-logo-word" viewBox="0 0 500 200" role="img" aria-label="Foxinix"><use href="#i-logo-word"></use></svg>' +
-          '<svg class="side-logo-mark" viewBox="-7 -30 334 362" aria-hidden="true"><use href="#i-logo-mark"></use></svg>' +
+          '<svg class="side-logo-mark" aria-hidden="true"><use href="#i-logo-mark"></use></svg>' +
           '<span class="side-title">{{ store.showArchived ? t(\'Archivados\') : t(\'Chats\') }}</span>' +
           '<span class="ws-dot" v-if="store.ws !== \'on\'" :title="wsLabel"></span>' +
           '<button class="icon-btn side-new" type="button" :title="t(\'Nuevo chat\')" @click="startNewChat">' +
@@ -10412,7 +10412,7 @@ export const ChatShell = {
            sólo cambia el título: en móvil Chats/Archivados comparten
            .side-head y Personas repite aquí su estructura. */
         '<header class="mobile-page-head">' +
-          '<svg class="side-logo side-logo-mark" viewBox="-7 -30 334 362" aria-hidden="true"><use href="#i-logo-mark"></use></svg>' +
+          '<svg class="side-logo side-logo-mark" aria-hidden="true"><use href="#i-logo-mark"></use></svg>' +
           '<span class="side-title">{{ t(\'Personas\') }}</span>' +
           '<span class="ws-dot" v-if="store.ws !== \'on\'" :title="wsLabel"></span>' +
           '<button class="icon-btn side-new" type="button" :title="t(\'Nuevo chat\')" @click="startNewChat">' +

@@ -223,6 +223,12 @@ _STATIC_FILES = (
     "js/theme-detect.js",
     "js/main.js",
     "vendor/vue.global.prod.js",
+    # Vistas importadas por main.js: no aparecen en index.html, pero su hash
+    # cambia static_hash y así /api/version dispara el auto-reload de las
+    # pestañas abiertas cuando cambian (el ?v= de index.html no las alcanza).
+    "js/views/auth.js",
+    "js/views/chat.js",
+    "js/views/bootscreen.js",
     # favicon: sin ?v= la URL no cambia y la caché de favicon del navegador
     # (que Ctrl+Shift+R NO limpia) seguía sirviendo el icono viejo.
     "icon.svg",
