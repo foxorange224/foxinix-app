@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-LANDING_DIR = Path(__file__).resolve().parent.parent / "landing"
+LANDING_DIR = Path("/home/FoxOrange/Projects/chat/landing")
 
 app = FastAPI(title="Foxinix Landing", version="0.1.0")
 
