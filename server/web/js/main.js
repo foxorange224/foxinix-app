@@ -8,6 +8,7 @@ import {
   BootView, LoginView, RegisterView, ProfileView,
   VerifyView, ForgotView, ResetView,
 } from './views/auth.js';
+import { LandingView } from './views/landing.js';
 import { ChatShell } from './views/chat.js';
 import { BootScreen } from './views/bootscreen.js';
 import { dlDirective, startDownload } from './mediadl.js';
@@ -28,6 +29,7 @@ const views = {
   verify: VerifyView,
   forgot: ForgotView,
   reset: ResetView,
+  landing: LandingView,
   app: ChatShell,
 };
 

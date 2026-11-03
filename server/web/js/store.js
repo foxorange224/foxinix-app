@@ -216,7 +216,7 @@ export const BOOT_PHASES = [
   { key: 'ready', progress: 1, txt: 'Cargando…' },
 ];
 
-const PUBLIC_ROUTES = ['login', 'register', 'forgot', 'reset'];
+const PUBLIC_ROUTES = ['login', 'register', 'forgot', 'reset', 'landing'];
 const AUTH_ROUTES = ['profile', 'verify', 'app'];
 
 function guard(name) {
@@ -247,6 +247,7 @@ const ROUTE_PATHS = {
   verify: '/verify',
   forgot: '/forgot',
   reset: '/reset',
+  landing: '/landing',
   app: '/app',
 };
 const KNOWN_ROUTES = Object.keys(ROUTE_PATHS);
@@ -383,7 +384,7 @@ function applyState(p) {
     /* '/' lo decide la sesión (bootstrap termina el trabajo si hace falta) */
     if (store.user) route = 'app';
     else if (store.hasSession) route = 'boot';
-    else route = 'login';
+    else route = 'landing';
   } else if (seg[0] === 'app') {
     route = 'app';
     /* W68: el segmento es el ID público (16 dígitos usuario / 12 grupo)
@@ -418,9 +419,9 @@ function applyState(p) {
     writeUrl('/login', 'replace');
   } else if (unknown) {
     writeUrl(ROUTE_PATHS[route], 'replace');
-  } else if (route === 'login' && !seg.length) {
-    /* sin sesión, la raíz canónica es /login (evita '/' y '/login' vivos) */
-    writeUrl('/login', 'replace');
+  } else if (route === 'landing' && !seg.length) {
+    /* sin sesión, la raíz canónica es /landing (evita '/' y '/landing' vivos) */
+    writeUrl('/landing', 'replace');
   } else if (route === 'app' && !seg.length) {
     writeUrl('/app', 'replace');
   }
