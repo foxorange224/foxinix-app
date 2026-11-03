@@ -374,6 +374,96 @@ a:focus {
     color: var(--orange-soft);
 }
 
+/* ---------------------------------------------------------------- plataforma detectada */
+
+.platform-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line-soft);
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.platform-badge-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
+.platform-badge.platform-android {
+    border-color: var(--green);
+    background: rgba(67, 209, 139, .10);
+    color: var(--green);
+}
+.platform-badge.platform-android .platform-badge-icon { fill: var(--green); }
+
+.platform-badge.platform-ios {
+    border-color: var(--blue);
+    background: rgba(74, 144, 226, .10);
+    color: var(--blue);
+}
+.platform-badge.platform-ios .platform-badge-icon { fill: var(--blue); }
+
+.platform-badge.platform-desktop {
+    border-color: var(--coral);
+    background: rgba(239, 122, 107, .10);
+    color: var(--coral);
+}
+.platform-badge.platform-desktop .platform-badge-icon { fill: var(--coral); }
+
+.platform-badge.platform-web {
+    border-color: var(--line-soft);
+    color: var(--muted-2);
+}
+.platform-badge.platform-web .platform-badge-icon { fill: var(--muted-2); }
+
+.platform-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Orbes artísticos adicionales en el hero (solo CSS, GPU-friendly) */
+.hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: .5;
+    animation: hero-drift 16s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+.hero-orb-1 {
+    width: 400px; height: 400px;
+    background: var(--orange);
+    top: -80px; left: -10%;
+    animation-delay: 0s;
+}
+.hero-orb-2 {
+    width: 300px; height: 300px;
+    background: var(--blue);
+    bottom: -60px; right: -8%;
+    animation-delay: -8s;
+}
+
+@keyframes hero-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(20px, -30px) scale(1.05); }
+    66% { transform: translate(-15px, 25px) scale(.95); }
+}
+
 /* ---------------------------------------------------------------- app preview */
 
 .app-preview {
@@ -982,7 +1072,7 @@ a:focus {
 
 .footer-grid {
     display: grid;
-    grid-template-columns: 1.8fr 1fr 1fr 1fr;
+    grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr;
     padding-top: 56px;
     padding-bottom: 42px;
 }
@@ -1026,6 +1116,34 @@ a:focus {
 
 .footer-col a:hover {
     color: var(--orange-soft);
+}
+
+.footer-github {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 12px;
+    margin-top: 6px;
+    transition: border-color .2s, background .2s, color .2s;
+}
+.footer-github:hover {
+    border-color: var(--orange);
+    background: rgba(255, 106, 19, .08);
+    color: var(--text);
+}
+.footer-github .icon {
+    width: 16px;
+    height: 16px;
+    fill: var(--muted-2);
+    transition: fill .2s;
+}
+.footer-github:hover .icon {
+    fill: var(--orange);
 }
 
 .footer-bottom {
