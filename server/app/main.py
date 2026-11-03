@@ -73,9 +73,14 @@ async def reject_big_bodies(request, call_next):
             # y una foto normal (cientos de KB) devolvía 413 aunque el
             # endpoint acepta MAX_MEDIA_BYTES.
             path = request.url.path
+            # W80: el frontend llama a /media, /chats/{id}/avatar sin /api/.
+            # El middleware rewrite_api_paths las reescribe después, pero
+            # este middleware se ejecuta antes, así que aceptamos ambas formas.
             is_media = (
-                path == "/api/media"
-                or (path.startswith("/api/chats/") and path.endswith("/avatar"))
+                path == "/media"
+                or path == "/api/media"
+                or path.startswith("/chats/") and path.endswith("/avatar")
+                or path.startswith("/api/chats/") and path.endswith("/avatar")
             )
             # margen para el boundary/multipart: el endpoint vuelve a medir
             # los bytes reales del archivo y aplica MAX_MEDIA_BYTES exacto.
@@ -88,6 +93,24 @@ async def reject_big_bodies(request, call_next):
                 else:
                     detail = "Cuerpo de la petición demasiado grande"
                 return JSONResponse(status_code=413, content={"detail": detail})
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def rewrite_api_paths(request, call_next):
+    """W80: el frontend llama a /version, /chats, /auth/login, etc.
+    Sin /api/. El servidor los trata internamente como /api/version,
+    /api/chats, /api/auth/login. No toca estáticos, SW, manifest,
+    favicon ni tonos.
+    """
+    path = request.url.path
+    if (
+        not path.startswith("/api/")
+        and not path.startswith("/static/")
+        and not path.startswith("/tonos/")
+        and path not in ("/sw.js", "/manifest.webmanifest", "/favicon.ico", "/")
+    ):
+        request.scope["path"] = "/api" + path
     return await call_next(request)
 
 

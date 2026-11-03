@@ -317,7 +317,7 @@ def _extract_token(ws: WebSocket) -> str:
     return ws.query_params.get("token", "")
 
 
-@router.websocket("/api/ws")
+@router.websocket("/ws")
 async def ws_endpoint(ws: WebSocket) -> None:
     token = _extract_token(ws)
     payload = security.decode(token)
