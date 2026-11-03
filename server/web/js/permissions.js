@@ -13,9 +13,9 @@
    - Un permiso concedido no vuelve a preguntarse; uno bloqueado ofrece
      "Abrir ajustes" cuando el sistema lo permite.
 */
-import { store } from './store.js';
-import { t } from './i18n.js';
-import { hooks as dlHooks } from './downloads.js';
+import { store } from './store.js?v=3';
+import { t } from './i18n.js?v=3';
+import { hooks as dlHooks } from './downloads.js?v=3';
 
 export const PERMISSIONS = [
   { id: 'mic', icon: 'i-mic', label: 'Micrófono' },

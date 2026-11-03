@@ -1,24 +1,24 @@
 /* Punto de entrada: crea la app Vue, conecta el router (W22: rutas
    reales con History API) y los toasts. */
 import { store, syncPath, go as goRef, goReplace as goReplaceRef,
-  setTheme, toggleTheme } from './store.js';
-import { bootstrap, loadSession } from './api.js';
-import { t } from './i18n.js';
+  setTheme, toggleTheme } from './store.js?v=3';
+import { bootstrap, loadSession } from './api.js?v=3';
+import { t } from './i18n.js?v=3';
 import {
   BootView, LoginView, RegisterView, ProfileView,
   VerifyView, ForgotView, ResetView,
-} from './views/auth.js';
-import { ChatShell } from './views/chat.js';
-import { BootScreen } from './views/bootscreen.js';
-import { dlDirective, startDownload } from './mediadl.js';
-import { startWS, stopWS, reconnectNow } from './realtime.js';
-import { markChatRead } from './actions.js';
+} from './views/auth.js?v=3';
+import { ChatShell } from './views/chat.js?v=3';
+import { BootScreen } from './views/bootscreen.js?v=3';
+import { dlDirective, startDownload } from './mediadl.js?v=3';
+import { startWS, stopWS, reconnectNow } from './realtime.js?v=3';
+import { markChatRead } from './actions.js?v=3';
 import {
   dlCategory, saveDownload, saveDownloadToDevice, listDownloads,
   deleteDownload, hasDownload, clearDownloads, autoDlPrefs, setAutoDl,
   DL_TYPES,
-} from './downloads.js';
-import { prefetchEmojis } from './emoji.js';
+} from './downloads.js?v=3';
+import { prefetchEmojis } from './emoji.js?v=3';
 
 const views = {
   boot: BootView,

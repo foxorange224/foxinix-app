@@ -13,7 +13,7 @@
    abrir la lista y se puede volver a descargar.
 
    Sin dependencias. FF78: Cache API + IndexedDB + Blob + XHR. */
-import { store } from './store.js';
+import { store } from './store.js?v=3';
 
 /* P1: las descargas persistentes son por CUENTA. Antes el mismo caché e
    IndexedDB se compartían entre usuarios del mismo dispositivo y la

@@ -18,11 +18,11 @@
    el que llama empieza en 'outgoing'. Firefox 78: RTCPeerConnection y
    getUserMedia con promesas ✓ (el runner de tests inyecta micrófono y
    cámara falsos vía media.navigator.streams.fake). */
-import { store, toast } from './store.js';
-import { t } from './i18n.js';
-import { ensurePermission } from './permissions.js';
+import { store, toast } from './store.js?v=3';
+import { t } from './i18n.js?v=3';
+import { ensurePermission } from './permissions.js?v=3';
 /* W63: tono de llamada elegido en Ajustes. */
-import { selectedToneSrc } from './tones.js';
+import { selectedToneSrc } from './tones.js?v=3';
 
 let sendFn = null;          // lo inyecta realtime.js (su send() privado)
 let pc = null;              // PeerConnection del 1:1

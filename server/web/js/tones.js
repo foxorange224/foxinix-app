@@ -6,7 +6,7 @@
 
    Un tono subido por el usuario se guarda como data-URL en
    localStorage (fm.p.customTone.<kind>) y se añade al final del catálogo. */
-import { store } from './store.js';
+import { store } from './store.js?v=3';
 
 export const MESSAGE_TONES = [
   { id: 'default', name: 'Predeterminado', file: null },

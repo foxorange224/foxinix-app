@@ -3,7 +3,7 @@ import { store, go, goReplace, toast } from '../store.js';
 import { api, applyAuth, bootstrap, logout, uploadMedia, session, saveSession } from '../api.js';
 /* W66c: GIF/WebP animados como foto de perfil (se suben tal cual) */
 import { isAnimWebp } from '../actions.js';
-import { AvatarEditor } from './avatar-editor.js';
+import { AvatarEditor } from './avatar-editor.js?v=3';
 
 const { ref, computed, onMounted, onUnmounted } = Vue;
 

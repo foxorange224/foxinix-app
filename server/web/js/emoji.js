@@ -4,9 +4,9 @@
    EMO_FILE_NOTO (imágenes de Google) en emoji-noto-data.js;
    los nombres de búsqueda en español viven en NAMES (emoji →
    palabras clave). FF78/ES2020. */
-import { CATS, CODES, DESC, EMO_FILE } from './emoji-data.js';
-import { EMO_FILE_NOTO } from './emoji-noto-data.js';
-import { store } from './store.js';
+import { CATS, CODES, DESC, EMO_FILE } from './emoji-data.js?v=3';
+import { EMO_FILE_NOTO } from './emoji-noto-data.js?v=3';
+import { store } from './store.js?v=3';
 
 /* Nombres de búsqueda (español). No hace falta nombrar todo: los emojis
    sin nombre se encuentran pegando el emoji mismo en el buscador. */

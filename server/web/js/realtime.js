@@ -1,15 +1,15 @@
 /* Foxinix — WebSocket de tiempo real. Reconecta con backoff y refresca
    la lista al reconectar (API.md §tiempo real). */
-import { store, toast } from './store.js';
-import { session, refreshTokens, authLost, ApiError, sessionHooks } from './api.js';
+import { store, toast } from './store.js?v=3';
+import { session, refreshTokens, authLost, ApiError, sessionHooks } from './api.js?v=3';
 import { hooks, loadChats, loadMembers, loadPeople, loadBlocks,
-  onIncomingMessage, catchUpChat, mediaUrl, openNotificationTarget } from './actions.js';
-import { t } from './i18n.js';
+  onIncomingMessage, catchUpChat, mediaUrl, openNotificationTarget } from './actions.js?v=3';
+import { t } from './i18n.js?v=3';
 /* W28h: la señalización de llamadas WebRTC reutiliza este socket */
-import { initCall, handleCallEvent, abortCall } from './call.js';
+import { initCall, handleCallEvent, abortCall } from './call.js?v=3';
 /* W63: el aviso de mensaje nuevo usa el tono elegido en Ajustes. */
-import { selectedToneSrc } from './tones.js';
-import { clearMediaBlobs } from './mediadl.js';
+import { selectedToneSrc } from './tones.js?v=3';
+import { clearMediaBlobs } from './mediadl.js?v=3';
 
 let ws = null;
 let pingTimer = null;

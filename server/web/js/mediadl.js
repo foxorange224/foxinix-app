@@ -13,13 +13,13 @@
    y guarda en Downloads/Foxinix).
 
    Sin dependencias. FF78: XHR + Blob + IntersectionObserver (todo disponible). */
-import { t } from './i18n.js';
-import { toast } from './store.js';
+import { t } from './i18n.js?v=3';
+import { toast } from './store.js?v=3';
 import {
   getDownloadBlob, saveDownload, requestPersistence,
   fetchBlob, saveBlobToDevice, saveBlobToDisk, androidBridge,
   dlCategory, dlTypeInfo,
-} from './downloads.js';
+} from './downloads.js?v=3';
 
 const RING = 132;                 // circunferencia del círculo (r=21, igual que subidas)
 const blobs = new Map();          // ruta (sin query) → objectURL de la sesión
