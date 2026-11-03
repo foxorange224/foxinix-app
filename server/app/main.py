@@ -102,12 +102,17 @@ async def rewrite_api_paths(request, call_next):
     Sin /api/. El servidor los trata internamente como /api/version,
     /api/chats, /api/auth/login. No toca estáticos, SW, manifest,
     favicon ni tonos.
+
+    Excepción: /media/{kind}/{fname} (imágenes firmadas del router pub)
+    ya está sin /api/ y NO debe reescribirse. Solo /media exacto
+    (POST upload) se reescribe a /api/media.
     """
     path = request.url.path
     if (
         not path.startswith("/api/")
         and not path.startswith("/static/")
         and not path.startswith("/tonos/")
+        and not path.startswith("/media/")   # pub router: /media/profile/..., /media/file/...
         and path not in ("/sw.js", "/manifest.webmanifest", "/favicon.ico", "/")
     ):
         request.scope["path"] = "/api" + path
