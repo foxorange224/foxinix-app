@@ -8,7 +8,7 @@
      aleatorio por subida → el contenido de una ruta nunca cambia.
    Firefox 78 (Mypal) lo soporta; en orígenes http no seguros el registro
    falla en main.js y la app sigue funcionando sin SW. */
-const SHELL_CACHE = 'foxinix-shell-v122';  // v122: motion unificado (W77): duraciones .1/.12/.15/.2, modal-in a .15s
+const SHELL_CACHE = 'foxinix-shell-v123';  // v123: W79 shell red-primero (nunca JS viejo)
 /* Los emojis Twemoji/Noto viven en su PROPIO caché: cambiar la versión
    del shell ya no obliga a volver a descargar cientos de SVG. */
 const EMOJI_CACHE = 'foxinix-emoji-v1';
@@ -276,23 +276,27 @@ self.addEventListener('fetch', function (e) {
 
   e.respondWith(
     caches.open(SHELL_CACHE).then(async function (c) {
-      let hit = await c.match(req);
-      /* W22: las rutas reales (/app/user/5) no están en la caché como
-         documentos; el shell cacheado de '/' sirve de base offline. */
-      if (!hit && req.mode === 'navigate') hit = await c.match('/');
-      /* refresco en segundo plano (se ignora si falla) */
-      const net = fetch(req).then(function (res) {
+      /* W79: RED PRIMERO. Antes el shell se servía desde la caché y
+         sólo se refrescaba en segundo plano (stale-while-revalidate):
+         el navegador cargaba el bundle viejo —el que no tenía
+         openGroupProfile— y la app se rompía al entrar. Ahora, si hay
+         red, va siempre a la red; la caché queda sólo para el modo
+         offline. */
+      try {
+        const res = await fetch(req);
         if (res && res.ok && res.type === 'basic') c.put(req, res.clone());
         return res;
-      }).catch(function () { return null; });
-
-      if (hit) { net.then(function () {}); return hit; }
-      const res = await net;
-      if (res) return res;
-      return new Response('Sin conexión', {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+      } catch (err) {
+        let hit = await c.match(req);
+        /* W22: las rutas reales (/app/user/5) no están en la caché como
+           documentos; el shell cacheado de '/' sirve de base offline. */
+        if (!hit && req.mode === 'navigate') hit = await c.match('/');
+        if (hit) return hit;
+        return new Response('Sin conexión', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
     })
   );
 });

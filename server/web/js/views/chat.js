@@ -80,7 +80,7 @@ import { emojiCats, emojiCat, emojiRecent, emojiSearch, emojiPush,
   emoFile, emoSrc, emoStyle, emoAnySrc, splitEmojis, isEmojiBurst,
   reactBump, reactRank } from '../emoji.js';
 import { startWS, stopWS, applyProfileFields } from '../realtime.js';
-import { AvatarEditor } from './avatar-editor.js?v=3';
+import { AvatarEditor } from './avatar-editor.js';
 
 /* ------------------------------------------------------- fechas/horas */
 

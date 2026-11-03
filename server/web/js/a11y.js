@@ -4,7 +4,7 @@
 /* Mapa de nombres de emoji (inglés, desde gemoji). Se genera en
    emoji-data.js y se reutiliza aquí para poner nombre a los emojis
    en el aria-label. Cuando no hay nombre, se usa el propio emoji. */
-import { DESC } from './emoji-data.js?v=3';
+import { DESC } from './emoji-data.js';
 
 /* Regex que coincide con un solo código punto que tiene la propiedad
    Unicode Emoji. Suficiente para agrupar repeticiones consecutivas en

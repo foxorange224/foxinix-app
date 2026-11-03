@@ -1,7 +1,7 @@
 /* Foxinix — acciones de datos (chats, mensajes). Importa store + api; sin ciclos. */
-import { store, toast, syncUrl } from './store.js?v=3';
-import { api, uploadMedia, session } from './api.js?v=3';
-import { t } from './i18n.js?v=3';
+import { store, toast, syncUrl } from './store.js';
+import { api, uploadMedia, session } from './api.js';
+import { t } from './i18n.js';
 
 /* Puentes que registra realtime.js para mandar 'seen' por WS (fallback: REST). */
 export const hooks = { sendSeen: null };
@@ -19,10 +19,10 @@ export function charCount(txt) {
 /* URL de media. Las nuevas vienen firmadas (?exp=&sig=) y NO llevan token
    de cuenta (W11); a las viejas /api/media/{id} les seguimos pegando
    ?token= por compatibilidad. */
-import { cachedUrl } from './mediadl.js?v=3';
+import { cachedUrl } from './mediadl.js';
 import {
   autoDownload, dlCategory, listDownloads, hooks as dlHooks,
-} from './downloads.js?v=3';
+} from './downloads.js';
 
 /* W58: las descargas guardadas en los datos de la app se reflejan en la
    UI (los botones de medios se ocultan cuando la automática ya terminó). */

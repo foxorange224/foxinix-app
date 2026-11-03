@@ -6,7 +6,7 @@
    El idioma vive en el dispositivo (fm.lang) y en store.lang (reactivo):
    t() lee store.lang durante el render de Vue, así que al cambiar de
    idioma toda la interfaz se repinta sola. */
-import { store } from './store.js?v=3';
+import { store } from './store.js';
 
 const EN = {
   /* ---------- carga / genéricos ---------- */

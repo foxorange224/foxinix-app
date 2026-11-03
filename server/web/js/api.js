@@ -1,8 +1,8 @@
 /* Cliente API: fetch + refresh de token + sesión en localStorage.
    Reglas: 401 → refresh y reintenta una vez; 403 → cuenta sin verificar. */
-import { store, go, goReplace, authFallback, toast } from './store.js?v=3';
-import { t } from './i18n.js?v=3';
-import { resetDownloadStore } from './downloads.js?v=3';
+import { store, go, goReplace, authFallback, toast } from './store.js';
+import { t } from './i18n.js';
+import { resetDownloadStore } from './downloads.js';
 
 const SKEY = 'fm.session';
 

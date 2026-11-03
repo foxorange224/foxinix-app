@@ -5,6 +5,7 @@ import asyncio
 import hashlib
 import logging
 import os
+import re
 import time
 
 from pathlib import Path
@@ -89,6 +90,115 @@ async def reject_big_bodies(request, call_next):
     return await call_next(request)
 
 
+# ------------------------------------------------ módulos JS con hash
+# W79: cada módulo JS se sirve con sus imports relativos reescritos a
+# `?v=<BUILD_ID>`, donde BUILD_ID es el hash de TODOS los assets (js/css).
+# Así, al desplegar CUALQUIER archivo cambian TODAS las URLs de módulos y
+# el navegador no puede volver a servir un bundle viejo.
+#
+# Por qué hacía falta: el HTML sí llevaba `?v=<hash>`, pero los imports
+# entre módulos no. Con Cloudflare (max-age=14400) y el service worker
+# (stale-while-revalidate) el navegador se quedaba con el JS viejo: el
+# click en el nombre del grupo hacía toggleInfo en vez de abrir el modal
+# de perfil (openGroupProfile undefined) y la app se rompía al entrar.
+_BUILD_ID = "0"
+_JS_CACHE: dict[str, tuple[float, int, bytes, str]] = {}
+
+# from './x.js' | import './x.js' | import('./x.js') | export ... from './x.js'
+_IMPORT_RE = re.compile(
+    r"(?P<head>(?:\bfrom|\bimport)\s*\(?\s*)"
+    r"(?P<q>['\"])(?P<spec>\.{1,2}/[^'\"\n]+?\.js)(?P<old>\?[^'\"\n]*)?(?P=q)"
+)
+
+# Referencias /static/... dentro del HTML (para versionarlas).
+_STATIC_REF_RE = re.compile(
+    r"(/static/[A-Za-z0-9._/-]+?)(\?[^\"'\s)]*)?(?=['\"\s\)>])"
+)
+
+
+def _rewrite_imports(text: str, build_id: str) -> str:
+    """Agrega `?v=<build_id>` a cada import relativo de un módulo JS."""
+
+    def repl(m: re.Match) -> str:
+        q = m.group("q")
+        return f"{m.group('head')}{q}{m.group('spec')}?v={build_id}{q}"
+
+    return _IMPORT_RE.sub(repl, text)
+
+
+def _asset_files() -> list[str]:
+    """Todos los assets versionables (js/css) del frontend, ordenados."""
+    out: list[str] = []
+    for root in ("js", "css", "vendor"):
+        d = WEB_DIR / root
+        if not d.is_dir():
+            continue
+        for p in sorted(d.rglob("*")):
+            if p.is_file() and p.suffix in (".js", ".css"):
+                out.append(str(p.relative_to(WEB_DIR)).replace("\\", "/"))
+    return out
+
+
+def _compute_build_id(hashes: dict[str, str]) -> str:
+    h = hashlib.sha256()
+    for rel, fh in sorted(hashes.items()):
+        h.update(rel.encode("utf-8"))
+        h.update(fh.encode("utf-8"))
+    return h.hexdigest()[:12]
+
+
+@app.middleware("http")
+async def hashed_js_modules(request, call_next):
+    """Sirve /static/**/*.js con los imports reescritos al build actual.
+
+    El ETag es el del cuerpo YA reescrito: si cambia el BUILD_ID (aunque
+    el archivo no cambie) el ETag cambia y el navegador no se queda con
+    un 304 que apunta a imports viejos.
+    """
+    path = request.url.path
+    if path.startswith("/static/") and path.endswith(".js"):
+        rel = path[len("/static/"):]
+        try:
+            p = (WEB_DIR / rel).resolve()
+            p.relative_to(WEB_DIR.resolve())
+        except (ValueError, OSError):
+            p = None
+        if p is not None and p.is_file():
+            try:
+                st = p.stat()
+                cached = _JS_CACHE.get(str(p))
+                if cached is None or cached[0] != st.st_mtime or cached[1] != st.st_size:
+                    raw = p.read_bytes()
+                    body = _rewrite_imports(
+                        raw.decode("utf-8", "replace"), _BUILD_ID
+                    ).encode("utf-8")
+                    etag = '"' + hashlib.sha256(body).hexdigest()[:32] + '"'
+                    _JS_CACHE[str(p)] = (st.st_mtime, st.st_size, body, etag)
+                else:
+                    body, etag = cached[2], cached[3]
+            except OSError:
+                body, etag, st = b"", '"0"', None
+            if st is not None:
+                inm = request.headers.get("if-none-match", "")
+                if etag in [x.strip() for x in inm.split(",") if x.strip()]:
+                    return Response(
+                        status_code=304,
+                        headers={"ETag": etag, "Cache-Control": "no-cache"},
+                    )
+                return Response(
+                    content=body,
+                    media_type="text/javascript; charset=utf-8",
+                    headers={
+                        "ETag": etag,
+                        "Cache-Control": "no-cache",
+                        "Last-Modified": time.strftime(
+                            "%a, %d %b %Y %H:%M:%S GMT", time.gmtime(st.st_mtime)
+                        ),
+                    },
+                )
+    return await call_next(request)
+
+
 # W14: cabeceras de seguridad en TODA respuesta.
 # 'unsafe-eval' en script-src es necesario porque el build global de
 # Vue compila los templates en runtime (new Function).
@@ -166,15 +276,16 @@ if TONES_DIR.is_dir():
 def index() -> Response:
     """SPA: el shell de la app web (rutas por hash, sin catch-all).
 
-    Inyecta `?v=<hash>` en cada referencia estática para que, al desplegar
-    archivos nuevos, el navegador los descargue de nuevo en lugar de usar
-    la copia en caché (Cloudflare max-age=14400 o service worker).
+    Inyecta `?v=<BUILD_ID>` en cada referencia estática para que, al
+    desplegar archivos nuevos, el navegador los descargue de nuevo en
+    lugar de usar la copia en caché (Cloudflare max-age=14400 o service
+    worker). El mismo BUILD_ID va en los imports de cada módulo JS, así
+    que toda la cadena queda coherente.
     """
     if not INDEX_HTML.is_file():
         return Response(status_code=404, media_type="text/plain", content="web no desplegado")
     html = INDEX_HTML.read_text(encoding="utf-8")
-    for rel, h in STATIC_HASHES.items():
-        html = html.replace(f'/static/{rel}', f'/static/{rel}?v={h}')
+    html = _STATIC_REF_RE.sub(lambda m: f"{m.group(1)}?v={_BUILD_ID}", html)
     return Response(
         content=html,
         media_type="text/html",
@@ -248,11 +359,18 @@ def _file_hash(rel: str) -> str:
 
 @app.on_event("startup")
 async def _startup() -> None:
+    global _BUILD_ID
     db.init_db()
     hub.bind_loop()
     asyncio.create_task(cleanup.cleanup_loop())
     for rel in _STATIC_FILES:
         STATIC_HASHES[rel] = _file_hash(rel)
+    # W79: también todos los módulos (no sólo los del HTML). Si cambia
+    # cualquiera de ellos, /api/version lo ve y el BUILD_ID cambia, así
+    # que todas las URLs de JS se renuevan juntas.
+    for rel in _asset_files():
+        STATIC_HASHES.setdefault(rel, _file_hash(rel))
+    _BUILD_ID = _compute_build_id(STATIC_HASHES)
 
 
 @app.get("/api/health")
