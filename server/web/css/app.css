@@ -2994,7 +2994,7 @@ html.wallimg .chat-pane.people-pane::after { content: none; }
 }
 .modal.settings .m-tabs {
   flex: none;
-  width: 176px;
+  width: 190px;
   flex-direction: column;
   align-items: stretch;
   border-bottom: 0;
@@ -3027,7 +3027,24 @@ html.wallimg .chat-pane.people-pane::after { content: none; }
   overflow: hidden;
   text-overflow: ellipsis;
   transition: background .12s, color .12s;
+  /* W80: icono + texto en la columna lateral (PC) */
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
+.modal.settings .m-tab .m-tab-ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  opacity: .7;
+  transition: opacity .12s;
+}
+.modal.settings .m-tab .m-tab-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.modal.settings .m-tab:hover .m-tab-ic { opacity: .9; }
+.modal.settings .m-tab.on .m-tab-ic { opacity: 1; }
 .modal.settings .m-tab:hover { background: var(--accent-wash, var(--panel2)); color: var(--t1); }
 .modal.settings .m-tab.on {
   background: var(--panel2);
@@ -3056,6 +3073,9 @@ html.wallimg .chat-pane.people-pane::after { content: none; }
   }
   .st-group { display: none; }
   .modal.settings .m-tab { margin-bottom: 0; padding: 9px 12px; }
+  /* W80: en móvil la barra de pestañas es horizontal y deslizable; ahí
+     sólo va el texto (los iconos ya están en la lista de categorías). */
+  .modal.settings .m-tab .m-tab-ic { display: none; }
 }
 .st-body {
   flex: 1;

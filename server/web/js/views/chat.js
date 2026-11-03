@@ -3794,7 +3794,11 @@ const SettingsModal = {
             <div class="st-group" v-if="tb.group && (i === 0 || tabs[i - 1].group !== tb.group)"
               :key="'g-' + tb.group">{{ t(tb.group) }}</div>
             <button class="m-tab" type="button" :key="tb.val"
-              :class="{ on: store.settingsTab === tb.val }" @click="setTab(tb.val)">{{ t(tb.name) }}</button>
+              :class="{ on: store.settingsTab === tb.val }" @click="setTab(tb.val)">
+              <!-- W80: icono en la columna lateral de Ajustes (PC) -->
+              <svg class="ic ic-sm m-tab-ic"><use :href="'#' + tb.icon"></use></svg>
+              <span class="m-tab-t">{{ t(tb.name) }}</span>
+            </button>
           </template>
         </div>
 
