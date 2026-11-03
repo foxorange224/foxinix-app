@@ -6,6 +6,10 @@ import { resetDownloadStore } from './downloads.js';
 
 const SKEY = 'fm.session';
 
+/* W80: base de la API. Cuando la app se sirve desde foxinix.qzz.io (GitHub
+   Pages) las peticiones van a api.foxinix.qzz.io vía cloudflared tunnel. */
+export const API_BASE = 'https://api.foxinix.qzz.io';
+
 export const session = {
   access: '', refresh: '', user: null, pendingEmail: '',
   /* W30e: true = sesión legada (inyectada con tokens en localStorage,
@@ -351,7 +355,7 @@ export async function api(method, path, body, opts = {}) {
   }
   let res;
   try {
-    res = await fetch(path, http);
+    res = await fetch(API_BASE + path, http);
   } catch (e) {
     if (ctl) clearTimeout(http._t);
     throw new ApiError(0, 'Sin conexión con el servidor');
@@ -389,7 +393,7 @@ export async function uploadChatAvatar(chatId, file, _retried) {
   fd.append('file', file);
   let res;
   try {
-    res = await fetch('/api/chats/' + chatId + '/avatar', {
+    res = await fetch(API_BASE + '/api/chats/' + chatId + '/avatar', {
       method: 'POST',
       headers: authHeaders(),
       body: fd,
@@ -429,7 +433,7 @@ export function uploadMedia(file, onProgress, ctl) {
     const attempt = (retried) => {
       const x = new XMLHttpRequest();
       xhr = x;
-      x.open('POST', '/api/media');
+      x.open('POST', API_BASE + '/api/media');
       x.setRequestHeader('Authorization', 'Bearer ' + session.access);
       x.timeout = 300000; // 5 min para enlaces lentos
       x.upload.onprogress = (e) => {

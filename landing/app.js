@@ -71,7 +71,7 @@
 
         var platform = 'web';
         var label = 'Entrar a Foxinix Chat';
-        var url = 'https://chat.foxinix.qzz.io/';
+        var url = '/app/';
         var blank = false;
 
         if (isAndroid) {

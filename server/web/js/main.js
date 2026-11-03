@@ -2,7 +2,7 @@
    reales con History API) y los toasts. */
 import { store, syncPath, go as goRef, goReplace as goReplaceRef,
   setTheme, toggleTheme } from './store.js';
-import { bootstrap, loadSession } from './api.js';
+import { bootstrap, loadSession, API_BASE } from './api.js';
 import { t } from './i18n.js';
 import {
   BootView, LoginView, RegisterView, ProfileView,
@@ -84,7 +84,7 @@ const Root = {
       bootstrap();
       // W62: check for new version (web + APK)
       setTimeout(() => {
-        fetch('/api/version').then(r => r.json()).then(v => {
+        fetch(API_BASE + '/api/version').then(r => r.json()).then(v => {
           const isAndroid = !!(window.FoxinixAndroid);
           const srvWeb = v.web_version || '';
           const srvApk = v.apk_version || '';

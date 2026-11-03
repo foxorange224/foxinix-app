@@ -137,9 +137,10 @@ def _set_refresh_cookie(
         refresh,
         max_age=config.REFRESH_TTL,
         httponly=True,
-        samesite="strict",
-        secure=secure,
-        path="/api/auth",
+        samesite="none",      # W80: cross-origin desde foxinix.qzz.io a api.foxinix.qzz.io
+        secure=True,          # W80: requerido por SameSite=None
+        domain=".foxinix.qzz.io",  # W80: disponible en todos los subdominios
+        path="/",
     )
 
 
@@ -554,7 +555,11 @@ def logout(
             )
             # W45g: no dejar la WebSocket viva tras cerrar sesión.
             hub.kick_user(user["id"])
-    response.delete_cookie(REFRESH_COOKIE, path="/api/auth")
+    response.delete_cookie(
+        REFRESH_COOKIE,
+        path="/",
+        domain=".foxinix.qzz.io",
+    )
     return {"ok": True}
 
 

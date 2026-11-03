@@ -1,7 +1,7 @@
 /* Foxinix — WebSocket de tiempo real. Reconecta con backoff y refresca
    la lista al reconectar (API.md §tiempo real). */
 import { store, toast } from './store.js';
-import { session, refreshTokens, authLost, ApiError, sessionHooks } from './api.js';
+import { session, API_BASE, refreshTokens, authLost, ApiError, sessionHooks } from './api.js';
 import { hooks, loadChats, loadMembers, loadPeople, loadBlocks,
   onIncomingMessage, catchUpChat, mediaUrl, openNotificationTarget } from './actions.js';
 import { t } from './i18n.js';
@@ -132,8 +132,8 @@ function connect() {
     return;
   }
   store.ws = 'connecting';
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const url = proto + '//' + location.host + '/api/ws';
+  /* W80: el WebSocket va a api.foxinix.qzz.io vía cloudflared tunnel. */
+  const url = API_BASE.replace(/^https:/i, 'wss:') + '/api/ws';
   let sock;
   try {
     /* W14: el token viaja como subprotocolo (2.º valor), no en la URL,
