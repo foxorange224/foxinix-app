@@ -15,7 +15,7 @@ pub fn run() {
             /* FOXINIX_URL permite probar un servidor local sin recompilar
                para producción. El valor por defecto es la web pública. */
             let target = std::env::var("FOXINIX_URL")
-                .unwrap_or_else(|_| "https://chat.foxinix.qzz.io/".to_string());
+                .unwrap_or_else(|_| "https://foxinix.qzz.io/".to_string());
             let url = tauri::WebviewUrl::External(
                 target.parse().expect("URL de Foxinix inválida"),
             );

@@ -39,7 +39,7 @@ router = APIRouter(prefix="/api", tags=["links"])
 
 MAX_BYTES = 1_500_000          # sólo leemos el HTML de la portada
 TTL = 7 * 86400                # segundos de caché por URL
-_UA = "FoxinixLink/1.0 (+https://chat.foxinix.qzz.io)"
+_UA = "FoxinixLink/1.0 (+https://foxinix.qzz.io)"
 
 _META_RE = re.compile(r"<meta\s[^>]*>", re.I)
 _LINK_RE = re.compile(r"<link\s[^>]*>", re.I)

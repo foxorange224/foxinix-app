@@ -8,11 +8,11 @@ from pathlib import Path
 # Orden de preferencia: Tailscale primero (privado), luego Cloudflare (público).
 SERVERS = [
     ("tailscale", "http://100.125.128.82:8444"),
-    ("cloudflare", "https://chat.foxinix.qzz.io"),
+    ("cloudflare", "https://foxinix.qzz.io"),
 ]
 WS_SERVERS = [
     ("tailscale", "ws://100.125.128.82:8444"),
-    ("cloudflare", "wss://chat.foxinix.qzz.io"),
+    ("cloudflare", "wss://foxinix.qzz.io"),
 ]
 
 # Override manual (desarrollo): FOXMSG_SERVER=http://127.0.0.1:8899

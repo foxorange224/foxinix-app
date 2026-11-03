@@ -37,7 +37,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://foxinix.qzz.io",
-        "https://chat.foxinix.qzz.io",
+        "https://foxinix.qzz.io",
         "http://localhost:8899",
         "http://127.0.0.1:8899",
     ],
