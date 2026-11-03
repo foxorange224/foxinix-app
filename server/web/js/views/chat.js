@@ -7117,7 +7117,8 @@ const ChatInfoPanel = {
             <div class="pp-galgrid" v-if="gal && gal.images.length">
               <button class="pp-galimg" type="button" v-for="im in gal.images"
                 :key="im.msg_id" :title="galSpoiled(im) ? t('Spoiler') : (im.media.name || '')" @click="galClick(im)">
-                <img :src="mediaUrl(im.media.url)" alt="" loading="lazy">
+                <!-- W79: la miniatura spoiler va desenfocada hasta que se toca -->
+                <img :class="{ 'gal-blur': galSpoiled(im) }" :src="mediaUrl(im.media.url)" alt="" loading="lazy">
                 <!-- W29d: miniatura de spoiler tapada hasta tocarla -->
                 <span class="gal-spoil" v-if="galSpoiled(im)">
                   <svg class="ic"><use href="#i-eye-off"></use></svg>
