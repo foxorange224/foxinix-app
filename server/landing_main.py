@@ -39,12 +39,11 @@ _ROOT_FILES = {
     "apple-touch-icon.png", "favicon.ico", "CNAME",
 }
 
-# Rutas SPA con su index.html físico
+# Rutas SPA con su index.html físico (clave sin barra final)
 _SPA_ROUTES = {
-    "": "index.html",
-    "login/": "login/index.html",
-    "register/": "register/index.html",
-    "app/": "app/index.html",
+    "login": "login/index.html",
+    "register": "register/index.html",
+    "app": "app/index.html",
 }
 
 
@@ -71,12 +70,10 @@ async def serve(full_path: str) -> FileResponse:
     if f:
         return f
 
-    # 2) Ruta SPA conocida (login/, register/, app/)
-    if full_path in _SPA_ROUTES:
-        return FileResponse(LANDING_DIR / _SPA_ROUTES[full_path], media_type="text/html")
-    if full_path.rstrip("/") in _SPA_ROUTES:
-        idx = _SPA_ROUTES[full_path.rstrip("/") + "/"] if full_path.rstrip("/") else "index.html"
-        return FileResponse(LANDING_DIR / idx, media_type="text/html")
+    # 2) Ruta SPA conocida, con o sin barra final (/login y /login/)
+    key = full_path.strip("/")
+    if key in _SPA_ROUTES:
+        return FileResponse(LANDING_DIR / _SPA_ROUTES[key], media_type="text/html")
 
     # 3) Fallback: index.html (SPA History API)
     return FileResponse(LANDING_DIR / "index.html", media_type="text/html")

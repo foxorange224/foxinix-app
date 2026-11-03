@@ -267,35 +267,13 @@ a:focus {
         var(--bg);
 }
 
-.hero-glow {
-    position: absolute;
-    top: -160px;
-    right: -120px;
-    width: 620px;
-    height: 620px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 106, 19, .15), rgba(255, 106, 19, 0) 68%);
-    pointer-events: none;
-}
-
 .hero-grid {
     position: relative;
     z-index: 2;
-    display: flex;
-    align-items: center;
 }
 
 .hero-copy {
-    width: 48%;
-    flex: 0 0 auto;
-    padding-right: 24px;
-}
-
-.hero-art {
-    position: relative;
-    width: 52%;
-    flex: 1 1 auto;
-    min-width: 0;
+    max-width: 720px;
 }
 
 .eyebrow {
@@ -372,169 +350,6 @@ a:focus {
     height: 16px;
     margin-right: 6px;
     color: var(--orange-soft);
-}
-
-/* ---------------------------------------------------------------- plataforma detectada */
-
-.platform-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    margin-top: 30px;
-}
-
-.platform-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 10px;
-    background: var(--panel-2);
-    border: 1px solid var(--line-soft);
-    color: var(--muted);
-    font-size: 12.5px;
-    font-weight: 600;
-}
-
-.platform-badge-icon {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 auto;
-}
-
-.platform-badge.platform-android {
-    border-color: var(--green);
-    background: rgba(67, 209, 139, .10);
-    color: var(--green);
-}
-.platform-badge.platform-android .platform-badge-icon { fill: var(--green); }
-
-.platform-badge.platform-ios {
-    border-color: var(--blue);
-    background: rgba(74, 144, 226, .10);
-    color: var(--blue);
-}
-.platform-badge.platform-ios .platform-badge-icon { fill: var(--blue); }
-
-.platform-badge.platform-desktop {
-    border-color: var(--coral);
-    background: rgba(239, 122, 107, .10);
-    color: var(--coral);
-}
-.platform-badge.platform-desktop .platform-badge-icon { fill: var(--coral); }
-
-.platform-badge.platform-web {
-    border-color: var(--line-soft);
-    color: var(--muted-2);
-}
-.platform-badge.platform-web .platform-badge-icon { fill: var(--muted-2); }
-
-.platform-btn {
-    width: 100%;
-    justify-content: center;
-}
-
-/* Orbes artísticos adicionales en el hero (solo CSS, GPU-friendly) */
-.hero-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: .5;
-    animation: hero-drift 16s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 1;
-}
-.hero-orb-1 {
-    width: 400px; height: 400px;
-    background: var(--orange);
-    top: -80px; left: -10%;
-    animation-delay: 0s;
-}
-.hero-orb-2 {
-    width: 300px; height: 300px;
-    background: var(--blue);
-    bottom: -60px; right: -8%;
-    animation-delay: -8s;
-}
-
-@keyframes hero-drift {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(20px, -30px) scale(1.05); }
-    66% { transform: translate(-15px, 25px) scale(.95); }
-}
-
-/* ---------------------------------------------------------------- app preview */
-
-.app-preview {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-width: 620px;
-    margin-left: auto;
-    border: 1px solid #34343e;
-    border-radius: 17px;
-    background: #121217;
-    box-shadow: 0 28px 70px rgba(0, 0, 0, .52), 0 0 0 1px rgba(255, 255, 255, .03) inset;
-    transform: rotate(-1.2deg);
-    animation: float-app 9s ease-in-out infinite;
-}
-
-.browser-bar {
-    display: flex;
-    align-items: center;
-    height: 36px;
-    padding: 0 12px;
-    background: #1b1b21;
-    border-bottom: 1px solid #2a2a32;
-}
-
-.browser-dots {
-    display: flex;
-    align-items: center;
-    width: 46px;
-}
-
-.browser-dots i {
-    width: 7px;
-    height: 7px;
-    margin-right: 5px;
-    border-radius: 50%;
-    background: #4c4c56;
-}
-
-.browser-dots i:first-child { background: #ed6a5e; }
-.browser-dots i:nth-child(2) { background: #e9c46a; }
-.browser-dots i:nth-child(3) { background: #56b886; }
-
-.browser-url {
-    display: inline-flex;
-    align-items: center;
-    height: 22px;
-    padding: 0 10px;
-    border-radius: 6px;
-    background: #141419;
-    color: #8e8d99;
-    font-size: 9.5px;
-    letter-spacing: .2px;
-}
-
-.browser-url .icon {
-    width: 10px;
-    height: 10px;
-    margin-right: 5px;
-    color: #6f9b74;
-}
-
-.browser-space {
-    flex: 1;
-}
-
-.app-shot {
-    display: block;
-    width: 100%;
-    height: auto;
-    background: #17171d;
 }
 
 /* ---------------------------------------------------------------- proof strip */
@@ -1139,8 +954,8 @@ a:focus {
 .footer-github .icon {
     width: 16px;
     height: 16px;
-    fill: var(--muted-2);
-    transition: fill .2s;
+    fill: currentColor;
+    flex: 0 0 auto;
 }
 .footer-github:hover .icon {
     fill: var(--orange);
@@ -1163,11 +978,6 @@ a:focus {
     50% { opacity: .55; transform: scale(.8); }
 }
 
-@keyframes float-app {
-    0%, 100% { transform: rotate(-1.2deg) translateY(0); }
-    50% { transform: rotate(-.7deg) translateY(-8px); }
-}
-
 @keyframes rise-in {
     0% { opacity: 0; transform: translateY(14px); }
     100% { opacity: 1; transform: translateY(0); }
@@ -1181,12 +991,7 @@ a:focus {
     }
 
     .hero-copy {
-        width: 48%;
-        padding-right: 20px;
-    }
-
-    .hero-art {
-        width: 52%;
+        max-width: 640px;
     }
 
     .privacy-copy {
@@ -1204,23 +1009,12 @@ a:focus {
     }
 
     .hero-copy {
-        width: 100%;
+        max-width: none;
         padding-right: 0;
     }
 
     .hero h1 {
         font-size: 58px;
-    }
-
-    .hero-art {
-        width: 100%;
-        max-width: 620px;
-        margin: 44px auto 0;
-    }
-
-    .app-preview {
-        margin-left: auto;
-        margin-right: auto;
     }
 
     .privacy-grid {
@@ -1324,10 +1118,6 @@ a:focus {
         font-size: 11.5px;
     }
 
-    .hero-art {
-        margin-top: 30px;
-    }
-
     .proof-grid {
         flex-wrap: wrap;
     }
@@ -1422,11 +1212,6 @@ a:focus {
     .section-head h2,
     .privacy-copy h2 {
         font-size: 30px;
-    }
-
-    .app-preview {
-        transform: none;
-        animation: none;
     }
 
     .feature-grid {
