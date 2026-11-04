@@ -70,10 +70,12 @@ async def serve(full_path: str) -> FileResponse:
     if f:
         return f
 
-    # 2) Ruta SPA conocida, con o sin barra final (/login y /login/)
+    # 2) Ruta SPA conocida, con o sin barra final y con subrutas:
+    #    /app, /app/, /app/group/123 → app/index.html (nunca el index de landing)
     key = full_path.strip("/")
-    if key in _SPA_ROUTES:
-        return FileResponse(LANDING_DIR / _SPA_ROUTES[key], media_type="text/html")
+    head = key.split("/", 1)[0] if key else ""
+    if head in _SPA_ROUTES:
+        return FileResponse(LANDING_DIR / _SPA_ROUTES[head], media_type="text/html")
 
     # 3) Fallback: index.html (SPA History API)
     return FileResponse(LANDING_DIR / "index.html", media_type="text/html")
