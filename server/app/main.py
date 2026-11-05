@@ -419,13 +419,17 @@ def version_info() -> dict:
     # detecte cambios de CSS/JS y recargue automáticamente.
     import os
     apk_version = os.getenv("FOXMSG_APK_VERSION", app.version)
-    apk_url = os.getenv("FOXMSG_APK_URL", "")
+    # W90: una URL por arquitectura; el cliente elige según el bitness
+    # del WebView (32 → armv7) y por defecto usa arm64.
+    apk_url_arm64 = os.getenv("FOXMSG_APK_URL_ARM64", "")
+    apk_url_armv7 = os.getenv("FOXMSG_APK_URL_ARMV7", "")
     static_hash = "+".join(f"{k}={v}" for k, v in sorted(STATIC_HASHES.items()))
     web_version = f"{app.version}+{static_hash}"
     return {
         "web_version": web_version,
         "apk_version": apk_version,
-        "apk_url": apk_url,
+        "apk_url_arm64": apk_url_arm64,
+        "apk_url_armv7": apk_url_armv7,
         "min_version": os.getenv("FOXMSG_MIN_VERSION", app.version),
     }
 
