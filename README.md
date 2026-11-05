@@ -1,4 +1,4 @@
-# 🦊 Foxinix
+[Foxinix](https://foxinix.qzz.io/assets/chat/logo.svg)
 
 Centro de mensajería propio: servidor en tu máquina host `1` (firuserver) + **cliente web** (Vue 3 sin build, PWA) servido por el mismo FastAPI. Liviano: corre bien incluso en máquinas muy modestas (objetivo mínimo: Mypal 78 / Firefox 78, 1 GB de RAM).
 
