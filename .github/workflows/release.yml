@@ -279,7 +279,7 @@ jobs:
             - **Android 7 o superior (32 bits):** `Foxinix-*-android-armv7.apk`
 
             La app usa la misma interfaz web que
-            https://chat.foxinix.qzz.io/. Los APK de Android están firmados
+            https://foxinix.qzz.io/. Los APK de Android están firmados
             y cubren dispositivos arm64 y armv7 (32 bits).
 
             ## Novedades v0.2.0

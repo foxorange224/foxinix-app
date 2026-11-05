@@ -1,7 +1,7 @@
 # Foxinix Desktop y Android (Tauri)
 
 Envoltorio instalable de la misma web de Foxinix. No es un cliente
-paralelo: carga `https://chat.foxinix.qzz.io/` en una ventana nativa o en el
+paralelo: carga `https://foxinix.qzz.io/` en una ventana nativa o en el
 WebView de Android y recibe las actualizaciones del servidor sin reinstalar.
 
 ## Plataformas
