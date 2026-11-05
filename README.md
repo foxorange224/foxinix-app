@@ -1,6 +1,17 @@
 ![Foxinix](https://foxinix.qzz.io/assets/chat/logo.svg)
 
-Centro de mensajería propio: servidor en tu máquina host `1` (firuserver) + **cliente web** (Vue 3 sin build, PWA) servido por el mismo FastAPI. Liviano: corre bien incluso en máquinas muy modestas (objetivo mínimo: Mypal 78 / Firefox 78, 1 GB de RAM).
+**Foxinix** es un centro de mensajería propio: servidor en tu máquina (host SSH `1`, firuserver) + **cliente web** (Vue 3 sin build, PWA) + **portada pública**, todo servido por procesos propios (sin Docker). Liviano: corre bien incluso en máquinas muy modestas (objetivo mínimo: Mypal 78 / Firefox 78, 1 GB de RAM).
+
+**Enlaces rápidos**
+
+| | |
+|---|---|
+| Sitio | <https://foxinix.qzz.io> — portada; el chat está en `/app` y el registro en `/register` |
+| Legal | [Privacidad](https://foxinix.qzz.io/privacy) · [Términos](https://foxinix.qzz.io/terms) |
+| API | <https://api.foxinix.qzz.io> — REST + WebSocket (`wss://api.foxinix.qzz.io/ws`) |
+| Media | <https://cdn.foxinix.qzz.io> — CDN de imágenes, voz y archivos (URLs firmadas) |
+| Comunidad | [Discord](https://www.discord.com/invite/r9v67gFRcp) · [YouTube](https://www.youtube.com/channel/UCRv3ZZXkuPXaKSe588W1L9A) |
+| Releases | <https://github.com/foxorange224/foxinix-app/releases> — APK y escritorio |
 
 > El cliente Python + Qt6 (PySide6/QML) de las fases 2-6 quedó **reemplazado por la web** y vive congelado en `client/` como referencia. La dirección actual es web + PWA (notificaciones del navegador, Ctrl+V, drag&drop) y un **envoltorio Tauri** en `desktop/` que carga la misma web para tener instalador de escritorio sin mantener dos interfaces.
 
@@ -39,20 +50,36 @@ Centro de mensajería propio: servidor en tu máquina host `1` (firuserver) + **
 
 ```
 chat/
-├── server/          # FastAPI + WebSockets + SQLite
-│   ├── app/         #   config, db, security, mailer, realtime, cleanup
-│   │   └── routers/ #   auth, users, chats, media, ws
-│   ├── web/         #   frontend Vue 3 sin build (se sirve en "/")
-│   │   ├── index.html, css/, js/, vendor/vue.global.prod.js
-│   ├── deploy/      #   unidad systemd
-│   ├── tests/       #   e2e.sh, ws_test.py, cleanup_test.py
+├── landing/               # sitio público (se sirve tal cual desde el checkout)
+│   ├── index.html         #   portada
+│   ├── styles.css         #   portada + páginas legales (tema claro/oscuro)
+│   ├── theme.js           #   tema antes del 1er pintado (fm.theme o el del navegador)
+│   ├── privacidad.html    #   se sirve en /privacy (terminos.html → /terms; los .html dan 301)
+│   ├── static/            #   SPA: css/, js/ (views/), vendor/, emoji…
+│   ├── login|register|app/#   shells de la SPA (index.html)
+│   └── sw.js              #   PWA: shell + cachés separadas de medios/descargas
+├── server/                # FastAPI + WebSockets + SQLite
+│   ├── app/               #   config, db, security, mailer, realtime, cleanup
+│   │   └── routers/       #   auth, users, chats, media, ws
+│   ├── web/               #   shell de la SPA que sirve el API en "/"
+│   ├── landing_main.py    #   servidor de la portada (8844 → landing-server.service)
+│   ├── deploy/            #   unidades systemd
+│   ├── tests/             #   e2e.sh, ws_test.py, cleanup_test.py
 │   └── requirements.txt
-├── client/          # PySide6 + QML — CONGELADO (superseded por server/web)
-├── desktop/         # Tauri 2: instalador de escritorio que carga la misma web
-├── tests/           # web_e2e.py (E2E de la UI vía Firefox headless + BiDi)
-├── docs/            # API.md (contrato)
-└── scripts/         # install-server.sh, remote-setup.sh, shot.py, check-js.mjs
+├── client/                # PySide6 + QML — CONGELADO (superseded por server/web)
+├── desktop/               # Tauri 2: instalador de escritorio que carga la misma web
+├── tests/                 # web_e2e.py (E2E de la UI vía Firefox headless + BiDi)
+├── docs/                  # API.md (contrato)
+└── scripts/               # install-server.sh, remote-setup.sh, shot.py, check-js.mjs
 ```
+
+## Sitio público (landing/)
+
+- **Sin build ni dependencias**: HTML/CSS/JS planos, pensados también para Firefox 78 (Mypal).
+- **Tema responsivo**: `theme.js` corre antes del primer pintado y aplica `data-theme` según la preferencia guardada por la app (`fm.theme` en localStorage: `light`/`dark`/`black`) o, si aún no hay, el modo del navegador (`prefers-color-scheme`); los cambios se propagan en vivo entre pestañas.
+- **URLs limpias**: la legal se sirve en `/privacy` y `/terms`; los viejos `.html` responden `301`.
+- **PWA**: `sw.js` precachea el shell (`foxinix-shell-*`) y mantiene cachés separadas de medios y descargas.
+- Se sirve desde el checkout con `server/landing_main.py` (servicio `landing-server`, puerto 8844): el HTML va siempre `no-cache, must-revalidate` y el CSS/JS/imagenes usa la caché del CDN.
 
 ## Cliente web
 
@@ -75,7 +102,7 @@ npm run dev       # desarrollo
 npm run build     # instaladores en src-tauri/target/release/bundle/
 ```
 
-Carga `https://chat.foxinix.qzz.io/` en una ventana nativa (se puede cambiar con `FOXINIX_URL` para probar un servidor local). No reescribe la UI: la app web sigue siendo la única interfaz. Los instaladores se publican en [**Releases**](https://github.com/foxorangestudios/foxinix-app/releases/latest); no se versionan los binarios:
+Carga `https://foxinix.qzz.io/` en una ventana nativa (se puede cambiar con `FOXINIX_URL` para probar un servidor local). No reescribe la UI: la app web sigue siendo la única interfaz. Los instaladores se publican en [**Releases**](https://github.com/foxorange224/foxinix-app/releases/latest); no se versionan los binarios:
 
 - **Debian/Ubuntu:** `.deb` amd64.
 - **Fedora:** `.rpm` x86_64.
@@ -96,7 +123,19 @@ cd server && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 bash scripts/install-server.sh
 ```
 
-Servicio: `sudo systemctl status chat-server` · logs: `journalctl -u chat-server -f`
+Servicios (systemd, todos `enabled` + auto-reinicio ante fallos):
+
+| Servicio | Puerto | Dominio | Unit |
+|---|---|---|---|
+| Portada + SPA (`landing/`) | 8844 | foxinix.qzz.io | `landing-server.service` |
+| API + WebSocket | 8444 | api.foxinix.qzz.io | `chat-server.service` |
+| CDN de media | 8448 | cdn.foxinix.qzz.io | `cdn-server.service` |
+| Túnel Cloudflare | — | todo lo anterior | `cloudflared.service` |
+
+```bash
+sudo systemctl status|restart landing-server   # o chat-server, cdn-server, cloudflared
+journalctl -u landing-server -f                # logs del servicio
+```
 
 - **Tailscale**: `http://100.125.128.82:8444` · la web queda en la raíz: `http://100.125.128.82:8444/`
 - **Datos**: `~/chat-server/data/` (DB SQLite + media + `mail.log`)
@@ -131,6 +170,15 @@ BASE="http://100.125.128.82:8444" WSBASE="ws://100.125.128.82:8444" .venv/bin/py
 - Media protegida con URLs firmadas (HMAC con expiración), MIME whitelist, cuota 1 GB.
 - **DB cifrada en reposo con SQLCipher** (activa en producción): la clave vive en `.env` (`FOXMSG_DB_KEY`), se aplica por conexión y sin ella la base es ilegible (robos de archivo o backup → galimbas). Activar/migrar: `PASS=123 bash scripts/encrypt-db.sh` (migra con `sqlcipher_export`, verifica conteos + `cipher_version`, borra el backup plano). Sin clave, dev/local usa SQLite normal con las mismas suites. Limitación: los archivos de `data/media/` (fotos, notas de voz) siguen en claro en disco (en tránsito van por TLS con URLs firmadas).
 - Sin Docker, sin dependencias de sistema: solo Python + systemd (el driver `sqlcipher3-binary` se instala solo si `.env` tiene la clave).
+
+## Repositorios
+
+| Repo | Contenido |
+|---|---|
+| [`foxorange224/foxinix-app`](https://github.com/foxorange224/foxinix-app) | código fuente completo (este repositorio): servidor, landing, app web, escritorio y tests |
+| [`foxorange224/Foxinix-main`](https://github.com/foxorange224/Foxinix-main) | espejo publicado del sitio (`landing/` en la raíz) como respaldo; se sincroniza con cada cambio de la portada |
+
+Ambos repos comparten este README.
 
 ## Licencia
 

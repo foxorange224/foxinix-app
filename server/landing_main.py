@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 LANDING_DIR = Path("/home/FoxOrange/Projects/chat/landing")
@@ -34,7 +34,6 @@ app.mount("/assets", StaticFiles(directory=str(LANDING_DIR / "assets")), name="a
 _ROOT_FILES = {
     "styles.css", "app.js", "sw.js", "manifest.webmanifest",
     "robots.txt", "sitemap.xml", "404.html",
-    "privacidad.html", "terminos.html",
     "icon.svg", "icon.webp", "icon-192.png", "icon-512.png",
     "apple-touch-icon.png", "favicon.ico", "CNAME",
 }
@@ -63,9 +62,36 @@ async def root() -> FileResponse:
     return FileResponse(LANDING_DIR / "index.html", media_type="text/html")
 
 
-@app.get("/{full_path:path}")
-async def serve(full_path: str) -> FileResponse:
-    # 1) Buscar archivo real en disco (styles.css, app.js, privacidad.html, etc.)
+# W86: páginas legales con URL limpia (sin .html). Los viejos caminos
+# (.html y sin extensión) responden 301 para conservar lo indexado.
+_LEGACY_LEGAL = {
+    "privacidad.html": "/privacy",
+    "terminos.html": "/terms",
+    "privacidad": "/privacy",
+    "terminos": "/terms",
+}
+
+
+@app.get("/privacy")
+@app.get("/privacy/")
+async def legal_privacidad() -> FileResponse:
+    return FileResponse(LANDING_DIR / "privacidad.html", media_type="text/html")
+
+
+@app.get("/terms")
+@app.get("/terms/")
+async def legal_terminos() -> FileResponse:
+    return FileResponse(LANDING_DIR / "terminos.html", media_type="text/html")
+
+
+@app.get("/{full_path:path}", response_model=None)
+async def serve(full_path: str):
+    # 0) Legales con URL vieja → URL limpia (301)
+    legacy = _LEGACY_LEGAL.get(full_path.strip("/"))
+    if legacy:
+        return RedirectResponse(url=legacy, status_code=301)
+
+    # 1) Buscar archivo real en disco (styles.css, app.js, etc.)
     f = _serve_file(full_path)
     if f:
         return f
