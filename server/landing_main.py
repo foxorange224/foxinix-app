@@ -30,6 +30,13 @@ async def no_cache_html(request: Request, call_next: Response) -> Response:
 app.mount("/static", StaticFiles(directory=str(LANDING_DIR / "static")), name="static")
 app.mount("/assets", StaticFiles(directory=str(LANDING_DIR / "assets")), name="assets")
 
+# W87: los tonos de sonido (/tonos/…) también se sirven en foxinix.qzz.io.
+# La SPA vive en este dominio y toneSrc() usa rutas absolutas same-origin;
+# sin este mount, el fallback de la SPA devolvía el index.html y el
+# <audio> de Ajustes → Notificaciones fallaba con HTML en vez de MP3.
+TONES_DIR = Path("/home/FoxOrange/Projects/chat/server/web/tonos")
+app.mount("/tonos", StaticFiles(directory=str(TONES_DIR)), name="tones")
+
 # Archivos raíz que NO son SPA (se sirven tal cual)
 _ROOT_FILES = {
     "styles.css", "app.js", "sw.js", "manifest.webmanifest",
