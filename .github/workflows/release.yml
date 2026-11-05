@@ -282,33 +282,31 @@ jobs:
             https://foxinix.qzz.io/. Los APK de Android están firmados
             y cubren dispositivos arm64 y armv7 (32 bits).
 
-            ## Novedades v0.2.0
-            - **Multi-adjuntos en cola:** varios archivos se ponen en
-              `pendingAtts` y se envían juntos; el cap-strip muestra el
-              contador.
-            - **Botón “+” con cursor manito en PC:** clase `.att-btn`
-              con `cursor: pointer`.
-            - **Fotos de perfil en grupos y notificaciones:** avatares con
-              `crossorigin="anonymous"` y reintento automático si fallan.
-            - **Vídeo fullscreen móvil:** se quitó `playsinline` del visor.
-            - **Permisos sin nag:** solo en primer arranque vía
-              `fm.perm.booted`.
-            - **Zoom desactivado en móvil:** viewport `user-scalable=no`.
-            - **App viva para notificaciones y llamadas:** notificación
-              persistente de Android y WebView sin pausa en segundo plano.
-            - **Icono adaptativo sin recorte:** inset 10 % y color de acento
-              estático configurable por `FOXMSG_ACCENT_COLOR`.
-            - **Pantalla sin conexión / servidor caído:** overlay global con
-              estado de WebSocket y `navigator.onLine`.
-            - **Actualización automática de APK:** endpoint `/api/version`,
-              splash de comprobación, modal con progreso de descarga,
-              `DownloadManager` e instalación automática al terminar.
-              Botón **Reintentar** si el usuario cancela la instalación.
-            - **E2E eliminado:** toda la comunicación viaja en claro tras
-              migración de BD y backups.
-            - **Reintento de avatar:** Android `loadAvatar` reintenta una
-              vez y la web reintenta con cache-busting antes de mostrar
-              iniciales.
+            ## Novedades v0.2.2
+            - **Dominio unificado:** la app carga ahora
+              https://foxinix.qzz.io/ (el dominio anterior
+              chat.foxinix.qzz.io dejó de resolver). La API vive en
+              https://api.foxinix.qzz.io/ y el CDN en
+              https://cdn.foxinix.qzz.io/.
+            - **Importante para Android:** las APK v0.2.1 cargan el
+              dominio antiguo y no pueden autoactualizarse; instalá la
+              APK nueva de esta release manualmente (misma clave de
+              firma: se actualiza sin perder datos).
+            - **Portada con tema:** la landing sigue el tema claro/
+              oscuro de la app o el del sistema.
+            - **URLs legales limpias:** `/privacy` y `/terms` (las rutas
+              `.html` viejas redirigen con 301).
+            - **UI:** iconos en las pestañas del panel (Emojis, Stickers,
+              GIFs), botón X para vaciar búsquedas y selección visible
+              en Ajustes (en claro y oscuro).
+            - **Sesión:** arreglo de la cookie de refresh en el primer
+              arranque (W81/W82) y rutas `/app/group/*` que abren la
+              shell de la app en vez de 404.
+            - **Iconos y medios:** bundle de favicons renovado, GIFs de
+              efectos de chat que faltaban e imágenes dentro de spoilers.
+            - **Diseño y estabilidad:** nuevos tokens de color, arreglo
+              de la app sin conexión, README unificado y limpieza de
+              enlaces al dominio viejo.
 
             ## Notas
             - El AppImage incluye GStreamer para reproducir audio y video; los
