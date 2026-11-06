@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Tunnel client (foxinix.qzz.io → 8844/8444/8448)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+TimeoutStartSec=15
+Type=notify
+# El token vive en el host (/etc/cloudflared/token), no en el repo.
+ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token-file /etc/cloudflared/token
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

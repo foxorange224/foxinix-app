@@ -37,7 +37,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://foxinix.qzz.io",
-        "https://foxinix.qzz.io",
         "http://localhost:8899",
         "http://127.0.0.1:8899",
     ],
@@ -45,6 +44,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """W92: endurecimiento básico en todas las respuestas de la API
+    (JSON, estáticos y SW). Mismos headers que el servidor de la
+    portada; no toca CORS ni caché."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault(
+        "Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy", "geolocation=(), payment=(), usb=()")
+    return response
 
 
 @app.middleware("http")

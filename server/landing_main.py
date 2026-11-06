@@ -19,12 +19,38 @@ app = FastAPI(title="Foxinix Landing", version="0.1.0")
 @app.middleware("http")
 async def no_cache_html(request: Request, call_next: Response) -> Response:
     """HTML siempre fresco (no-cache + revalidación). CSS/JS/imagen
-    siguen con su cache normal del CDN."""
+    siguen con su cache normal del CDN. W92: además, headers básicos
+    de endurecimiento en TODA respuesta (nosniff, clickjacking,
+    referrer y features que la app no usa)."""
     response = await call_next(request)
     ct = response.headers.get("content-type", "")
     if "text/html" in ct:
         response.headers["cache-control"] = "no-cache, must-revalidate"
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault(
+        "Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy", "geolocation=(), payment=(), usb=()")
     return response
+
+# W92: sets de emoji self-hosted. Viven en server/web/ (compartidos con
+# el dominio API) y DEBEN montarse antes que /static, si no el montaje
+# general se come la ruta y da 404 → el estilo 'twemoji'/'noto' no
+# cargaba en foxinix.qzz.io y el SW reintentaba el manifest en vano.
+EMOJI_DIR = Path("/home/FoxOrange/Projects/chat/server/web/emoji")
+EMOJI_NOTO_DIR = Path("/home/FoxOrange/Projects/chat/server/web/emoji-noto")
+app.mount("/static/emoji-noto", StaticFiles(directory=str(EMOJI_NOTO_DIR)),
+          name="emoji-noto")
+app.mount("/static/emoji", StaticFiles(directory=str(EMOJI_DIR)),
+          name="emoji")
+
+
+@app.get("/static/emoji-manifest.json")
+async def emoji_manifest() -> FileResponse:
+    return FileResponse(
+        Path("/home/FoxOrange/Projects/chat/server/web/emoji-manifest.json"))
+
 
 # Archivos estáticos (CSS, JS, imágenes, etc.)
 app.mount("/static", StaticFiles(directory=str(LANDING_DIR / "static")), name="static")
@@ -37,20 +63,20 @@ app.mount("/assets", StaticFiles(directory=str(LANDING_DIR / "assets")), name="a
 TONES_DIR = Path("/home/FoxOrange/Projects/chat/server/web/tonos")
 app.mount("/tonos", StaticFiles(directory=str(TONES_DIR)), name="tones")
 
-# Archivos raíz que NO son SPA (se sirven tal cual)
-_ROOT_FILES = {
-    "styles.css", "app.js", "sw.js", "manifest.webmanifest",
-    "robots.txt", "sitemap.xml", "404.html",
-    "icon.svg", "icon.webp", "icon-192.png", "icon-512.png",
-    "apple-touch-icon.png", "favicon.ico", "CNAME",
-}
-
 # Rutas SPA con su HTML físico (clave sin barra final). W91: la portada
 # se reestructuró (Foxinix-main) → app.html / login.html / register.html.
+# W92: profile/verify/forgot/reset existen en el router de la SPA
+# (ROUTE_PATHS) y sin entrada aquí el fallback devolvía la PORTADA:
+# los enlaces de email (/reset?token=…, /verify?…) aterrizaban mal.
+# El shell es idéntico en todos, así que todos apuntan a app.html.
 _SPA_ROUTES = {
     "login": "login.html",
     "register": "register.html",
     "app": "app.html",
+    "profile": "app.html",
+    "verify": "app.html",
+    "forgot": "app.html",
+    "reset": "app.html",
 }
 
 
@@ -113,5 +139,9 @@ async def serve(full_path: str):
     if head in _SPA_ROUTES:
         return FileResponse(LANDING_DIR / _SPA_ROUTES[head], media_type="text/html")
 
-    # 3) Fallback: index.html (SPA History API)
-    return FileResponse(LANDING_DIR / "index.html", media_type="text/html")
+    # 3) Ruta desconocida → 404 real. Antes devolvía index.html con 200
+    #    (mal SEO: cualquier basura indexaba como portada). Las rutas
+    #    de la SPA están todas cubiertas arriba, así que el fallback
+    #    solo lo necesitaban bots y enlaces rotos.
+    return FileResponse(LANDING_DIR / "404.html", status_code=404,
+                        media_type="text/html")

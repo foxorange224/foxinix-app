@@ -9,6 +9,13 @@ User=FoxOrange
 WorkingDirectory=/home/FoxOrange/chat-server
 # El .env se carga desde el código (config.py), acá solo variables de runtime
 Environment=PYTHONUNBUFFERED=1
+
+# Variables de runtime de la release publicada (se actualizan en cada
+# release; el .env de config.py NO las lleva porque cambian por build).
+Environment=FOXMSG_APK_VERSION=0.2.2
+Environment=FOXMSG_APK_URL_ARM64=https://github.com/foxorange224/foxinix-app/releases/download/v0.2.2/Foxinix-0.2.2-android-arm64.apk
+Environment=FOXMSG_APK_URL_ARMV7=https://github.com/foxorange224/foxinix-app/releases/download/v0.2.2/Foxinix-0.2.2-android-armv7.apk
+Environment=FOXMSG_MIN_VERSION=0.1.8
 ExecStart=/home/FoxOrange/chat-server/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8444
 Restart=on-failure
 RestartSec=3

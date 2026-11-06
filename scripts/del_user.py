@@ -12,13 +12,34 @@ Los grupos que quedan sin él sobreviven (se elimina solo su membresía;
 las menciones a sus mensajes quedan como "reply_to = NULL").
 
 Uso:
-  python3 del_user.py <username> <ruta/db> [--dry]
+  FOXMSG_DB_KEY=... python3 del_user.py <username> <ruta/db> [--dry]
 
 --dry solo informa lo que se borraría (no escribe nada).
+Si FOXMSG_DB_KEY está definido (DB cifrada con SQLCipher, como la de
+producción) se usa el mismo driver que server/app/db.py.
 """
 import os
+import re
 import sqlite3
 import sys
+
+
+def connect(db: str):
+    """Abre la DB; cifrada si FOXMSG_DB_KEY está definido."""
+    key = os.environ.get("FOXMSG_DB_KEY", "").strip()
+    if not key:
+        return sqlite3.connect(db, timeout=30)
+    if not re.fullmatch(r"[0-9a-fA-F]+", key):
+        raise SystemExit("✗ FOXMSG_DB_KEY no parece hex")
+    try:
+        from sqlcipher3 import dbapi2 as m          # type: ignore
+    except ImportError:
+        from pysqlcipher3 import dbapi2 as m        # type: ignore
+    con = m.connect(db, timeout=30)
+    con.execute(f"PRAGMA key = '{key}'")
+    # Verificación: si la clave no sirve, esto revienta ya.
+    con.execute("SELECT count(*) FROM sqlite_master").fetchone()
+    return con
 
 
 def main():
@@ -32,7 +53,7 @@ def main():
         print(f"✗ no existe la base: {db}")
         return 1
 
-    con = sqlite3.connect(db, timeout=30)
+    con = connect(db)
     con.execute("PRAGMA foreign_keys = ON")
     cur = con.cursor()
 

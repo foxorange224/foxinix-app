@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Servidor estático mínimo para la portada de Foxinix Chat.
+# Servidor estático mínimo para la portada de Foxinix.
 # En producción se sirve detrás del túnel de Cloudflare en el puerto 6070.
 set -euo pipefail
 cd "$(dirname "$0")"

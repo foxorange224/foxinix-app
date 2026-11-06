@@ -1,0 +1,26 @@
+[Unit]
+Description=Foxinix CDN (media files, puerto 8448)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=FoxOrange
+WorkingDirectory=/home/FoxOrange/chat-server
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/FoxOrange/chat-server/.venv/bin/uvicorn cdn_main:app --host 0.0.0.0 --port 8448
+Restart=on-failure
+RestartSec=3
+
+# endurecimiento
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths=/home/FoxOrange/chat-server
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
