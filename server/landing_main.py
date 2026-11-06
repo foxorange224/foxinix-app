@@ -45,11 +45,12 @@ _ROOT_FILES = {
     "apple-touch-icon.png", "favicon.ico", "CNAME",
 }
 
-# Rutas SPA con su index.html físico (clave sin barra final)
+# Rutas SPA con su HTML físico (clave sin barra final). W91: la portada
+# se reestructuró (Foxinix-main) → app.html / login.html / register.html.
 _SPA_ROUTES = {
-    "login": "login/index.html",
-    "register": "register/index.html",
-    "app": "app/index.html",
+    "login": "login.html",
+    "register": "register.html",
+    "app": "app.html",
 }
 
 
@@ -72,7 +73,9 @@ async def root() -> FileResponse:
 # W86: páginas legales con URL limpia (sin .html). Los viejos caminos
 # (.html y sin extensión) responden 301 para conservar lo indexado.
 _LEGACY_LEGAL = {
-    "privacidad.html": "/privacy",
+    "privacy.html": "/privacy",    # nombre nuevo del archivo → URL limpia
+    "terms.html": "/terms",
+    "privacidad.html": "/privacy",  # nombres viejos → siguen con 301
     "terminos.html": "/terms",
     "privacidad": "/privacy",
     "terminos": "/terms",
@@ -82,13 +85,13 @@ _LEGACY_LEGAL = {
 @app.get("/privacy")
 @app.get("/privacy/")
 async def legal_privacidad() -> FileResponse:
-    return FileResponse(LANDING_DIR / "privacidad.html", media_type="text/html")
+    return FileResponse(LANDING_DIR / "privacy.html", media_type="text/html")
 
 
 @app.get("/terms")
 @app.get("/terms/")
 async def legal_terminos() -> FileResponse:
-    return FileResponse(LANDING_DIR / "terminos.html", media_type="text/html")
+    return FileResponse(LANDING_DIR / "terms.html", media_type="text/html")
 
 
 @app.get("/{full_path:path}", response_model=None)
@@ -104,7 +107,7 @@ async def serve(full_path: str):
         return f
 
     # 2) Ruta SPA conocida, con o sin barra final y con subrutas:
-    #    /app, /app/, /app/group/123 → app/index.html (nunca el index de landing)
+    #    /app, /app/, /app/group/123 → app.html (nunca el index de landing)
     key = full_path.strip("/")
     head = key.split("/", 1)[0] if key else ""
     if head in _SPA_ROUTES:
