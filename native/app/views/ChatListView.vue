@@ -2,6 +2,7 @@
   <Page>
     <ActionBar title="Chats">
       <ActionItem text="Personas" @tap="goPeople" ios.position="right" />
+      <ActionItem text="Ajustes" @tap="goSettings" ios.position="right" />
       <ActionItem text="Salir" @tap="doLogout" ios.position="right" />
     </ActionBar>
 
@@ -129,6 +130,10 @@
   /* Panel de personas: amigos, solicitudes y búsqueda. */
   function goPeople() {
     goView('people');
+  }
+
+  function goSettings() {
+    goView('settings');
   }
 
   onMounted(async () => {

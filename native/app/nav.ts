@@ -9,7 +9,7 @@
 
 import { ref } from 'nativescript-vue';
 
-export type NativeView = 'chats' | 'people' | 'newgroup' | 'profile';
+export type NativeView = 'chats' | 'people' | 'newgroup' | 'profile' | 'settings';
 
 export const view = ref<NativeView>('chats');
 /* Datos de la vista actual (id del usuario del perfil). */

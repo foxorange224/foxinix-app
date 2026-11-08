@@ -244,7 +244,30 @@ async function run() {
     ok('flujo de personas con un segundo usuario', true, 'omitido (sin user2)');
   }
 
-  /* --- 9. logout --- */
+  /* --- 9. ajustes: las preferencias se guardan en el dispositivo --- */
+  const st = await import('../app/core/store.js');
+  st.setPref('sound', false);
+  ok('setPref cambia la preferencia', st.store.prefs.sound === false);
+  ok('setPref la guarda en el dispositivo',
+    storage.StorageAdapter.getItem('fm.p.sound') === '0',
+    'fm.p.sound=' + storage.StorageAdapter.getItem('fm.p.sound'));
+  st.setPref('sound', true);
+  ok('setPref la vuelve a guardar',
+    storage.StorageAdapter.getItem('fm.p.sound') === '1');
+  st.setPrefStr('emo', 'noto');
+  ok('setPrefStr guarda el valor',
+    st.store.prefs.emo === 'noto' &&
+    storage.StorageAdapter.getItem('fm.p.emo') === 'noto');
+  st.setFont('large');
+  ok('setFont cambia el tamaño de letra', st.store.font === 'large');
+  ok('setFont lo guarda en el dispositivo',
+    storage.StorageAdapter.getItem('fm.font') === 'large');
+  /* se restauran para no dejar el almacenamiento con valores raros */
+  st.setPref('sound', true);
+  st.setPrefStr('emo', 'system');
+  st.setFont('normal');
+
+  /* --- 10. logout --- */
   try { await api.api('POST', '/auth/logout', {}); } catch (e) {}
   api.clearSession();
   ok('logout: sesión borrada', api.session.access === '' && !store.store.hasSession);
