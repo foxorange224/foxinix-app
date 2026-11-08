@@ -163,6 +163,38 @@ async function run() {
       sent && sent.media ? sent.media.mime : '');
     ok('el mensaje ya no está pendiente',
       !!(sent && sent.pending !== true));
+
+    /* --- 6c. W102: la imagen DENTRO de la burbuja --- */
+    const img = await import('../app/img.ts');
+    ok('W102: una imagen con media es una imagen',
+      img.isImageMsg(sent) === true);
+    ok('W102: un texto no es una imagen',
+      img.isImageMsg({ kind: 'text', body: 'hola' }) === false);
+    ok('W102: una imagen sin media todavía no se muestra',
+      img.isImageMsg({ kind: 'image', pending: true, media: null }) === false);
+    ok('W102: una imagen con MIME que no es imagen no se muestra',
+      img.isImageMsg({ kind: 'image', media: { url: '/media/file/x.pdf', mime: 'application/pdf' } }) === false);
+    /* la burbuja pide la MINIATURA (?thumb=1) y el visor el ORIGINAL */
+    const bub = sent ? img.imageUrl(sent, true) : '';
+    const org = sent ? img.imageUrl(sent, false) : '';
+    ok('W102: la miniatura de la burbuja es del CDN',
+      bub.indexOf('https://cdn.foxinix.qzz.io/media/file/') === 0, bub.slice(0, 80));
+    ok('W102: la miniatura pide ?thumb=1', bub.indexOf('thumb=1') > 0);
+    ok('W102: el original no pide miniatura',
+      org.indexOf('thumb=1') < 0 && org.indexOf('https://cdn.foxinix.qzz.io/') === 0,
+      org.slice(0, 80));
+    ok('W102: la firma se conserva al pedir la miniatura',
+      bub.indexOf('sig=') > 0 && bub.indexOf('exp=') > 0);
+    /* la caja conserva la proporción que manda el server y no pasa del tope */
+    const box = img.imageBox({ media: { width: 800, height: 400 } });
+    ok('W102: la caja conserva la proporción',
+      box.w === 220 && box.h === 110, JSON.stringify(box));
+    const boxV = img.imageBox({ media: { width: 400, height: 800 } });
+    ok('W102: una imagen alta se acota en alto',
+      boxV.h <= img.IMG_MAX_H && boxV.w === 150, JSON.stringify(boxV));
+    const box0 = img.imageBox({ media: { width: 0, height: 0 } });
+    ok('W102: sin resolución conocida sale una caja cuadrada',
+      box0.w === img.IMG_MAX_W && box0.h === img.IMG_MAX_W, JSON.stringify(box0));
   }
 
   /* --- 7. tiempo real (WebSocket por el adaptador de NS) --- */

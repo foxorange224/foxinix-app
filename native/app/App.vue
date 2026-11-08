@@ -7,6 +7,10 @@
       <LoginView v-if="route === 'login'" />
       <RegisterView v-else-if="route === 'register'" />
       <VerifyView v-else-if="route === 'verify'" />
+      <!-- W102: el visor de imagen va ANTES que el chat: cuando se abre
+           desde la burbuja, el chat sigue activo (activeChatId) y el
+           visor debe taparlo. -->
+      <MediaViewer v-else-if="view === 'media'" />
       <!-- con un chat abierto va la conversación; si no, la lista o
            el panel de personas -->
       <ChatView v-else-if="activeChatId" />
@@ -31,6 +35,7 @@
   import VerifyView from './views/VerifyView.vue';
   import ChatListView from './views/ChatListView.vue';
   import ChatView from './views/ChatView.vue';
+  import MediaViewer from './views/MediaViewer.vue';
   import PeopleView from './views/PeopleView.vue';
   import NewGroupView from './views/NewGroupView.vue';
   import ProfileView from './views/ProfileView.vue';

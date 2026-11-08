@@ -175,6 +175,36 @@ de importancia **BAJA**: sale silencioso, sin vibración y sin insignias.
 > `specialUse`; para el APK firmado que se distributes a mano no hace
 > falta nada extra.
 
+## La imagen dentro de la burbuja (W102)
+
+Antes, en la app nativa, un mensaje con imagen se veía como el texto
+"🖼 Imagen". Ahora la imagen **se ve dentro de la burbuja**:
+
+- `app/img.ts` decide qué es una imagen (`isImageMsg`), qué URL se pide
+  (`imageUrl`) y de qué tamaño es la caja (`imageBox`). Vive fuera de la
+  vista para poder probarlo en Node (`tools/test-core.mjs`).
+- La burbuja (`app/views/ChatView.vue`) pide la **miniatura** del servidor
+  (`?thumb=1`): pesa mucho menos y a ese tamaño se ve igual. La firma
+  HMAC cubre sólo el slug del archivo, así que añadir `?thumb=1` no la
+  invalida (comprobado contra el CDN real: HTTP 200 con la firma puesta).
+- La caja conserva la **proporción real** que manda el servidor
+  (`media.width` / `media.height`), con un tope de 220×300 DIPs; si la
+  imagen no trae resolución (mensajes viejos) sale una caja cuadrada.
+- Al tocarla se abre el **visor a pantalla completa**
+  (`app/views/MediaViewer.vue`), que carga el **original** y muestra el pie
+  de foto. Es una vista nativa propia: en `App.vue` se enruta **antes** que
+  el chat, porque cuando se abre desde la burbuja el chat sigue activo y el
+  visor debe taparlo.
+- La navegación es la pila propia de `app/nav.ts` (`openMedia()` / `back()`);
+  no hay URL (en NS no existe el historial del navegador).
+
+```
+ChatView.vue ──imageUrl(m, true)──▶ miniatura (?thumb=1) en la burbuja
+      │ tap
+      ▼
+nav.openMedia(url) ──▶ MediaViewer.vue ──imageUrl(m, false)──▶ original
+```
+
 ## Comandos
 
 ```bash
@@ -219,9 +249,11 @@ sudo bash tools/fix-ns-cli-gradle.sh
   tocarla, se abre el chat y el mensaje exactos.
 - **Servicio en primer plano** (W101): el WebSocket sigue vivo con la app
   en segundo plano (sin Firebase), así que los avisos llegan de verdad.
+- **La imagen se ve dentro de la burbuja** (W102): miniatura del servidor
+  (`?thumb=1`) respetando la proporción real y, al tocarla, un visor a
+  pantalla completa con el original.
 
  pendiente:
-- Mostrar la imagen dentro de la burbuja (hoy sale como etiqueta de texto).
 - Notas de voz (plugin de audio).
 - Push remoto (FCM/APNs) para los avisos cuando la app está cerrada de
   verdad (el usuario la arrastró fuera y el sistema no la levanta).

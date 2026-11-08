@@ -33,7 +33,24 @@
                 class="fox-sender"
                 :text="senderName(m)"
               />
-              <Label class="fox-body" :text="bodyOf(m)" textWrap="true" />
+              <!-- W102: la imagen se ve DENTRO de la burbuja (con su
+                   pie de foto si lo tiene). Al tocarla se abre a
+                   pantalla completa. -->
+              <Image
+                v-if="isImage(m)"
+                class="fox-img"
+                :src="imgSrc(m)"
+                :width="imgSize(m).w"
+                :height="imgSize(m).h"
+                stretch="aspectFit"
+                @tap="openImage(m)"
+              />
+              <Label
+                v-if="bodyOf(m)"
+                class="fox-body"
+                :text="bodyOf(m)"
+                textWrap="true"
+              />
               <Label class="fox-time" :text="timeOf(m)" />
             </StackLayout>
           </StackLayout>
@@ -81,6 +98,8 @@
   import { store, toast } from '../core/store.js';
   import { openChat, sendText, closeChat, sendMedia } from '../core/actions.js';
   import { pickFile } from '../files';
+  import { imageBox, imageUrl, isImageMsg } from '../img';
+  import { openMedia } from '../nav';
 
   const draft = ref('');
   const sending = ref(false);
@@ -126,11 +145,43 @@
       const d = m.dur ? Math.round(m.dur) + ' s' : '';
       return '🎤 Nota de voz' + (d ? ' · ' + d : '');
     }
-    if (m.kind === 'image') return '🖼 Imagen';
+    if (m.kind === 'image') {
+      /* W102: la imagen se ve dentro de la burbuja; aquí va sólo el pie
+         de foto (si lo hay). Sin media todavía (subida en curso) se avisa
+         con un texto, para que la burbuja no quede vacía. */
+      if (isImageMsg(m)) return m.body || '';
+      return '🖼 Enviando imagen…';
+    }
     if (m.kind === 'video') return '🎬 Video';
     if (m.kind === 'file') return '📎 Archivo';
     if (m.kind === 'sticker') return 'Sticker';
     return m.body || '';
+  }
+
+  /* --- W102: la imagen dentro de la burbuja --- */
+
+  function isImage(m: any): boolean {
+    return isImageMsg(m);
+  }
+
+  /* La miniatura del server (pesa poco y se ve igual de chica). */
+  function imgSrc(m: any): string {
+    return imageUrl(m, true);
+  }
+
+  /* La caja: conserva la proporción real que manda el server. */
+  function imgSize(m: any): { w: number; h: number } {
+    return imageBox(m);
+  }
+
+  /* Al tocarla se abre a pantalla completa (el original). */
+  function openImage(m: any) {
+    const u = imageUrl(m, false);
+    if (!u) {
+      toast('No se pudo abrir la imagen', 'err');
+      return;
+    }
+    openMedia(u, m.body || '');
   }
 
   function timeOf(m: any): string {
@@ -229,6 +280,13 @@
   font-size: 12;
   font-weight: 600;
   margin-bottom: 2;
+}
+
+/* W102: la imagen dentro de la burbuja. El tamaño lo fija la vista
+   (imageBox: conserva la proporción real del server, tope 220×300). */
+.fox-img {
+  border-radius: 8;
+  margin: 2 0;
 }
 
 .fox-body {
