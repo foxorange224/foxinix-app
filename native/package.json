@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@master.technology/websockets": "^2.0.5",
+    "@nativescript-community/ui-document-picker": "^1.1.29",
     "@nativescript/core": "~9.1.0",
     "nativescript-vue": "^3.1.2"
   },

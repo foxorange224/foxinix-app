@@ -41,10 +41,19 @@
       </ScrollView>
 
       <!-- compositor -->
-      <GridLayout class="fox-composer" columns="*,auto" rows="auto">
+      <GridLayout class="fox-composer" columns="auto,*,auto" rows="auto">
+        <!-- adjuntar archivo (imágenes, documentos…) -->
+        <Button
+          class="fox-attach"
+          col="0"
+          row="0"
+          text="📎"
+          :enabled="!sendingFile"
+          @tap="attach"
+        />
         <TextField
           class="fox-input"
-          col="0"
+          col="1"
           row="0"
           :text="draft"
           hint="Mensaje"
@@ -56,7 +65,7 @@
         />
         <Button
           class="fox-send"
-          col="1"
+          col="2"
           row="0"
           text="Enviar"
           :enabled="!!draft.trim() && !sending"
@@ -69,11 +78,13 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'nativescript-vue';
-  import { store } from '../core/store.js';
-  import { openChat, sendText, closeChat } from '../core/actions.js';
+  import { store, toast } from '../core/store.js';
+  import { openChat, sendText, closeChat, sendMedia } from '../core/actions.js';
+  import { pickFile } from '../files';
 
   const draft = ref('');
   const sending = ref(false);
+  const sendingFile = ref(false);
   const loading = ref(true);
   const scroller = ref<any>(null);
 
@@ -150,6 +161,24 @@
          reintentar. */
     } finally {
       sending.value = false;
+    }
+  }
+
+  /* Adjuntar un archivo: el selector nativo del sistema. El núcleo
+     sube el archivo (multipart) y manda el mensaje; la burbuja
+     "pendiente" sale ya y se reemplaza cuando el server responde. */
+  async function attach() {
+    if (sendingFile.value) return;
+    sendingFile.value = true;
+    try {
+      const f = await pickFile();
+      if (!f) return;
+      const kind = (f.type || '').indexOf('image/') === 0 ? 'image' : 'file';
+      await sendMedia(store.activeChatId, f as any, kind);
+    } catch (e: any) {
+      toast((e && e.detail) || 'No se pudo enviar el archivo', 'err');
+    } finally {
+      sendingFile.value = false;
     }
   }
 
@@ -249,6 +278,20 @@
   padding: 10;
   font-size: 15;
   margin-right: 8;
+}
+
+.fox-attach {
+  background-color: transparent;
+  color: #8aa0ad;
+  font-size: 20;
+  width: 40;
+  padding: 6;
+  margin-right: 4;
+  android-textAllCaps: false;
+}
+
+.fox-attach:disabled {
+  color: #56666f;
 }
 
 .fox-send {

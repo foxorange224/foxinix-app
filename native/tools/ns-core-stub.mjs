@@ -10,6 +10,8 @@
    NO es el runtime real de NativeScript: sirve para verificar que el
    núcleo compartido (api/store/i18n) funciona con la capa nativa. */
 
+import fs from 'node:fs';
+
 const store = new Map();
 
 export function getString(key, def = null) {
@@ -37,13 +39,16 @@ export const device = {
   sdkVersion: '0', deviceType: 'Phone', uuid: 'stub', language: 'es', region: 'ES',
 };
 
-/* --- http sobre fetch --- */
+/* --- http sobre fetch ---
+   El cuerpo va en `content` (como en NS 9): si la app usara `body`, la
+   petición saldría sin cuerpo y el fallo sólo se vería en el dispositivo. */
 export async function request(opts) {
   const headers = Object.assign({}, opts.headers || {});
   if (opts.contentType) headers['Content-Type'] = opts.contentType;
-  let body = opts.body;
-  if (body !== undefined && body !== null && typeof body !== 'string' &&
-      !(body instanceof ArrayBuffer) && !(body instanceof FormData)) {
+  let body = opts.content;
+  if (body === undefined || body === null) body = undefined;
+  else if (typeof body !== 'string' && !(body instanceof ArrayBuffer) &&
+      !(body instanceof Uint8Array) && !(body instanceof FormData)) {
     body = JSON.stringify(body);
   }
   const res = await fetch(opts.url, {
@@ -73,23 +78,38 @@ export const knownFolders = {
   externalDocuments: () => ({ path: '/tmp/ext' }),
 };
 
+/* --- API de bajo nivel de archivos (readBufferSync devuelve un
+   ArrayBuffer, como en NS; en Android además entiende los content://) --- */
+export function getFileAccess() {
+  return {
+    readBufferSync(path) {
+      const buf = fs.readFileSync(String(path));
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    },
+    readBuffer(path) {
+      return Promise.resolve(this.readBufferSync(path));
+    },
+    getFileSize(path) {
+      try { return fs.statSync(String(path)).size; }
+      catch (e) { return 0; }
+    },
+  };
+}
+
 export class File {
   static fromPath(path) { return new File(path); }
-  static exists(path) { return false; }
+  static exists(path) { try { return fs.existsSync(String(path)); } catch (e) { return false; } }
   constructor(path) { this.path = path; }
   writeSync() {}
   write() { return Promise.resolve(); }
   remove() { return Promise.resolve(); }
-  readSync() { return null; }
+  readSync() { return getFileAccess().readBufferSync(this.path); }
 }
 export class Folder {
   getFile(name) { return new File(name); }
 }
 
-export function getFileAccess() { return {}; }
-
-/* --- image-source: sólo hace falta fromUrl (tamaño de una imagen) --- */
-export const ImageSource = {
+/* --- image-source: sólo hace falta fromUrl (tamaño de una imagen) --- */export const ImageSource = {
   fromUrl(url) {
     /* En Node no hay decodificador de imágenes: se resuelve con 0×0. */
     return Promise.resolve({ width: 0, height: 0, url: String(url) });
@@ -106,4 +126,5 @@ export const Application = {
 export default {
   getString, setString, remove, clear, hasKey, Screen, device,
   request, getFile, knownFolders, File, Folder, Application, ImageSource,
+  getFileAccess,
 };

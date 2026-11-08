@@ -8,18 +8,26 @@
      4. Al "reiniciar la app" (módulo recargado), la sesión se recupera.
      5. El refresh renueva el access (modo nativo: refresh en el body).
      6. Lista de chats, abrir un chat y enviar un mensaje.
+     6b. Envío de media: la imagen se sube (multipart a mano) y llega.
      7. Adaptador de WebSocket (tiempo real).
      8. Personas: amigos, solicitudes, búsqueda y DM nuevo.
-     9. Logout limpio.
+     9. Ajustes: las preferencias se guardan en el dispositivo.
+    10. Logout limpio.
 
    Uso: node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw>
         [usuario2 <pw2>]   <- para probar el flujo de amistad */
+
+import fs from 'node:fs';
 
 const [USER, PW, USER2, PW2] = process.argv.slice(2);
 if (!USER || !PW) {
   console.log('uso: node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw> [user2 pw2]');
   process.exit(1);
 }
+
+/* PNG de 1×1 (para probar la subida de media contra la API real). */
+const PNG_1x1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8' +
+  'z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra) => {
@@ -113,6 +121,48 @@ async function run() {
     ok('sendText publica el mensaje', mine.length === 1,
       'id=' + (mine[0] && mine[0].id));
     ok('el mensaje quedó en el store', arr.some((m) => m.body === texto));
+
+    /* --- 6b. envío de media: el multipart se arma a mano (NS) --- */
+    /* En NS el FormData no genera multipart: la capa de plataforma
+       construye el cuerpo (boundary + bytes). Acá se sube una imagen
+       real de verdad contra la API. */
+    const imgPath = '/tmp/opencode/foxinix-test.png';
+    fs.writeFileSync(imgPath, Buffer.from(PNG_1x1, 'base64'));
+    const imgSize = fs.statSync(imgPath).size;
+    const f = {
+      name: 'prueba foxinix.png',
+      size: imgSize,
+      type: 'image/png',
+      path: imgPath,
+    };
+    await actions.sendMedia(chatId, f, 'image');
+    /* la subida va en background: se espera el mensaje real */
+    let sent = null;
+    for (let i = 0; i < 60 && !sent; i++) {
+      await sleep(250);
+      const list = store.store.msgs[chatId] || [];
+      /* se busca por el nombre que mandamos (el chat puede tener imágenes
+         de corridas anteriores, y su orden no es estable) */
+      const hits = list.filter((m) => m.kind === 'image' && !m.pending && m.media &&
+        m.media.name === 'prueba foxinix.png');
+      sent = hits.length ? hits[hits.length - 1] : null;
+    }
+    ok('la imagen se sube y se manda', !!sent, sent ? 'id=' + sent.id : 'no llegó');
+    ok('el mensaje trae la media', !!(sent && sent.media && sent.media.url),
+      sent && sent.media ? String(sent.media.url).slice(0, 50) : '');
+    /* La URL del mensaje es relativa (/media/...): la que ve el usuario
+       la arma mediaUrl(), que la pasa al CDN con su firma. */
+    const abs = sent && sent.media ? actions.mediaUrl(sent.media.url) : '';
+    ok('mediaUrl la convierte en URL absoluta del CDN',
+      abs.indexOf('https://cdn.foxinix.qzz.io/') === 0, abs.slice(0, 70));
+    ok('el server guardó el nombre del archivo',
+      !!(sent && sent.media && sent.media.name === 'prueba foxinix.png'),
+      sent && sent.media ? sent.media.name : '');
+    ok('el server guardó el tipo del archivo',
+      !!(sent && sent.media && String(sent.media.mime).indexOf('image/') === 0),
+      sent && sent.media ? sent.media.mime : '');
+    ok('el mensaje ya no está pendiente',
+      !!(sent && sent.pending !== true));
   }
 
   /* --- 7. tiempo real (WebSocket por el adaptador de NS) --- */
