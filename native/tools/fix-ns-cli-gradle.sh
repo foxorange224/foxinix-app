@@ -43,7 +43,8 @@ CLI_CONSTANTS="$CLI_DIR/lib/constants.js"
 
 if [ ! -f "$CLI_CONSTANTS" ]; then
   echo "No se encontró el CLI en $CLI_CONSTANTS"
-  echo "Ajustá la ruta si el NativeScript CLI está instalado en otro lado."
+  echo "Ajustá la ruta así:  sudo bash tools/fix-ns-cli-gradle.sh <ruta-del-cli>"
+  echo "La ruta se obtiene con:  npm root -g   (+ /nativescript)"
   exit 1
 fi
 

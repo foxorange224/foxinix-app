@@ -46,7 +46,12 @@ jobs:
       - name: Alinear el Gradle del CLI
         # El CLI compila los plugins con Gradle 7.4.0 + AGP 7.1.2, que en
         # NS 9 no compilan (el runtime Android ya no es un paquete aparte).
-        run: sudo bash native/tools/fix-ns-cli-gradle.sh
+        # OJO: `npm root -g` con sudo da otra carpeta (la de root), así que
+        # la ruta se calcula SIN sudo y se le pasa al script.
+        run: |
+          CLI_DIR="$(npm root -g)/nativescript"
+          echo "CLI: $CLI_DIR"
+          sudo bash native/tools/fix-ns-cli-gradle.sh "$CLI_DIR"
 
       - name: Compilar la APK nativa (debug)
         working-directory: native
