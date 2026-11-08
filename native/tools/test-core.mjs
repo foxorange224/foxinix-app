@@ -80,7 +80,48 @@ async function run() {
   const me2 = await api.api('GET', '/users/me', undefined, { retry401: false });
   ok('petición tras el refresh', !!(me2 && me2.user));
 
-  /* --- 6. logout --- */
+  /* --- 6. lista de chats + conversación (el camino de la app nativa) --- */
+  const actions = await import('../app/core/actions.js');
+  await actions.loadChats();
+  ok('GET /chats devuelve la lista', Array.isArray(store.store.chats),
+    'n=' + store.store.chats.length);
+
+  /* Para probar la conversación hace falta un chat. Si el usuario de
+     prueba no tiene ninguno, se crea un grupo (el creador es miembro
+     implícito: no hace falta un segundo usuario). */
+  if (!store.store.chats.length) {
+    const g = await actions.createGroup('Prueba nativa', []);
+    ok('createGroup crea el chat de prueba', !!(g && g.id), 'chat=' + (g && g.id));
+  }
+  let chatId = store.store.chats.length ? store.store.chats[0].id : 0;
+  ok('la lista trae al menos un chat', !!chatId, 'chat=' + chatId);
+
+  if (chatId) {
+    await actions.openChat(chatId);
+    ok('openChat carga los mensajes', !!store.store.loaded[chatId]);
+    ok('store.msgs tiene la conversación', !!(store.store.msgs[chatId]),
+      'n=' + ((store.store.msgs[chatId] || []).length));
+
+    const texto = 'zafiro' + Date.now();
+    await actions.sendText(chatId, texto);
+    const arr = store.store.msgs[chatId] || [];
+    const mine = arr.filter((m) => m.body === texto);
+    ok('sendText publica el mensaje', mine.length === 1,
+      'id=' + (mine[0] && mine[0].id));
+    ok('el mensaje quedó en el store', arr.some((m) => m.body === texto));
+  }
+
+  /* --- 7. tiempo real (WebSocket por el adaptador de NS) --- */
+  const socket = await import('../app/core/platform/socket.js');
+  ok('el adaptador de socket existe', !!socket.SocketAdapter);
+  ok('el adaptador de socket tiene soporte', socket.SocketAdapter.isSupported() === true);
+  const sock = socket.SocketAdapter.create('wss://api.foxinix.qzz.io/ws',
+    ['foxinix', 'token-de-prueba'], { 'X-Foxinix-Token': 'token-de-prueba' });
+  ok('se abre un socket con la interfaz del navegador',
+    !!sock && typeof sock.send === 'function' && typeof sock.close === 'function');
+  ok('el socket expone readyState', sock && typeof sock.readyState === 'number');
+
+  /* --- 8. logout --- */
   try { await api.api('POST', '/auth/logout', {}); } catch (e) {}
   api.clearSession();
   ok('logout: sesión borrada', api.session.access === '' && !store.store.hasSession);

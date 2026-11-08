@@ -35,6 +35,9 @@ const ENTRIES = [
   'store.js',
   'i18n.js',
   'downloads.js',
+  'mediadl.js',
+  'actions.js',
+  'realtime.js',
 ];
 
 /* Módulos de platform/ que la app nativa necesita (implementación NS). */
@@ -47,6 +50,7 @@ const PLATFORM_FILES = [
   'media.js',
   'notifications.js',
   'cookies.js',
+  'socket.js',
 ];
 
 const IMPORT_RE = /import\s+(?:[\s\S]*?)\s+from\s+['"]([^'"]+)['"]/g;
@@ -131,9 +135,13 @@ function platformIndex() {
   ];
   const names = { 'net.js': 'HttpClient', 'storage.js': 'StorageAdapter', 'files.js': 'FileAdapter',
     'dom.js': 'DomAdapter', 'images.js': 'ImageAdapter', 'media.js': 'MediaAdapter',
-    'notifications.js': 'NotificationAdapter', 'cookies.js': 'CookieAdapter' };
+    'notifications.js': 'NotificationAdapter', 'cookies.js': 'CookieAdapter',
+    'socket.js': 'SocketAdapter' };
   for (const f of PLATFORM_FILES) {
-    lines.push("export { " + names[f] + " } from './nativescript/" + f + "';");
+    /* Los archivos se copian a app/core/platform/<f> (no a
+       app/core/platform/nativescript/<f>): la ruta es la MISMA que en la
+       web, sólo cambia el contenido. */
+    lines.push("export { " + names[f] + " } from './" + f + "';");
   }
   lines.push('');
   return lines.join('\n');

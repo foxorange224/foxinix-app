@@ -8,6 +8,8 @@ import { Application } from '@nativescript/core';
 import { api, applyAuth, bootstrap, loadSession, logout, session } from './core/api.js';
 import { store, go, goReplace, toast } from './core/store.js';
 import { t } from './core/i18n.js';
+import { loadChats, openChat, sendText } from './core/actions.js';
+import { startWS, stopWS } from './core/realtime.js';
 
 /* El objeto `android` solo existe en el runtime de Android. */
 declare const android: any;
@@ -24,7 +26,13 @@ export async function bootNative(): Promise<void> {
     await bootstrap();
   } catch (e) {
     goReplace('login');
+    return;
   }
+  /* Sesión lista: la lista de chats y el tiempo real. */
+  try {
+    await loadChats();
+  } catch (e) { /* la lista se reintenta al abrir la app */ }
+  try { startWS(); } catch (e) { /* sin WS: la app sigue funcionando */ }
 }
 
 export interface AuthResult {
@@ -62,6 +70,7 @@ export async function nativeRegister(username: string, email: string, password: 
 }
 
 export function nativeLogout(): void {
+  try { stopWS(); } catch (e) {}
   logout();
   goReplace('login');
 }
@@ -85,4 +94,4 @@ export function nativeToast(msg: string, kind?: string): void {
   }
 }
 
-export { store, go, goReplace, toast, t, session };
+export { store, go, goReplace, toast, t, session, loadChats, openChat, sendText };

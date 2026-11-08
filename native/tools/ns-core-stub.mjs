@@ -88,6 +88,16 @@ export class Folder {
 
 export function getFileAccess() { return {}; }
 
+/* --- image-source: sólo hace falta fromUrl (tamaño de una imagen) --- */
+export const ImageSource = {
+  fromUrl(url) {
+    /* En Node no hay decodificador de imágenes: se resuelve con 0×0. */
+    return Promise.resolve({ width: 0, height: 0, url: String(url) });
+  },
+  fromFile() { return Promise.resolve({ width: 0, height: 0 }); },
+  fromData() { return Promise.resolve({ width: 0, height: 0 }); },
+};
+
 export const Application = {
   android: { foregroundActivity: null },
   ios: {},
@@ -95,5 +105,5 @@ export const Application = {
 
 export default {
   getString, setString, remove, clear, hasKey, Screen, device,
-  request, getFile, knownFolders, File, Folder, Application,
+  request, getFile, knownFolders, File, Folder, Application, ImageSource,
 };
