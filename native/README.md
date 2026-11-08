@@ -13,6 +13,7 @@ native/
 │   ├── App.vue             raíz: decide qué vista se ve según store.route
 │   ├── fox.ts              pegamento nativo ↔ núcleo compartido
 │   ├── notifier.ts         avisos del sistema (plugin de notificaciones)
+│   ├── service.ts          servicio en primer plano (WS vivo en 2º plano)
 │   ├── files.ts            selector de archivos (común)
 │   ├── files-picker.*.ts   selector por plataforma (Android SAF / iOS)
 │   ├── views/              VISTAS NATIVAS (Login, Register, Verify, Shell)
@@ -126,9 +127,53 @@ realtime.js  ──NotificationAdapter.notify()──▶  notifier.ts  ──▶
   lista de chats está lista.
 
 > **Limitación**: el aviso sale cuando el proceso recibe el mensaje por el
-> WebSocket. Si Android mata la app en segundo plano, no llega nada: para
-> eso hace falta push remoto (FCM/APNs), que necesita credenciales de
-> Firebase, o un servicio en primer plano propio.
+> WebSocket. Con el servicio en primer plano (W101, más abajo) el proceso
+> no se congela con la app en segundo plano, así que el socket sigue vivo
+> y el aviso llega. Lo que **no** hay es push remoto (FCM/APNs): si el
+> usuario cierra la app a la fuerza y el sistema no la levanta, no llega
+> nada (ni con el servicio: Android lo mata si el usuario la arrastra
+> fuera).
+
+## Servicio en primer plano (W101)
+
+Sin Firebase, el WebSocket de la app nativa vive en el runtime de
+JavaScript: si Android congela o mata el proceso con la app en segundo
+plano, el socket se cae y no llega ningún aviso.
+
+La solución es un **servicio en primer plano** propio:
+
+- `App_Resources/Android/src/main/java/io/foxinix/app/FoxinixService.java`
+  (`START_STICKY`: si Android mata el proceso, el sistema vuelve a
+  levantar el servicio y con él la conexión).
+- `app/service.ts` lo arranca cuando la app va al segundo plano
+  (`Application.suspendEvent`) y lo para cuando vuelve
+  (`Application.resumeEvent`): en primer plano el proceso vive por sí
+  solo y el aviso persistente del servicio sobraría.
+- El intent es **explícito** (`ComponentName`), así que la clase Java no
+  hace falta que esté expuesta al runtime de JS.
+
+Requisitos de Android 14+ (API 34), que ya van en el manifest:
+
+```xml
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+...
+<service android:name="io.foxinix.app.FoxinixService"
+         android:exported="false"
+         android:foregroundServiceType="specialUse">
+    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+              android:value="keep_messaging_connection_alive" />
+</service>
+```
+
+`specialUse` es el tipo que corresponde a "mantener una conexión de
+mensajería viva" (no hay un tipo estándar para eso; `dataSync` tendría un
+límite de 6 h por día en Android 15). El aviso del servicio va en un canal
+de importancia **BAJA**: sale silencioso, sin vibración y sin insignias.
+
+> Con `targetSdk` 36, Google Play exige justificar el uso de
+> `specialUse`; para el APK firmado que se distributes a mano no hace
+> falta nada extra.
 
 ## Comandos
 
@@ -172,12 +217,14 @@ sudo bash tools/fix-ns-cli-gradle.sh
 - **Avisos del sistema** (W100): notificación real del sistema con el
   texto del mensaje, permiso de Android 13+, sonido según Ajustes y, al
   tocarla, se abre el chat y el mensaje exactos.
+- **Servicio en primer plano** (W101): el WebSocket sigue vivo con la app
+  en segundo plano (sin Firebase), así que los avisos llegan de verdad.
 
  pendiente:
 - Mostrar la imagen dentro de la burbuja (hoy sale como etiqueta de texto).
 - Notas de voz (plugin de audio).
-- Push remoto (FCM/APNs) y servicio en primer plano para que el aviso
-  llegue aunque Android mate la app en segundo plano.
+- Push remoto (FCM/APNs) para los avisos cuando la app está cerrada de
+  verdad (el usuario la arrastró fuera y el sistema no la levanta).
 - Compilación para iOS (hace falta un Mac).
 
 ## Requisitos

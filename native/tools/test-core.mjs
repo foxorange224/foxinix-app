@@ -261,6 +261,47 @@ async function run() {
     'n=' + notifStub.__list().length);
   realtime.stopWS();
 
+  /* --- 7c. servicio en primer plano (W101) ---
+     Sin Firebase: un servicio en primer plano mantiene vivo el proceso
+     (y el WebSocket) con la app en segundo plano. Se arranca al salir y
+     se para al volver. */
+  const service = await import('../app/service.ts');
+  /* El runtime de Android (Intent/ComponentName/Build) */
+  globalThis.android = {
+    content: {
+      Intent: class {
+        constructor() { this.action = ''; this.component = null; }
+        setAction(a) { this.action = a; }
+        setComponent(c) { this.component = c; }
+      },
+      ComponentName: class {
+        constructor(pkg, cls) { this.pkg = pkg; this.cls = cls; }
+      },
+    },
+    os: { Build: { VERSION: { SDK_INT: 34 } } },
+  };
+  coreStub.__resetCtx();
+  service.setupBackgroundService();
+  coreStub.Application.__emit(coreStub.Application.suspendEvent);
+  await sleep(80);
+  const scalls = coreStub.__ctxCalls();
+  const sstart = scalls.find((c) => c[0] === 'startForegroundService');
+  ok('al salir se arranca el servicio en primer plano', !!sstart,
+    JSON.stringify(scalls.map((c) => c[0])));
+  ok('el intent apunta al servicio de Foxinix',
+    !!(sstart && sstart[1].component &&
+      sstart[1].component.cls === 'io.foxinix.app.FoxinixService'),
+    sstart && sstart[1].component ? sstart[1].component.cls : 'sin intent');
+  ok('la acción del intent es START',
+    !!(sstart && String(sstart[1].action).indexOf('START') > 0),
+    sstart ? String(sstart[1].action) : '');
+  coreStub.Application.__emit(coreStub.Application.resumeEvent);
+  await sleep(80);
+  ok('al volver se para el servicio',
+    coreStub.__ctxCalls().some((c) => c[0] === 'stopService'),
+    JSON.stringify(coreStub.__ctxCalls().map((c) => c[0])));
+  delete globalThis.android;
+
   /* --- 8. personas: amigos, solicitudes, búsqueda y DM nuevo --- */
   await actions.loadPeople();
   const ppl = store.store.people || { friends: [], sent: [], received: [] };

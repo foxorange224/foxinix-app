@@ -144,8 +144,25 @@ export const Application = {
   },
 };
 
+/* --- contexto de la app (W101: servicio en primer plano) ---
+   El servicio en primer plano se arranca con un Intent explícito al
+   contexto de la aplicación. El stub anota las llamadas para que la
+   prueba pueda comprobar que se arrancan y se paran. */
+const ctxCalls = [];
+const appContext = {
+  getPackageName() { return 'io.foxinix.app'; },
+  startForegroundService(i) { ctxCalls.push(['startForegroundService', i]); },
+  startService(i) { ctxCalls.push(['startService', i]); },
+  stopService(i) { ctxCalls.push(['stopService', i]); },
+};
+export const Utils = {
+  android: { getApplicationContext: () => appContext },
+};
+export function __ctxCalls() { return ctxCalls.slice(); }
+export function __resetCtx() { ctxCalls.length = 0; }
+
 export default {
   getString, setString, remove, clear, hasKey, Screen, device,
   request, getFile, knownFolders, File, Folder, Application, ImageSource,
-  getFileAccess,
+  getFileAccess, Utils,
 };

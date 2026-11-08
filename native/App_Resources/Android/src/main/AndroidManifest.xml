@@ -12,6 +12,10 @@
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 	<uses-permission android:name="android.permission.INTERNET"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+	<!-- W101: servicio en primer plano (mantiene vivo el WebSocket con la
+	     app en segundo plano, sin Firebase). -->
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 
 	<application
 		android:name="com.tns.NativeScriptApplication"
@@ -39,5 +43,19 @@
 			</intent-filter>
 		</activity>
 		<activity android:name="com.tns.ErrorReportActivity"/>
+
+		<!-- W101: servicio en primer plano. El tipo "specialUse" es el
+		     que corresponde a "mantener una conexión de mensajería en
+		     segundo plano" (no hay un tipo estándar para eso). Android 14+
+		     pide la propiedad PROPERTY_SPECIAL_USE_FGS_SUBTYPE y el
+		     permiso FOREGROUND_SERVICE_SPECIAL_USE (arriba). -->
+		<service
+			android:name="io.foxinix.app.FoxinixService"
+			android:exported="false"
+			android:foregroundServiceType="specialUse">
+			<property
+				android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+				android:value="keep_messaging_connection_alive" />
+		</service>
 	</application>
 </manifest>

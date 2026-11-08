@@ -2,4 +2,7 @@
 <resources>
     <string name="app_name">Foxinix</string>
     <string name="title_activity_kimera">Foxinix</string>
+    <!-- W101: aviso del servicio en primer plano (canal "Foxinix en segundo plano") -->
+    <string name="foxinix_fg_title">Foxinix está activo</string>
+    <string name="foxinix_fg_text">Conectado para recibir mensajes</string>
 </resources>

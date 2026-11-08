@@ -11,6 +11,7 @@ import { t } from './core/i18n.js';
 import { loadChats, openChat, sendText } from './core/actions.js';
 import { startWS, stopWS } from './core/realtime.js';
 import { askNotificationPermission, setupNotifications } from './notifier';
+import { setupBackgroundService } from './service';
 
 /* El objeto `android` solo existe en el runtime de Android. */
 declare const android: any;
@@ -22,6 +23,9 @@ export async function bootNative(): Promise<void> {
      llega un mensaje con la app en segundo plano, el aviso del sistema
      tiene que salir. */
   setupNotifications();
+  /* W101: servicio en primer plano para que el WebSocket sobreviva con
+     la app en segundo plano (se arranca al salir, se para al volver). */
+  setupBackgroundService();
   loadSession();
   if (!store.hasSession) {
     goReplace('login');
