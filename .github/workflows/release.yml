@@ -318,7 +318,7 @@ jobs:
               mensaje (orden estable).
 
             > La app nativa es una **prerelease**: es un APK de depuración
-            > (117 MB, firmado con la clave de debug) y convive con la app
+            > (114 MB, firmado con la clave de debug) y convive con la app
             > normal porque tiene otro paquete (`io.foxinix.app` frente a
             > `io.foxinix.desktop`). Se puede instalar sin problemas las
             > dos a la vez.
