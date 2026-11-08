@@ -1,23 +1,35 @@
 <template>
-  <Frame>
-    <LoginView v-if="route === 'login'" />
-    <RegisterView v-else-if="route === 'register'" />
-    <VerifyView v-else-if="route === 'verify'" />
-    <!-- con un chat abierto va la conversación; si no, la lista -->
-    <ChatView v-else-if="activeChatId" />
-    <ChatListView v-else />
-  </Frame>
+  <!-- La raíz es un GridLayout para poder poner los avisos (toasts)
+     ENCIMA de las vistas: en NS no hay un portal ni un z-index como en
+     la web. -->
+  <GridLayout rows="*,auto">
+    <Frame row="0">
+      <LoginView v-if="route === 'login'" />
+      <RegisterView v-else-if="route === 'register'" />
+      <VerifyView v-else-if="route === 'verify'" />
+      <!-- con un chat abierto va la conversación; si no, la lista o
+           el panel de personas -->
+      <ChatView v-else-if="activeChatId" />
+      <PeopleView v-else-if="view === 'people'" />
+      <ChatListView v-else />
+    </Frame>
+
+    <NativeToasts row="1" />
+  </GridLayout>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted } from 'nativescript-vue';
   import { store } from './core/store.js';
   import { bootNative } from './fox';
+  import { view } from './nav';
   import LoginView from './views/LoginView.vue';
   import RegisterView from './views/RegisterView.vue';
   import VerifyView from './views/VerifyView.vue';
   import ChatListView from './views/ChatListView.vue';
   import ChatView from './views/ChatView.vue';
+  import PeopleView from './views/PeopleView.vue';
+  import NativeToasts from './components/NativeToasts.vue';
 
   /* La ruta vive en el store compartido: el núcleo decide, la vista
      nativa obedece. */

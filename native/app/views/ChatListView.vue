@@ -1,6 +1,7 @@
 <template>
   <Page>
     <ActionBar title="Chats">
+      <ActionItem text="Personas" @tap="goPeople" ios.position="right" />
       <ActionItem text="Salir" @tap="doLogout" ios.position="right" />
     </ActionBar>
 
@@ -49,6 +50,7 @@
   import { loadChats, chatTitle, openChat } from '../core/actions.js';
   import { startWS } from '../core/realtime.js';
   import { nativeLogout } from '../fox';
+  import { goView } from '../nav';
 
   const loading = ref(true);
 
@@ -122,6 +124,11 @@
 
   function doLogout() {
     nativeLogout();
+  }
+
+  /* Panel de personas: amigos, solicitudes y búsqueda. */
+  function goPeople() {
+    goView('people');
   }
 
   onMounted(async () => {

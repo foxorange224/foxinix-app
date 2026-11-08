@@ -1,19 +1,23 @@
 /* test-core.mjs — prueba de integración del NÚCLEO NATIVO.
-   Corre el núcleo compartido (api/store/i18n) con la capa `platform/`
-   en modo NativeScript (con stubs de @nativescript/core) y verifica
-   contra la API real de Foxinix:
+   Corre el núcleo compartido (api/store/i18n/actions) con la capa
+   `platform/` en modo NativeScript (con stubs de @nativescript/core) y
+   verifica contra la API real de Foxinix:
      1. Login con la API real.
      2. La sesión queda guardada en el almacenamiento del dispositivo.
      3. /users/me funciona con el token.
      4. Al "reiniciar la app" (módulo recargado), la sesión se recupera.
      5. El refresh renueva el access (modo nativo: refresh en el body).
-     6. Logout limpio.
+     6. Lista de chats, abrir un chat y enviar un mensaje.
+     7. Adaptador de WebSocket (tiempo real).
+     8. Personas: amigos, solicitudes, búsqueda y DM nuevo.
+     9. Logout limpio.
 
-   Uso: node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw> */
+   Uso: node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw>
+        [usuario2 <pw2>]   <- para probar el flujo de amistad */
 
-const [USER, PW] = process.argv.slice(2);
+const [USER, PW, USER2, PW2] = process.argv.slice(2);
 if (!USER || !PW) {
-  console.log('uso: node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw>');
+  console.log('uso: node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw> [user2 pw2]');
   process.exit(1);
 }
 
@@ -121,12 +125,92 @@ async function run() {
     !!sock && typeof sock.send === 'function' && typeof sock.close === 'function');
   ok('el socket expone readyState', sock && typeof sock.readyState === 'number');
 
-  /* --- 8. logout --- */
+  /* --- 8. personas: amigos, solicitudes, búsqueda y DM nuevo --- */
+  await actions.loadPeople();
+  const ppl = store.store.people || { friends: [], sent: [], received: [] };
+  ok('GET /people devuelve la lista', Array.isArray(ppl.friends),
+    'amigos=' + ppl.friends.length);
+
+  /* La URL del avatar (firma del CDN) la usa la vista nativa: tiene que
+     salir ABSOLUTA y conservar la firma, si no la <Image> de NS no la
+     carga. */
+  const av = actions.mediaUrl('/media/profile/abc.png?exp=123&sig=deadbeef');
+  ok('mediaUrl devuelve una URL absoluta del CDN', av.indexOf('https://cdn.foxinix.qzz.io/') === 0,
+    av.slice(0, 80));
+  ok('mediaUrl conserva la firma y pide la miniatura',
+    av.indexOf('sig=deadbeef') > 0 && av.indexOf('thumb=1') > 0);
+
+  if (USER2 && PW2) {
+    /* El segundo usuario se loguea por HTTP plano (es el "otro
+       teléfono"): sólo hace falta para aceptar la solicitud. */
+    const lr = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: USER2, password: PW2 }),
+    }).then((x) => x.json());
+    const tok2 = lr && lr.tokens && lr.tokens.access;
+    ok('login del segundo usuario', !!tok2, 'user=' + (lr && lr.user && lr.user.username));
+
+    const found = await actions.searchUsers(USER2.slice(0, 4));
+    ok('searchUsers encuentra al usuario', Array.isArray(found) &&
+      found.some((u) => u.username === USER2), 'n=' + (found || []).length);
+    ok('searchUsers con 1 carácter no busca', (await actions.searchUsers('a')).length === 0);
+
+    /* Solicitud de amistad: si ya son amigos o ya hay una pendiente, se
+       respeta el estado que dejó la corrida anterior. */
+    let areFriends = ppl.friends.some((u) => u.username === USER2);
+    if (!areFriends) {
+      const pending = ppl.sent.some((r) => r.user && r.user.username === USER2);
+      if (!pending) {
+        try {
+          const req = await actions.sendFriendRequest(USER2);
+          ok('sendFriendRequest crea la solicitud', !!(req && req.id), 'id=' + (req && req.id));
+        } catch (e) {
+          ok('sendFriendRequest crea la solicitud', false, e && e.detail ? e.detail : e.message);
+        }
+      } else {
+        ok('sendFriendRequest crea la solicitud', true, 'ya estaba pendiente');
+      }
+      /* B acepta la solicitud (crea el DM). La solicitud que A acaba de
+         mandar está en la lista de ENVIADAS de A; la acepta B con su
+         propio token. */
+      await actions.loadPeople();
+      const mine = ((store.store.people || {}).sent || [])
+        .find((r) => r.user && r.user.username === USER2);
+      if (mine) {
+        const res = await fetch(API + '/people/requests/' + mine.id + '/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok2 },
+          body: '{}',
+        });
+        ok('el segundo usuario acepta la solicitud', res.ok, 'HTTP ' + res.status);
+      } else {
+        ok('el segundo usuario acepta la solicitud', false, 'no está en las enviadas');
+      }
+      await actions.loadPeople();
+      areFriends = (store.store.people || {}).friends.some((u) => u.username === USER2);
+    } else {
+      ok('sendFriendRequest crea la solicitud', true, 'ya eran amigos');
+      ok('el segundo usuario acepta la solicitud', true, 'ya eran amigos');
+    }
+    ok('loadPeople muestra al amigo nuevo', areFriends);
+
+    /* DM con el amigo: createDm lo crea (o lo reutiliza) y lo abre. */
+    const dm = await actions.createDm(USER2);
+    ok('createDm abre el DM', !!(dm && dm.id), 'chat=' + (dm && dm.id));
+    ok('el DM queda como chat activo', store.store.activeChatId === (dm && dm.id));
+    await actions.loadChats();
+    const inList = (store.store.chats || []).some((c) => c.id === (dm && dm.id));
+    ok('el DM aparece en la lista de chats', inList);
+  } else {
+    ok('flujo de personas con un segundo usuario', true, 'omitido (sin user2)');
+  }
+
+  /* --- 9. logout --- */
   try { await api.api('POST', '/auth/logout', {}); } catch (e) {}
   api.clearSession();
   ok('logout: sesión borrada', api.session.access === '' && !store.store.hasSession);
   ok('logout: almacenamiento limpio', !storage.StorageAdapter.getItem('fm.session'));
-
   console.log('');
   console.log(pass + ' PASS / ' + fail + ' FAIL');
   process.exit(fail ? 1 : 0);
