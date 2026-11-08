@@ -7,7 +7,7 @@
 
 import { ref } from 'nativescript-vue';
 
-export type NativeView = 'chats' | 'people';
+export type NativeView = 'chats' | 'people' | 'newgroup';
 
 export const view = ref<NativeView>('chats');
 

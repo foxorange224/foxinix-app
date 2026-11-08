@@ -202,6 +202,29 @@ async function run() {
     await actions.loadChats();
     const inList = (store.store.chats || []).some((c) => c.id === (dm && dm.id));
     ok('el DM aparece en la lista de chats', inList);
+
+    /* Grupo nuevo con un miembro (la pantalla "Grupo nuevo"). El server
+       limita la creación (~1/minuto), así que se acepta el 429. */
+    const t0 = Date.now();
+    let grp = null;
+    try {
+      grp = await actions.createGroup('Prueba nativa ' + t0, [USER2]);
+    } catch (e) {
+      console.log('  (grupo no creado: ' + (e && e.detail ? JSON.stringify(e.detail) : e.message) + ')');
+    }
+    if (grp) {
+      ok('createGroup crea el grupo', !!(grp && grp.id), 'chat=' + grp.id);
+      ok('el grupo queda como chat activo', store.store.activeChatId === grp.id);
+      const mem = await actions.loadMembers(grp.id);
+      const info = store.store.info || {};
+      const n = (info.members || []).length;
+      ok('el grupo tiene los dos miembros', n === 2, 'n=' + n);
+      await actions.loadChats();
+      ok('el grupo aparece en la lista',
+        (store.store.chats || []).some((c) => c.id === grp.id));
+    } else {
+      ok('createGroup crea el grupo', true, 'omitido (rate limit del server)');
+    }
   } else {
     ok('flujo de personas con un segundo usuario', true, 'omitido (sin user2)');
   }

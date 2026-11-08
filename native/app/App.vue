@@ -10,6 +10,7 @@
       <!-- con un chat abierto va la conversación; si no, la lista o
            el panel de personas -->
       <ChatView v-else-if="activeChatId" />
+      <NewGroupView v-else-if="view === 'newgroup'" />
       <PeopleView v-else-if="view === 'people'" />
       <ChatListView v-else />
     </Frame>
@@ -29,6 +30,7 @@
   import ChatListView from './views/ChatListView.vue';
   import ChatView from './views/ChatView.vue';
   import PeopleView from './views/PeopleView.vue';
+  import NewGroupView from './views/NewGroupView.vue';
   import NativeToasts from './components/NativeToasts.vue';
 
   /* La ruta vive en el store compartido: el núcleo decide, la vista

@@ -2,6 +2,7 @@
   <Page>
     <ActionBar title="Personas">
       <ActionItem text="Chats" @tap="backToChats" ios.position="left" />
+      <ActionItem text="Grupo" @tap="goNewGroup" ios.position="right" />
     </ActionBar>
 
     <GridLayout rows="auto,auto,*">
@@ -180,7 +181,7 @@
     acceptFriendRequest, cancelFriendRequest, createDm, loadPeople, mediaUrl,
     rejectFriendRequest, searchUsers, sendFriendRequest,
   } from '../core/actions.js';
-  import { backToChats } from '../nav';
+  import { backToChats, goView } from '../nav';
 
   const tab = ref<'active' | 'req'>('active');
   const q = ref('');
@@ -308,6 +309,11 @@
     }
     if (sentTo(u)) return;
     run(() => sendFriendRequest(u.username), 'Solicitud enviada');
+  }
+
+  /* Grupo nuevo: se eligen los miembros en otra pantalla. */
+  function goNewGroup() {
+    goView('newgroup');
   }
 
   function cancelReq(r: any) { run(() => cancelFriendRequest(r.id)); }
