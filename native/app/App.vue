@@ -10,6 +10,7 @@
       <!-- con un chat abierto va la conversación; si no, la lista o
            el panel de personas -->
       <ChatView v-else-if="activeChatId" />
+      <ProfileView v-else-if="view === 'profile'" :user-id="profileUserId" />
       <NewGroupView v-else-if="view === 'newgroup'" />
       <PeopleView v-else-if="view === 'people'" />
       <ChatListView v-else />
@@ -23,7 +24,7 @@
   import { computed, onMounted } from 'nativescript-vue';
   import { store } from './core/store.js';
   import { bootNative } from './fox';
-  import { view } from './nav';
+  import { view, profileUserId } from './nav';
   import LoginView from './views/LoginView.vue';
   import RegisterView from './views/RegisterView.vue';
   import VerifyView from './views/VerifyView.vue';
@@ -31,6 +32,7 @@
   import ChatView from './views/ChatView.vue';
   import PeopleView from './views/PeopleView.vue';
   import NewGroupView from './views/NewGroupView.vue';
+  import ProfileView from './views/ProfileView.vue';
   import NativeToasts from './components/NativeToasts.vue';
 
   /* La ruta vive en el store compartido: el núcleo decide, la vista

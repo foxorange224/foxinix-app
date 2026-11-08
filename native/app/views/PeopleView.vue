@@ -45,6 +45,7 @@
                 class="fox-row"
                 columns="auto,*,auto"
                 rows="auto,auto"
+                @tap="openResult(u)"
               >
                 <GridLayout row="0" col="0" rowspan="2" class="fox-av">
                   <Image
@@ -181,7 +182,7 @@
     acceptFriendRequest, cancelFriendRequest, createDm, loadPeople, mediaUrl,
     rejectFriendRequest, searchUsers, sendFriendRequest,
   } from '../core/actions.js';
-  import { backToChats, goView } from '../nav';
+  import { backToChats, goProfile, goView } from '../nav';
 
   const tab = ref<'active' | 'req'>('active');
   const q = ref('');
@@ -302,13 +303,26 @@
     backToChats();
   }
 
+  /* El tap del botón de acción también sube a la fila (en NS los
+     eventos burbujean), así que se marca para que la fila no abra el
+     perfil. El flag se limpia solo en el siguiente turno: si el tap no
+     llegara a la fila, tampoco queda colgado. */
+  let skipRowTap = false;
+
   function actOnSearch(u: any) {
+    skipRowTap = true;
+    setTimeout(() => { skipRowTap = false; }, 0);
     if (isFriend(u)) {
       openFriend(u);
       return;
     }
     if (sentTo(u)) return;
     run(() => sendFriendRequest(u.username), 'Solicitud enviada');
+  }
+
+  function openResult(u: any) {
+    if (skipRowTap) return;
+    goProfile(u.id);
   }
 
   /* Grupo nuevo: se eligen los miembros en otra pantalla. */

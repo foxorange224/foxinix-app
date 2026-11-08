@@ -156,6 +156,21 @@ async function run() {
       found.some((u) => u.username === USER2), 'n=' + (found || []).length);
     ok('searchUsers con 1 carácter no busca', (await actions.searchUsers('a')).length === 0);
 
+    /* Perfil: la vista nativa lo abre y decide qué acción ofrecer según
+       la relación (amigo / solicitud / bloqueado / ninguno). */
+    const other = (found || []).find((u) => u.username === USER2);
+    if (other) {
+      const prof = await actions.loadProfile(other.id);
+      ok('loadProfile devuelve el usuario', !!(prof && prof.user && prof.user.id),
+        'id=' + (prof && prof.user && prof.user.id));
+      ok('loadProfile devuelve la relación', !!prof.relation, 'rel=' + prof.relation);
+      ok('la relación de un amigo es "friend"', prof.relation === 'friend', prof.relation);
+      ok('el perfil trae avatar/bio', prof.user.avatar_url !== undefined &&
+        prof.user.bio !== undefined);
+    } else {
+      ok('loadProfile devuelve el usuario', false, 'no apareció en la búsqueda');
+    }
+
     /* Solicitud de amistad: si ya son amigos o ya hay una pendiente, se
        respeta el estado que dejó la corrida anterior. */
     let areFriends = ppl.friends.some((u) => u.username === USER2);
