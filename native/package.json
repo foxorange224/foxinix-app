@@ -1,7 +1,7 @@
 {
   "name": "foxinix-native",
   "main": "app/app.ts",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "private": true,
   "scripts": {
     "sync": "node tools/sync-core.mjs",
