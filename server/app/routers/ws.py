@@ -309,11 +309,16 @@ def _friends(a: int, b: int) -> bool:
 
 
 def _extract_token(ws: WebSocket) -> str:
-    """Token por subprotocolo ['foxinix', <token>] (navegadores) o, como
-    respaldo, por query (cliente QML/desktop que no puede mandar headers)."""
+    """Token por subprotocolo ['foxinix', <token>] (navegadores), por la
+    cabecera X-Foxinix-Token (app nativa: el plugin de WebSocket de NS
+    sólo manda el primer subprotocolo) o, como respaldo, por query
+    (cliente QML/desktop que no puede mandar headers)."""
     parts = [p.strip() for p in ws.headers.get("sec-websocket-protocol", "").split(",") if p.strip()]
     if len(parts) >= 2 and parts[0] == _PROTO:
         return parts[1]
+    hdr = ws.headers.get("x-foxinix-token", "").strip()
+    if hdr:
+        return hdr
     return ws.query_params.get("token", "")
 
 
