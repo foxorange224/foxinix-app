@@ -118,9 +118,30 @@ export class Folder {
   fromData() { return Promise.resolve({ width: 0, height: 0 }); },
 };
 
+/* --- Application: eventos de suspender/reanudar (W100) ---
+   En NS la app avisa con Application.suspendEvent cuando va al segundo
+   plano: el núcleo lo usa para saber si tiene que mostrar un aviso del
+   sistema. El stub deja emitirlos a mano (__emit). */
+const appListeners = {};
 export const Application = {
   android: { foregroundActivity: null },
   ios: {},
+  suspendEvent: 'suspend',
+  resumeEvent: 'resume',
+  launchEvent: 'launch',
+  on(event, cb) {
+    (appListeners[event] = appListeners[event] || []).push(cb);
+  },
+  off(event, cb) {
+    const l = appListeners[event] || [];
+    const i = l.indexOf(cb);
+    if (i >= 0) l.splice(i, 1);
+  },
+  __emit(event, data) {
+    for (const cb of (appListeners[event] || []).slice()) {
+      try { cb(data); } catch (e) {}
+    }
+  },
 };
 
 export default {

@@ -175,6 +175,92 @@ async function run() {
     !!sock && typeof sock.send === 'function' && typeof sock.close === 'function');
   ok('el socket expone readyState', sock && typeof sock.readyState === 'number');
 
+  /* --- 7b. avisos del sistema (W100) ---
+     La app nativa no tiene Notification del navegador: los avisos salen
+     del sistema (plugin de notificaciones locales). Se comprueba el
+     camino COMPLETO:
+       mensaje por WS con la app en segundo plano → aviso del sistema
+       → toque en el aviso → se abre el chat exacto. */
+  const coreStub = await import('./ns-core-stub.mjs');
+  const notifStub = await import('./ns-notifications-stub.mjs');
+  const wsStub = await import('./ns-websocket-stub.mjs');
+  const notifier = await import('../app/notifier.ts');
+  const platformNotif = await import('../app/core/platform/notifications.js');
+  const dom = await import('../app/core/platform/dom.js');
+  const realtime = await import('../app/core/realtime.js');
+
+  notifier.setupNotifications();
+  ok('el notificador nativo queda enganchado',
+    platformNotif.NotificationAdapter.isSupported() === true);
+  const perm = await notifier.notificationState();
+  ok('el permiso de avisos se reconoce', perm === 'granted', perm);
+
+  /* La app va al segundo plano (Android suspende la actividad). */
+  coreStub.Application.__emit(coreStub.Application.suspendEvent);
+  ok('la app en segundo plano se detecta', dom.DomAdapter.getHidden() === true);
+
+  notifStub.__reset();
+  realtime.startWS();
+  await sleep(150);
+  const wssock = wsStub.instances[wsStub.instances.length - 1];
+  ok('el núcleo abre su WebSocket', !!wssock);
+  if (wssock) wssock.simulateOpen();
+  const msgId = 900000 + Math.floor(Math.random() * 900);
+  const cuerpo = 'aviso de prueba ' + Date.now();
+  const entrante = {
+    id: msgId,
+    seq: msgId,
+    chat_id: chatId,
+    kind: 'text',
+    body: cuerpo,
+    sender: { id: 999999, username: 'otro', display_name: 'Zafiro' },
+    mentions: [],
+    created_at: Math.floor(Date.now() / 1000),
+  };
+  if (wssock) {
+    wssock.simulateMessage(JSON.stringify({ type: 'message', message: entrante }));
+  }
+  await sleep(400);
+  const avisos = notifStub.__list();
+  ok('el mensaje entrante genera un aviso del sistema', avisos.length === 1, 'n=' + avisos.length);
+  const aviso = avisos[0] || {};
+  ok('el aviso lleva el título del remitente', aviso.title.indexOf('Zafiro') === 0, aviso.title);
+  ok('el aviso lleva el texto del mensaje', aviso.body === cuerpo, aviso.body);
+  ok('el aviso usa el canal Foxinix', aviso.channel === 'Foxinix', aviso.channel);
+  ok('el aviso lleva el icono de la marca',
+    aviso.icon === 'res://drawable/ic_stat_notify', aviso.icon);
+  ok('el aviso lleva el chat y el mensaje',
+    !!(aviso.payload && String(aviso.payload.chatId) === String(chatId) &&
+      String(aviso.payload.msgId) === String(msgId)), JSON.stringify(aviso.payload));
+  realtime.stopWS();
+
+  /* Toque en el aviso: se abre el chat (y el mensaje exacto). */
+  actions.closeChat();
+  ok('antes del toque no hay chat abierto', store.store.activeChatId === 0);
+  await notifStub.__tap({ chatId: String(chatId), msgId: String(msgId) });
+  await sleep(300);
+  ok('al tocar el aviso se abre el chat', store.store.activeChatId === chatId,
+    'chat=' + store.store.activeChatId);
+  ok('se marca el mensaje como destino', store.store.jumpMsg === msgId,
+    'msg=' + store.store.jumpMsg);
+  actions.closeChat();
+
+  /* En primer plano no sale ningún aviso (el usuario está mirando). */
+  coreStub.Application.__emit(coreStub.Application.resumeEvent);
+  ok('al volver a primer plano se detecta', dom.DomAdapter.getHidden() === false);
+  notifStub.__reset();
+  realtime.startWS();
+  await sleep(150);
+  const wssock2 = wsStub.instances[wsStub.instances.length - 1];
+  if (wssock2) {
+    wssock2.simulateOpen();
+    wssock2.simulateMessage(JSON.stringify({ type: 'message', message: entrante }));
+  }
+  await sleep(400);
+  ok('en primer plano no sale ningún aviso', notifStub.__list().length === 0,
+    'n=' + notifStub.__list().length);
+  realtime.stopWS();
+
   /* --- 8. personas: amigos, solicitudes, búsqueda y DM nuevo --- */
   await actions.loadPeople();
   const ppl = store.store.people || { friends: [], sent: [], received: [] };

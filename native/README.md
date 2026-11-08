@@ -12,6 +12,7 @@ native/
 │   ├── app.ts              punto de entrada
 │   ├── App.vue             raíz: decide qué vista se ve según store.route
 │   ├── fox.ts              pegamento nativo ↔ núcleo compartido
+│   ├── notifier.ts         avisos del sistema (plugin de notificaciones)
 │   ├── files.ts            selector de archivos (común)
 │   ├── files-picker.*.ts   selector por plataforma (Android SAF / iOS)
 │   ├── views/              VISTAS NATIVAS (Login, Register, Verify, Shell)
@@ -95,12 +96,48 @@ body del `POST /auth/refresh`.
 
 Eso lo decide `platform/cookies.js` → `api.js` (`applyAuth`).
 
+## Avisos del sistema (W100)
+
+En NS no existe la `Notification` del navegador, así que los avisos de
+mensajes nuevos los hace el plugin **`@nativescript/local-notifications`**
+(7.0.0) desde `app/notifier.ts`:
+
+```
+realtime.js  ──NotificationAdapter.notify()──▶  notifier.ts  ──▶  aviso del sistema
+     ▲                                                                    │
+     └── el aviso lleva chatId + msgId en el payload ──── al tocar ──────┘
+                                    (abre el chat y el mensaje exactos)
+```
+
+- **Cuándo avisa**: el núcleo sólo avisa si la app está en segundo plano.
+  En NS eso es el evento `Application.suspendEvent` (lo lleva
+  `platform/nativescript/dom.js`: `getHidden()`), no una pestaña oculta.
+- **Permiso**: `POST_NOTIFICATIONS` (Android 13+). Se pide **una vez** al
+  arrancar, después de iniciar sesión; si el usuario lo deniega, Ajustes →
+  Avisos muestra el estado y deja volver a pedirlo o abrir los ajustes del
+  sistema. En Android < 13 no hay diálogo (el permiso va incluido).
+- **El aviso**: canal "Foxinix", icono de la marca (`ic_stat_notify`, la
+  cabeza de zorro en blanco), título con el remitente (y el grupo) y el
+  texto del mensaje. El sonido sale si el usuario tiene "Sonido al
+  recibir" activado (en NS no hay Web Audio: lo pone el aviso).
+- **Al tocarlo**: el id del chat y del mensaje viajan en el `payload` de la
+  notificación y se abren con `openNotificationTarget()` (el mismo camino
+  que la web). Si la app estaba cerrada, el destino se resuelve cuando la
+  lista de chats está lista.
+
+> **Limitación**: el aviso sale cuando el proceso recibe el mensaje por el
+> WebSocket. Si Android mata la app en segundo plano, no llega nada: para
+> eso hace falta push remoto (FCM/APNs), que necesita credenciales de
+> Firebase, o un servicio en primer plano propio.
+
 ## Comandos
 
 ```bash
 npm run sync:check      # ¿app/core/ al día?
 npm run build:android   # sincroniza + compila el APK
 npm run run:android     # instala y corre en el dispositivo/emulador
+node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw>
+                         # test del núcleo nativo contra la API real
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -132,11 +169,15 @@ sudo bash tools/fix-ns-cli-gradle.sh
   (vistas nativas + `realtime.js`).
 - Envío de **imágenes y archivos** (selector del sistema + multipart a
   mano): la imagen sube al servidor y el mensaje llega con su media.
+- **Avisos del sistema** (W100): notificación real del sistema con el
+  texto del mensaje, permiso de Android 13+, sonido según Ajustes y, al
+  tocarla, se abre el chat y el mensaje exactos.
 
  pendiente:
 - Mostrar la imagen dentro de la burbuja (hoy sale como etiqueta de texto).
 - Notas de voz (plugin de audio).
-- Notificaciones push.
+- Push remoto (FCM/APNs) y servicio en primer plano para que el aviso
+  llegue aunque Android mate la app en segundo plano.
 - Compilación para iOS (hace falta un Mac).
 
 ## Requisitos

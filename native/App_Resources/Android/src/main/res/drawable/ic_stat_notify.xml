@@ -1,0 +1,25 @@
+<!-- Icono de los avisos del sistema (W100): la cabeza de zorro de la
+     marca, en blanco sobre transparente. Android exige que el icono
+     pequeño de una notificación sea una silueta de un solo color (la
+     tiñe con el color del sistema), así que aquí va la misma ruta del
+     icono de la app (App_Resources/.../drawable/ic_launcher_foreground.xml)
+     pero en blanco y con un trazo más grueso para que se lea a 24dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+  <group
+      android:scaleX="0.8"
+      android:scaleY="0.8"
+      android:translateX="40"
+      android:translateY="35">
+    <path
+        android:pathData="M289,279.25 L74,61.25 L58,231.25 L200,351.25 L342,231.25 L326,61.25 L111,279.25"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="45"
+        android:strokeLineJoin="miter"
+        android:strokeLineCap="butt"
+        android:fillColor="#00000000" />
+  </group>
+</vector>

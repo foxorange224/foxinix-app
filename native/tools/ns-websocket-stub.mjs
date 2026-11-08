@@ -6,6 +6,9 @@
    suficiente para que realtime.js cargue y se pueda comprobar el
    camino de conexión (y el apagado). */
 
+/* Todos los sockets creados (para las pruebas). */
+export const instances = [];
+
 export class NativeWebSockets {
   constructor(url, options) {
     this.url = url;
@@ -13,6 +16,9 @@ export class NativeWebSockets {
     this._callbacks = { open: [], close: [], message: [], error: [] };
     this.readyState = 0;          // CONNECTING
     this.sent = [];
+    /* Registro: la prueba usa el último socket creado para simular un
+       mensaje entrante (y así probar el camino WS → aviso). */
+    instances.push(this);
   }
   on(event, cb) {
     if (!this._callbacks[event]) this._callbacks[event] = [];

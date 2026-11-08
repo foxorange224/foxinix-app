@@ -10,6 +10,7 @@ import { store, go, goReplace, toast } from './core/store.js';
 import { t } from './core/i18n.js';
 import { loadChats, openChat, sendText } from './core/actions.js';
 import { startWS, stopWS } from './core/realtime.js';
+import { askNotificationPermission, setupNotifications } from './notifier';
 
 /* El objeto `android` solo existe en el runtime de Android. */
 declare const android: any;
@@ -17,6 +18,10 @@ declare const android: any;
 /* Arranque: carga la sesión guardada y, si hay una válida, entra a la
    app; si no, al login. */
 export async function bootNative(): Promise<void> {
+  /* W100: el notificador se engancha ANTES de abrir el WebSocket: si
+     llega un mensaje con la app en segundo plano, el aviso del sistema
+     tiene que salir. */
+  setupNotifications();
   loadSession();
   if (!store.hasSession) {
     goReplace('login');
@@ -33,11 +38,22 @@ export async function bootNative(): Promise<void> {
     await loadChats();
   } catch (e) { /* la lista se reintenta al abrir la app */ }
   try { startWS(); } catch (e) { /* sin WS: la app sigue funcionando */ }
+  /* W100: permiso de avisos (Android 13+). Se pide una sola vez y sin
+     bloquear el arranque: si el usuario lo deniega, puede activarlo
+     desde Ajustes. */
+  askNotif();
 }
 
 export interface AuthResult {
   needsVerification: boolean;
   email?: string;
+}
+
+/* W100: pide el permiso de avisos del sistema (una sola vez; si el
+   usuario lo deniega, puede reactivarlo desde Ajustes). No bloquea el
+   arranque. */
+function askNotif(): void {
+  askNotificationPermission().catch(() => {});
 }
 
 /* Login: devuelve true si la sesión quedó lista. */
@@ -49,6 +65,9 @@ export async function nativeLogin(identifier: string, password: string): Promise
     return { needsVerification: true, email: r.verification.email_masked || '' };
   }
   goReplace('app');
+  /* Si la app arrancó sin sesión, el permiso se pide recién cuando el
+     usuario entra (no antes). */
+  askNotif();
   return { needsVerification: false };
 }
 
@@ -59,6 +78,7 @@ export async function nativeRegister(username: string, email: string, password: 
     applyAuth({ user: r.user, tokens: r.tokens });
     if (!r.verification || !r.verification.required) {
       goReplace('app');
+      askNotif();
       return { needsVerification: false };
     }
     store.pendingEmail = r.verification.email_masked || email;
@@ -66,6 +86,7 @@ export async function nativeRegister(username: string, email: string, password: 
     return { needsVerification: true, email: r.verification.email_masked || email };
   }
   goReplace('app');
+  askNotif();
   return { needsVerification: false };
 }
 

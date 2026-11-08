@@ -100,6 +100,19 @@
           />
         </GridLayout>
 
+        <!-- ===== Avisos ===== -->
+        <Label class="fox-sec" text="Avisos" />
+        <GridLayout class="fox-row" columns="*,auto" rows="auto">
+          <Label class="fox-row-title" col="0" row="0" text="Notificaciones" />
+          <Label class="fox-row-sub" col="1" row="0" :text="notifState" />
+        </GridLayout>
+        <Button
+          v-if="notifState !== 'Concedido'"
+          class="fox-btn"
+          :text="notifState === 'Bloqueado' ? 'Abrir ajustes del sistema' : 'Activar notificaciones'"
+          @tap="askNotif"
+        />
+
         <!-- ===== Cuenta ===== -->
         <Label class="fox-sec" text="Cuenta" />
         <GridLayout class="fox-row" columns="*,auto" rows="auto,auto">
@@ -117,13 +130,48 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'nativescript-vue';
+  import { ref, computed, onMounted } from 'nativescript-vue';
   import { store, setFont, setPref, setPrefStr } from '../core/store.js';
   import { session } from '../core/api.js';
   import { nativeLogout } from '../fox';
   import { back } from '../nav';
+  import {
+    askNotificationPermission,
+    notificationState,
+    openNotificationSettings,
+  } from '../notifier';
 
   const err = ref('');
+
+  /* W100: estado del permiso de avisos (el sistema lo concede en
+     Android 13+; en Ajustes se puede volver a pedir o abrir los ajustes
+     del sistema si está bloqueado). */
+  const notifState = ref('Pendiente');
+
+  function notifLabel(p: string): string {
+    if (p === 'granted') return 'Concedido';
+    if (p === 'denied') return 'Bloqueado';
+    if (p === 'prompt') return 'Pendiente';
+    return 'No disponible';
+  }
+
+  onMounted(async () => {
+    notifState.value = notifLabel(await notificationState());
+  });
+
+  async function askNotif() {
+    if (notifState.value === 'Bloqueado') {
+      /* Si el usuario lo bloqueó, el sistema no vuelve a mostrar el
+         diálogo: hay que ir a los ajustes del sistema. */
+      if (!openNotificationSettings()) {
+        const r = await askNotificationPermission(true);
+        notifState.value = notifLabel(r);
+      }
+      return;
+    }
+    const r = await askNotificationPermission(true);
+    notifState.value = notifLabel(r);
+  }
 
   /* Las preferencias viven en el store compartido: el núcleo las usa
      igual que en la web (sonido, recibos, estilo de emojis…). */
