@@ -158,7 +158,7 @@ Requisitos de Android 14+ (API 34), que ya van en el manifest:
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
 ...
-<service android:name="io.foxinix.app.FoxinixService"
+<service android:name="io.foxinix.nativa.FoxinixService"
          android:exported="false"
          android:foregroundServiceType="specialUse">
     <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"

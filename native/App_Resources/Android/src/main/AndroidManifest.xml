@@ -50,7 +50,7 @@
 		     pide la propiedad PROPERTY_SPECIAL_USE_FGS_SUBTYPE y el
 		     permiso FOREGROUND_SERVICE_SPECIAL_USE (arriba). -->
 		<service
-			android:name="io.foxinix.app.FoxinixService"
+			android:name="io.foxinix.nativa.FoxinixService"
 			android:exported="false"
 			android:foregroundServiceType="specialUse">
 			<property

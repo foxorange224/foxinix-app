@@ -1,7 +1,10 @@
 import { NativeScriptConfig } from '@nativescript/core';
 
 export default {
-  id: 'io.foxinix.app',
+  /* Id propio: la app webview (Tauri) usa io.foxinix.app, así que la
+     app nativa lleva otro id y las DOS pueden estar instaladas en el
+     mismo teléfono (mismo nombre visible: "Foxinix"). */
+  id: 'io.foxinix.nativa',
   appPath: 'app',
   appResourcesPath: 'App_Resources',
   android: {

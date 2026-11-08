@@ -322,10 +322,10 @@ async function run() {
     JSON.stringify(scalls.map((c) => c[0])));
   ok('el intent apunta al servicio de Foxinix',
     !!(sstart && sstart[1].component &&
-      sstart[1].component.cls === 'io.foxinix.app.FoxinixService'),
+      sstart[1].component.cls === 'io.foxinix.nativa.FoxinixService'),
     sstart && sstart[1].component ? sstart[1].component.cls : 'sin intent');
   ok('la acción del intent es START',
-    !!(sstart && String(sstart[1].action).indexOf('START') > 0),
+    !!(sstart && sstart[1].action === 'io.foxinix.nativa.action.START'),
     sstart ? String(sstart[1].action) : '');
   coreStub.Application.__emit(coreStub.Application.resumeEvent);
   await sleep(80);

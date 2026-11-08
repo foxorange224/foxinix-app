@@ -1,4 +1,4 @@
-package io.foxinix.app;
+package io.foxinix.nativa;
 
 /* FoxinixService — servicio en primer plano (W101).
  *
@@ -42,8 +42,10 @@ import android.os.IBinder;
 
 public class FoxinixService extends Service {
 
-    public static final String ACTION_START = "io.foxinix.app.action.START";
-    public static final String ACTION_STOP = "io.foxinix.app.action.STOP";
+    /* Las acciones las arma service.ts con el nombre del paquete:
+       io.foxinix.nativa.action.START / .STOP */
+    public static final String ACTION_START = "io.foxinix.nativa.action.START";
+    public static final String ACTION_STOP = "io.foxinix.nativa.action.STOP";
     public static final String CHANNEL_ID = "foxinix_background";
     private static final int NOTIFICATION_ID = 1001;
 

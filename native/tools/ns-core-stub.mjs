@@ -150,7 +150,7 @@ export const Application = {
    prueba pueda comprobar que se arrancan y se paran. */
 const ctxCalls = [];
 const appContext = {
-  getPackageName() { return 'io.foxinix.app'; },
+  getPackageName() { return 'io.foxinix.nativa'; },
   startForegroundService(i) { ctxCalls.push(['startForegroundService', i]); },
   startService(i) { ctxCalls.push(['startService', i]); },
   stopService(i) { ctxCalls.push(['stopService', i]); },

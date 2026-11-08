@@ -21,14 +21,25 @@
 #   valores, para que los plugins (notificaciones push, audio, selector de
 #   archivos…) compilen con la misma cadena de herramientas que la app.
 #
-# USO:  sudo bash tools/fix-ns-cli-gradle.sh
-#       (es idempotente: si ya está aplicado, no toca nada)
+# USO:  sudo bash tools/fix-ns-cli-gradle.sh [ruta-del-cli]
+#       (por defecto busca el CLI con `npm root -g`; es idempotente:
+#        si ya está aplicado, no toca nada)
 
 set -euo pipefail
 
-CLI_CONSTANTS="/usr/lib/node_modules/nativescript/lib/constants.js"
 GRADLE_VERSION="8.14.3"
 AGP_VERSION="8.12.1"
+
+CLI_DIR="${1:-}"
+if [ -z "$CLI_DIR" ]; then
+  NPM_ROOT="$(npm root -g 2>/dev/null || true)"
+  if [ -n "$NPM_ROOT" ] && [ -d "$NPM_ROOT/nativescript" ]; then
+    CLI_DIR="$NPM_ROOT/nativescript"
+  else
+    CLI_DIR="/usr/lib/node_modules/nativescript"
+  fi
+fi
+CLI_CONSTANTS="$CLI_DIR/lib/constants.js"
 
 if [ ! -f "$CLI_CONSTANTS" ]; then
   echo "No se encontró el CLI en $CLI_CONSTANTS"
