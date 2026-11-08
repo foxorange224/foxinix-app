@@ -69,6 +69,9 @@ function closure(entries) {
   while (queue.length) {
     const rel = queue.shift();
     if (seen.has(rel)) continue;
+    /* vue.js es el puente de Vue para NS: lo genera el paso 3, no se
+       copia el de la web (que devuelve el global Vue del navegador). */
+    if (rel === 'vue.js') continue;
     const src = readWeb(rel);
     seen.add(rel);
     if (rel.startsWith('platform/')) continue;
