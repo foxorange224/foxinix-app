@@ -152,6 +152,9 @@ jobs:
           - target: armv7
             arch: armv7
             rust: armv7-linux-androideabi
+          - target: x86_64
+            arch: x86_64
+            rust: x86_64-linux-android
     steps:
       - uses: actions/checkout@v4
 
@@ -277,10 +280,48 @@ jobs:
             - **Windows 10/11:** `Foxinix-*-windows-x64-setup.exe`
             - **Android 7 o superior (64 bits):** `Foxinix-*-android-arm64.apk`
             - **Android 7 o superior (32 bits):** `Foxinix-*-android-armv7.apk`
+            - **Android en emulador (x86_64):** `Foxinix-*-android-x86_64.apk`
+            - **App nativa (nueva, Android):** `Foxinix-*-nativo-android.apk`
 
-            La app usa la misma interfaz web que
-            https://foxinix.qzz.io/. Los APK de Android están firmados
-            y cubren dispositivos arm64 y armv7 (32 bits).
+            Los APK de Android (arm64, armv7 y x86_64) llevan la interfaz
+            web de https://foxinix.qzz.io/ y están firmados.
+
+            ## Novedades v0.2.3
+            - **App nativa nueva (Android):** `Foxinix-0.2.3-nativo-android.apk`
+              es Foxinix reescrito con **NativeScript 9 + Vue 3**: no es la
+              web en un WebView, son vistas nativas que comparten el mismo
+              núcleo de lógica que la web (API, store, i18n, tiempo real).
+              Trae login/registro/verificación, lista de chats,
+              conversación, Personas, grupo nuevo, perfil y Ajustes.
+            - **En la app nativa:** envío de **imágenes y archivos** (selector
+              del sistema, sin permisos de almacenamiento), **avisos del
+              sistema** (canal "Foxinix", al tocar el aviso se abre el chat y
+              el mensaje exactos) y **servicio en primer plano** propio
+              (sin Firebase) para que la WebSocket siga viva con la app en
+              segundo plano y los avisos lleguen de verdad.
+            - **La imagen dentro de la burbuja** (app nativa): se ve la foto
+              con su pie de foto, respetando la proporción real, y al
+              tocarla se abre a pantalla completa con el original.
+            - **Web:** notas de voz en cola (W99), estado "Ausente"
+              automático a los 3 min de inactividad (W98), app **100% en
+              inglés** con idioma automático del sistema (W97),
+              cache-busting del landing sin depender del Purge de
+              Cloudflare (W96), sin recarga forzada al entrar (W94/W95),
+              corrección de 404 en los formatos compatibles de audio (W93)
+              y deep links y 404 del sitio (W92).
+            - **Arreglo de crash:** abrir un chat con mensajes de sistema
+              ya no rompe la conversación (`sysText` no estaba expuesta a
+              las plantillas).
+            - **Más APK de Android:** ahora también se adjunta el de
+              **x86_64** (además de arm64 y armv7).
+            - **Servidor:** la lista de chats desempata por id del último
+              mensaje (orden estable).
+
+            > La app nativa es una **prerelease**: es un APK de depuración
+            > (117 MB, firmado con la clave de debug) y convive con la app
+            > normal porque tiene otro paquete (`io.foxinix.app` frente a
+            > `io.foxinix.desktop`). Se puede instalar sin problemas las
+            > dos a la vez.
 
             ## Novedades v0.2.2
             - **Dominio unificado:** la app carga ahora
@@ -322,6 +363,10 @@ jobs:
               Aplicaciones > Foxinix > Permisos > Notificaciones.
             - Para actualizar en Android hace falta conservar la misma clave
               de firma. Las claves no se publican.
+            - La APK nativa (NativeScript) va firmada con la clave de
+              depuración: no sirve para publicar en Play, pero se instala
+              sin problema para probarla.
           files: dist/*
           fail_on_unmatched_files: true
           generate_release_notes: false
+          prerelease: true
