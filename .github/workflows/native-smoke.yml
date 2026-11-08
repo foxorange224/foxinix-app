@@ -55,6 +55,12 @@ jobs:
 
       - name: Compilar la APK nativa (debug)
         working-directory: native
+        # NS_SKIP_ENV_CHECK: el doctor del CLI exige el binario del
+        # emulador (`emulator -help`) y en este job sólo se compila (el
+        # emulador lo instala el job de capturas). Sin esto el doctor
+        # aborta el build con exit 127.
+        env:
+          NS_SKIP_ENV_CHECK: "1"
         run: |
           npm ci
           npm run sync
