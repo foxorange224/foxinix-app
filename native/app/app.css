@@ -1,0 +1,84 @@
+/* app.css — estilos de Foxinix para la app nativa.
+   La marca es la misma que en la web: acento naranja #ff751f, fondo
+   oscuro #0b141a, burbujas con acento. */
+
+Page {
+  background-color: #0b141a;
+  color: #e8edf2;
+  font-size: 15;
+}
+
+ActionBar {
+  background-color: #0b141a;
+  color: #ff751f;
+  title-text-color: #ff751f;
+}
+
+.fox-title {
+  color: #ff751f;
+  font-size: 34;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 24;
+  margin-bottom: 4;
+}
+
+.fox-sub {
+  color: #8aa0ad;
+  font-size: 14;
+  text-align: center;
+  margin-bottom: 20;
+}
+
+.fox-field {
+  background-color: #16232c;
+  color: #e8edf2;
+  border-radius: 10;
+  border-width: 1;
+  border-color: #24333d;
+  padding: 12;
+  margin-bottom: 12;
+  font-size: 16;
+}
+
+.fox-btn {
+  background-color: #ff751f;
+  color: #12181c;
+  border-radius: 10;
+  padding: 13;
+  font-size: 16;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4;
+}
+
+.fox-btn:disabled {
+  background-color: #7a4420;
+  color: #b9c4cb;
+}
+
+.fox-link {
+  color: #ff751f;
+  text-align: center;
+  margin-top: 16;
+  padding: 8;
+}
+
+.fox-err {
+  color: #ff7b72;
+  font-size: 13;
+  margin-bottom: 10;
+}
+
+.fox-ok {
+  color: #6ee7a8;
+  font-size: 13;
+  margin-bottom: 10;
+}
+
+.fox-card {
+  background-color: #111d25;
+  border-radius: 14;
+  padding: 16;
+  margin: 12;
+}

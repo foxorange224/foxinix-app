@@ -1,0 +1,26 @@
+{
+  "name": "foxinix-native",
+  "main": "app/app.ts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "sync": "node tools/sync-core.mjs",
+    "sync:check": "node tools/sync-core.mjs --check",
+    "prepare:android": "npm run sync && ns prepare android",
+    "build:android": "npm run sync && ns build android",
+    "run:android": "npm run sync && ns run android",
+    "clean": "ns clean"
+  },
+  "dependencies": {
+    "@nativescript/core": "~9.1.0",
+    "nativescript-vue": "^3.1.2"
+  },
+  "devDependencies": {
+    "@nativescript/tailwind": "^4.0.0",
+    "@nativescript/types": "~9.0.0",
+    "@nativescript/webpack": "~5.0.31",
+    "@types/node": "^20.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~6.0.0"
+  }
+}
