@@ -1,5 +1,6 @@
 /* Estado global + router W22 (History API: rutas reales, sin #).
    No importa api.js (sin ciclos). */
+import Vue from './vue.js';
 const { reactive, watch } = Vue;
 import { StorageAdapter } from './platform/storage.js';
 import { DomAdapter } from './platform/dom.js';
