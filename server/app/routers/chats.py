@@ -819,9 +819,13 @@ def list_chats(user: dict = Depends(current_user)) -> dict[str, Any]:
         if brief["last_message"] or c["type"] == "dm" or c["title"]:
             out.append(brief)
     # W13: fijados primero; dentro de cada bloque, por último mensaje.
+    # El desempate es por id del último mensaje (monótono): dos chats con
+    # el MISMO segundo quedan ordenados por lo que pasó después, así un
+    # grupo recién creado no salta por encima de una conversación activa.
     out.sort(
         key=lambda b: (1 if b["pinned"] else 0,
-                       (b["last_message"] or {}).get("created_at", 0)),
+                       (b["last_message"] or {}).get("created_at", 0),
+                       (b["last_message"] or {}).get("id", 0)),
         reverse=True,
     )
     return {"chats": out}
