@@ -1,93 +1,108 @@
 <template>
-  <Page>
-    <ActionBar :title="title">
-      <ActionItem text="Atrás" @tap="back" ios.position="left" />
-    </ActionBar>
+  <!-- W103: conversación con la cabecera de 56px de la web (.chat-head),
+       las filas de mensaje con su columna de avatar (.msg) y el
+       compositor redondo (.composer + .send-btn). -->
+  <Page :class="'fox-' + theme">
+    <ActionBar actionBarHidden="true" />
 
-    <GridLayout rows="*,auto">
-      <ScrollView ref="scroller">
-        <StackLayout class="fox-msgs">
-          <Label v-if="loading" class="fox-empty" text="Cargando mensajes…" />
+    <GridLayout rows="auto,*,auto" class="chat-page">
+      <!-- ---------- cabecera ---------- -->
+      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto">
+        <FoxIconBtn col="0" icon="back" bare :tint="muted" @tap="back" />
+        <FoxAvatar col="1" :src="peerAvatar" :initial="peerInitial"
+                   :size="38" :dot="peerDot" :ring="chatRing" />
+        <StackLayout col="2" class="ch-col">
+          <Label class="ch-name" :text="title" textWrap="false" />
+          <Label class="ch-status" :text="statusLine" textWrap="false" />
+        </StackLayout>
+        <Label v-if="store.ws !== 'on'" col="3" class="ws-pill"
+               :text="wsLabel" textWrap="false" />
+      </GridLayout>
 
-          <StackLayout
-            v-for="m in messages"
-            :key="m.id"
-            class="fox-msg-wrap"
-            :horizontalAlignment="isMine(m) ? 'right' : 'left'"
-          >
-            <!-- mensaje de sistema -->
-            <Label
-              v-if="m.kind === 'system'"
-              class="fox-sys"
-              :text="m.body"
-              textWrap="true"
-            />
-            <!-- burbuja normal -->
-            <StackLayout
-              v-else
-              class="fox-bubble"
-              :class="isMine(m) ? 'mine' : 'theirs'"
-            >
-              <Label
-                v-if="!isMine(m) && chatType === 'group'"
-                class="fox-sender"
-                :text="senderName(m)"
-              />
-              <!-- W102: la imagen se ve DENTRO de la burbuja (con su
-                   pie de foto si lo tiene). Al tocarla se abre a
-                   pantalla completa. -->
-              <Image
-                v-if="isImage(m)"
-                class="fox-img"
-                :src="imgSrc(m)"
-                :width="imgSize(m).w"
-                :height="imgSize(m).h"
-                stretch="aspectFit"
-                @tap="openImage(m)"
-              />
-              <Label
-                v-if="bodyOf(m)"
-                class="fox-body"
-                :text="bodyOf(m)"
-                textWrap="true"
-              />
-              <Label class="fox-time" :text="timeOf(m)" />
+      <!-- ---------- mensajes ---------- -->
+      <ScrollView row="1" ref="scroller">
+        <StackLayout class="msgs">
+          <Label v-if="loading" class="msgs-load" text="Cargando mensajes…"
+                 textWrap="true" />
+
+          <template v-for="r in rows" :key="r.ref.id">
+            <!-- separador de día -->
+            <Label v-if="r.day" class="day-pill" :text="r.day" textWrap="false" />
+
+            <!-- mensaje de sistema: centrado, sin columna -->
+            <Label v-if="r.ref.kind === 'system'" class="sys-msg"
+                   :text="r.ref.body" textWrap="true" />
+
+            <!-- fila normal: [avatar ajeno] [burbuja] [avatar propio]
+                 Las columnas de avatar miden 36px (28 de cara + 8 de
+                 hueco), como en la web. -->
+            <GridLayout v-else class="msg"
+                        :class="{ tight: r.tight, mine: r.mine }"
+                        columns="auto,*,auto">
+              <!-- Columna de avatar del remitente: la web reserva los
+                   mismos 36px aunque la cara no se vea, para que todas
+                   las burbujas del remitente arranquen en la misma
+                   línea. -->
+              <StackLayout v-if="!r.mine" col="0" width="36">
+                <FoxAvatar v-if="r.showAv" :src="avatarUrl(r.avatar)"
+                           :initial="r.avatar ? r.avatar.ini : '?'" :size="28"
+                           :ring="chatRing" flat />
+              </StackLayout>
+
+              <StackLayout col="1"
+                           :horizontalAlignment="r.mine ? 'right' : 'left'">
+                <Label v-if="r.showSender" class="b-sender"
+                       :text="r.avatar ? r.avatar.name : ''" textWrap="false"
+                       horizontalAlignment="left" />
+                <StackLayout class="bubble" :class="{ mine: r.mine }"
+                             :maxWidth="maxBubble">
+                  <!-- W102: la imagen se ve DENTRO de la burbuja -->
+                  <Image v-if="isImage(r.ref)" class="b-img"
+                         :src="imgSrc(r.ref)" :width="imgSize(r.ref).w"
+                         :height="imgSize(r.ref).h" stretch="aspectFit"
+                         @tap="openImage(r.ref)" />
+                  <Label v-if="bodyOf(r.ref)" class="b-body"
+                         :class="{ 'on-me': r.mine }" :text="bodyOf(r.ref)"
+                         textWrap="true" horizontalAlignment="stretch" />
+                  <Label v-if="r.showTime || r.ref.pending" class="b-meta"
+                         :class="{ 'on-me': r.mine }" :text="timeOf(r.ref)"
+                         textWrap="false" />
+                </StackLayout>
+              </StackLayout>
+
+              <!-- avatar propio: a la derecha, como en la web -->
+              <StackLayout v-if="r.mine" col="2" width="36">
+                <FoxAvatar v-if="r.showTime" :src="myAvatar"
+                           :initial="myInitial" :size="28" marginLeft="8"
+                           :ring="chatRing" flat />
+              </StackLayout>
+            </GridLayout>
+          </template>
+
+          <!-- "escribiendo…" (mismo aviso que en la web) -->
+          <GridLayout v-if="typingActive" class="msg" columns="auto,*,auto">
+            <StackLayout col="0" width="36">
+              <FoxAvatar :src="peerAvatar" :initial="peerInitial" :size="28"
+                         :ring="chatRing" flat />
             </StackLayout>
-          </StackLayout>
+            <Label col="1" class="sys-msg" text="escribiendo…"
+                   horizontalAlignment="left" textWrap="false" />
+            <StackLayout col="2" width="36" />
+          </GridLayout>
         </StackLayout>
       </ScrollView>
 
-      <!-- compositor -->
-      <GridLayout class="fox-composer" columns="auto,*,auto" rows="auto">
-        <!-- adjuntar archivo (imágenes, documentos…) -->
-        <Button
-          class="fox-attach"
-          col="0"
-          row="0"
-          text="📎"
-          :enabled="!sendingFile"
-          @tap="attach"
-        />
-        <TextField
-          class="fox-input"
-          col="1"
-          row="0"
-          :text="draft"
-          hint="Mensaje"
-          multiline="false"
-          autocorrect="true"
-          :editable="!sending"
-          @textChange="draft = $event.value"
-          @submit="send"
-        />
-        <Button
-          class="fox-send"
-          col="2"
-          row="0"
-          text="Enviar"
-          :enabled="!!draft.trim() && !sending"
-          @tap="send"
-        />
+      <!-- ---------- compositor ---------- -->
+      <GridLayout row="2" class="composer" columns="auto,*,auto">
+        <FoxIconBtn col="0" class="composer-attach" icon="clip" bare
+                    :tint="muted" @tap="attach" />
+        <TextField col="1" class="composer-input" :text="draft"
+                   hint="Mensaje" autocorrect="true" :editable="!sending"
+                   @textChange="draft = $event.value" @submit="send"
+                   returnKeyType="send" />
+        <FoxIconBtn col="2" class="send-btn" icon="send"
+                    :class="{ muted: !canSend }" :tint="sendTint"
+                    @tap="send" />
       </GridLayout>
     </GridLayout>
   </Page>
@@ -95,11 +110,18 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'nativescript-vue';
+  import { Screen } from '@nativescript/core';
   import { store, toast } from '../core/store.js';
-  import { openChat, sendText, closeChat, sendMedia } from '../core/actions.js';
+  import {
+    openChat, sendText, closeChat, sendMedia, mediaUrl,
+  } from '../core/actions.js';
+  import { t } from '../core/i18n.js';
+  import { dayKey, dayLabel, fmtTime, connLine, dotState, tok } from '../fmt';
   import { pickFile } from '../files';
   import { imageBox, imageUrl, isImageMsg } from '../img';
   import { openMedia } from '../nav';
+  import FoxAvatar from '../components/FoxAvatar.vue';
+  import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   const draft = ref('');
   const sending = ref(false);
@@ -113,26 +135,148 @@
     return null;
   });
 
+  const theme = computed(() => store.theme);
+
+  /* Colores que dependen del tema. */
+  const muted = computed(() => tok(store.theme, 't2'));
+  const chatRing = computed(() => tok(store.theme, 'chatBg'));
+  /* Icono del enviar: oscuro sobre el naranja (on-accent); apagado cuando
+     no se puede enviar. */
+  const sendTint = computed(() => {
+    if (!canSend.value) return muted.value;
+    return tok(store.theme, 'onAccent');
+  });
+
   const title = computed(() => {
     const c = chat.value;
     if (!c) return 'Chat';
     if (c.type === 'group') {
-      const t = c.title || {};
-      return t.display_name || 'Grupo';
+      const tt = c.title || {};
+      return tt.display_name || tt.name || t('Grupo');
     }
-    const t = c.title || {};
-    return t.display_name || t.username || 'Chat';
+    const tt = c.title || {};
+    return tt.display_name || tt.username || 'Chat';
   });
 
   const chatType = computed(() => (chat.value && chat.value.type) || 'dm');
+
+  /* Foto / letra del peer (o del grupo). */
+  const peerAvatar = computed(() => {
+    const c: any = chat.value;
+    if (!c) return '';
+    const url = c.type === 'dm' ? (c.title && c.title.avatar_url) : c.avatar_url;
+    return url ? mediaUrl(url) : '';
+  });
+  const peerInitial = computed(() =>
+    title.value ? title.value.charAt(0).toUpperCase() : '?');
+  const peerDot = computed(() => {
+    const c: any = chat.value;
+    return c && c.type === 'dm' ? dotState(c.title || null) : '';
+  });
+  const myAvatar = computed(() => {
+    const u: any = store.user;
+    return u && u.avatar_url ? mediaUrl(u.avatar_url) : '';
+  });
+  const myInitial = computed(() => {
+    const u: any = store.user;
+    const n = u && (u.display_name || u.username);
+    return n ? String(n).charAt(0).toUpperCase() : '?';
+  });
+
+  /* Línea de estado: "escribiendo…", participantes o última vez. */
+  const statusLine = computed(() => {
+    const c: any = chat.value;
+    if (!c) return '';
+    if (typingActive.value) return t('escribiendo…');
+    if (c.type === 'group') {
+      const n = c.member_count || 0;
+      return t('{n} participante{p}', { n: n, p: n === 1 ? '' : 's' });
+    }
+    return connLine(c.title || null);
+  });
+
+  const wsLabel = computed(() =>
+    store.ws === 'connecting' ? t('Conectando…') : t('Sin conexión'));
+
+  /* ¿Hay alguien escribiendo en este chat? (excluyo mi usuario) */
+  const typingActive = computed(() => {
+    const bag = (store.typing || {})[store.activeChatId] || {};
+    const meId = store.user && store.user.id;
+    for (const k in bag) if (String(k) !== String(meId)) return true;
+    return false;
+  });
 
   const messages = computed(() => {
     const id = store.activeChatId;
     return (store.msgs && store.msgs[id]) || [];
   });
 
+  const canSend = computed(() => !!draft.value.trim() && !sending.value);
+
+  /* Tope de la burbuja: 88% del ancho útil, como en la web. */
+  const maxBubble = computed(() =>
+    Math.round((Screen.mainScreen.widthDIPs - 24) * 0.88));
+
   function isMine(m: any): boolean {
     return !!(store.user && m.sender && m.sender.id === store.user.id);
+  }
+
+  /* Filas: misma lógica que rows() de chat-shell.js (tanda apretada,
+     hora sólo al final del minuto, nombre del emisor, columna de
+     avatar y separador de día). */
+  const rows = computed(() => {
+    const arr = messages.value;
+    const out: any[] = [];
+    const isGroup = chatType.value === 'group';
+    const meId = store.user && store.user.id;
+    let prevDay: string | null = null;
+    for (let i = 0; i < arr.length; i++) {
+      const m = arr[i];
+      const p = i > 0 ? arr[i - 1] : null;
+      const n = i + 1 < arr.length ? arr[i + 1] : null;
+      const d = new Date(m.created_at * 1000);
+      const dk = dayKey(d);
+      const mine = !!(m.sender && meId && m.sender.id === meId);
+      const sameSender = !!(p && p.sender && m.sender
+        && p.sender.id === m.sender.id);
+      const tight = !!(p && sameSender && dk === prevDay
+        && m.kind !== 'system' && p.kind !== 'system'
+        && m.created_at - p.created_at < 600);
+      const sameRun = !!(n && n.sender && m.sender
+        && n.sender.id === m.sender.id && n.kind !== 'system'
+        && m.kind !== 'system');
+      const showTime = !sameRun
+        || Math.floor(n.created_at / 60) !== Math.floor(m.created_at / 60);
+      const withName = isGroup && !mine && m.kind !== 'system'
+        && !!m.sender && (!tight || !!m.reply_to);
+      /* La cara se ve en la primera fila de la tanda (donde aparece el
+         nombre) y en la última del minuto (donde aparece la hora); en
+         los mensajes propios, cuando aparece la hora. */
+      const showAv = m.kind !== 'system'
+        && (mine ? showTime : (showTime || withName));
+      out.push({
+        ref: m,
+        day: dk !== prevDay ? dayLabel(d) : null,
+        tight: tight,
+        mine: mine,
+        avCol: m.kind !== 'system',
+        showAv: showAv,
+        avatar: m.sender ? {
+          url: m.sender.avatar_url || '',
+          ini: (m.sender.display_name || m.sender.username || '?')
+            .charAt(0).toUpperCase(),
+          name: m.sender.display_name || m.sender.username || '',
+        } : null,
+        showSender: withName,
+        showTime: showTime,
+      });
+      prevDay = dk;
+    }
+    return out;
+  });
+
+  function avatarUrl(a: any): string {
+    return a && a.url ? mediaUrl(a.url) : '';
   }
 
   function senderName(m: any): string {
@@ -186,10 +330,7 @@
 
   function timeOf(m: any): string {
     if (!m.created_at) return '';
-    const d = new Date(m.created_at * 1000);
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return hh + ':' + mm;
+    return fmtTime(new Date(m.created_at * 1000));
   }
 
   function scrollToEnd() {
@@ -251,112 +392,3 @@
     scrollToEnd();
   });
 </script>
-
-<style>
-.fox-msgs {
-  padding: 12;
-}
-
-.fox-msg-wrap {
-  margin-bottom: 8;
-}
-
-.fox-bubble {
-  max-width: 300;
-  border-radius: 12;
-  padding: 8 12;
-}
-
-.fox-bubble.mine {
-  background-color: #ff751f;
-}
-
-.fox-bubble.theirs {
-  background-color: #16232c;
-}
-
-.fox-sender {
-  color: #ff751f;
-  font-size: 12;
-  font-weight: 600;
-  margin-bottom: 2;
-}
-
-/* W102: la imagen dentro de la burbuja. El tamaño lo fija la vista
-   (imageBox: conserva la proporción real del server, tope 220×300). */
-.fox-img {
-  border-radius: 8;
-  margin: 2 0;
-}
-
-.fox-body {
-  color: #eef3f6;
-  font-size: 15;
-}
-
-.fox-bubble.mine .fox-body {
-  color: #12181c;
-}
-
-.fox-time {
-  color: #7d909c;
-  font-size: 10;
-  text-align: right;
-  margin-top: 2;
-}
-
-.fox-bubble.mine .fox-time {
-  color: #4a2c12;
-}
-
-.fox-sys {
-  color: #7d909c;
-  font-size: 12;
-  text-align: center;
-  margin: 8 0;
-}
-
-.fox-empty {
-  color: #8aa0ad;
-  text-align: center;
-  margin-top: 30;
-}
-
-.fox-composer {
-  padding: 8;
-  background-color: #111d25;
-}
-
-.fox-input {
-  background-color: #16232c;
-  color: #e8edf2;
-  border-radius: 10;
-  border-width: 1;
-  border-color: #24333d;
-  padding: 10;
-  font-size: 15;
-  margin-right: 8;
-}
-
-.fox-attach {
-  background-color: transparent;
-  color: #8aa0ad;
-  font-size: 20;
-  width: 40;
-  padding: 6;
-  margin-right: 4;
-  android-textAllCaps: false;
-}
-
-.fox-attach:disabled {
-  color: #56666f;
-}
-
-.fox-send {
-  background-color: #ff751f;
-  color: #12181c;
-  border-radius: 10;
-  padding: 10 16;
-  font-weight: 600;
-}
-</style>

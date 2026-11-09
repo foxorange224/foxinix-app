@@ -2,7 +2,13 @@
   <!-- La raíz es un GridLayout para poder poner los avisos (toasts)
      ENCIMA de las vistas: en NS no hay un portal ni un z-index como en
      la web. -->
-  <GridLayout rows="*,auto" :fontSize="fontSize">
+  <!-- W103: la raíz lleva las dos clases: el tema (tokens --bg, --panel…)
+       y el tamaño de letra. El tema va aquí para que TODAS las vistas
+       hereden los tokens (también las que todavía no se rediseñaron),
+       y el tamaño de letra porque font-size es heredado y así el
+       usuario lo nota en toda la app. -->
+  <GridLayout rows="*,auto"
+              :class="'fs-' + (store.font || 'normal') + ' fox-' + (store.theme || 'dark')">
     <Frame row="0">
       <LoginView v-if="route === 'login'" />
       <RegisterView v-else-if="route === 'register'" />
@@ -47,14 +53,10 @@
   const route = computed(() => store.route || 'login');
   const activeChatId = computed(() => store.activeChatId || 0);
 
-  /* Tamaño de letra (preferencia del núcleo): en NS no hay CSS, así que
-     se aplica como propiedad del layout raíz (hereda a los hijos). */
-  const fontSize = computed(() => {
-    const f = store.font || 'normal';
-    if (f === 'small') return 13;
-    if (f === 'large') return 18;
-    return 15;
-  });
+  /* Tamaño de letra (preferencia del núcleo): la clase .fs-* va en el
+     layout raíz y font-size es heredado en NS, así que llega a todos
+     los textos. (Poner :fontSize en un layout no sirve: fontSize sólo
+     está proxyado en TextBase.) */
 
   onMounted(() => {
     bootNative();

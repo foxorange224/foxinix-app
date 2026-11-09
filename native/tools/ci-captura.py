@@ -55,13 +55,16 @@ def nodes(xml: str) -> list[dict]:
     return out
 
 
-def find(xml: str, *, cls: str = "", text: str = "", contains: str = "") -> dict | None:
+def find(xml: str, *, cls: str = "", text: str = "", contains: str = "",
+         desc: str = "") -> dict | None:
     for n in nodes(xml):
         if cls and not n.get("class", "").endswith(cls):
             continue
         if text and n.get("text", "") != text:
             continue
         if contains and contains.lower() not in n.get("text", "").lower():
+            continue
+        if desc and not n.get("content-desc", "").startswith(desc):
             continue
         return n
     return None
@@ -121,11 +124,15 @@ def main() -> int:
     shot(out_dir, "2-tras-login")
 
     # Si hay lista de chats, se abre el primero para ver la conversación.
+    # Las filas llevan accessibilityLabel="chat: <nombre>" (W103), así que
+    # se buscan por content-desc y no por el texto de un chat en concreto.
     xml = dump()
-    row = find(xml, contains="nsprobe") or find(xml, contains="Prueba")
+    row = find(xml, desc="chat:") or find(xml, contains="nsprobe")
     if tap(row):
         time.sleep(6)
         shot(out_dir, "3-conversacion")
+    else:
+        print("no se encontró ninguna fila de chat para abrir")
 
     print("== logcat ==")
     log = sh("adb", "logcat", "-d", "-t", "300")

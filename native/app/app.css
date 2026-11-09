@@ -1,84 +1,674 @@
-/* app.css — estilos de Foxinix para la app nativa.
-   La marca es la misma que en la web: acento naranja #ff751f, fondo
-   oscuro #0b141a, burbujas con acento. */
+/* app.css — Foxinix nativo, con los MISMOS tokens que la web.
 
+   W103: la app nativa se ve como la web. La fuente de verdad es
+   landing/static/css/app.css (temas dark / light / black): los valores
+   de acá salen de ahí y hay que mantenerlos iguales.
+
+   NS no tiene flexbox ni pseudo-elementos: las filas, cabeceras y
+   burbujas se arman con GridLayout/StackLayout en el template y acá
+   sólo viven colores, tipografía, radios, bordes y espaciado.
+
+   OJO con lo que SÍ se puede poner como atributo en el template (NS-Vue
+   hace `view[prop] = value`): width, height, margin, padding, color,
+   backgroundColor, borderRadius, borderWidth, borderColor, opacity,
+   visibility, horizontalAlignment, verticalAlignment, textWrap, src,
+   stretch, tintColor. fontSize/fontWeight NO están en View (sólo en
+   TextBase), así que en layouts van por CSS. */
+
+/* ============================================================
+   Tokens (tema oscuro por defecto)
+
+   OJO: los tokens van en una CLASE, no en el selector `Page`. La
+   clase va en el layout raíz de App.vue (y también en cada <Page>),
+   así que:
+     - las vistas que todavía no se rediseñaron (registro, ajustes,
+       personas…) heredan el tema del raíz;
+     - el `font-size` del usuario no lo pisa nadie (font-size es
+       heredado: si `Page` lo fijara, la preferencia de letra sería
+       inútil).
+   ============================================================ */
+
+.fox-dark {
+  --bg: #1e1f22;             /* fondo profundo */
+  --panel: #2b2d31;          /* sidebar / cabeceras */
+  --panel2: #383a40;         /* elevado: inputs, chips */
+  --header: #2b2d31;
+  --border: #3f4147;
+  --t0: #f2f3f5;             /* encabezados */
+  --t1: #dbdee1;             /* cuerpo */
+  --t2: #a3a3a3;             /* meta / muted */
+  --accent: #ff751f;
+  --accent-d: #b85416;       /* fondo de la burbuja propia */
+  --accent-hover: #ff8a3d;
+  --on-accent: #1c0e03;
+  --err: #f23f43;
+  --err-bg: #35222a;
+  --ok: #00a8fc;
+  --radius: 8px;
+  --chat-bg: #313338;
+  --bubble-you: #2b2d31;
+  --bubble-me: #b85416;
+  --sel: #4e5058;
+  --row-hover: rgba(78, 80, 88, .3);
+  --online: #23a55a;
+  --st-busy: #f0b232;
+  --st-dnd: #f23f43;
+  --st-off: #80848e;
+  --st-ring: #2b2d31;        /* aro del puntito: superficie contenedora */
+
+  color: #dbdee1;
+}
+
+/* W65: tema claro y negro puro. */
+.fox-light {
+  --bg: #e3e5e8;
+  --panel: #f2f3f5;
+  --panel2: #e3e5e8;
+  --header: #f2f3f5;
+  --border: #dcddde;
+  --t0: #060607;
+  --t1: #313338;
+  --t2: #5c5e66;
+  --accent: #a33f12;
+  --accent-d: #b85416;
+  --accent-hover: #7c2d12;
+  --on-accent: #ffffff;
+  --err: #d32f2f;
+  --err-bg: #fdecee;
+  --ok: #006ce7;
+  --chat-bg: #ffffff;
+  --bubble-you: #f2f3f5;
+  --sel: #d7d9dc;
+  --row-hover: rgba(6, 6, 7, .07);
+  --st-ring: #f2f3f5;
+
+  color: #313338;
+}
+
+.fox-black {
+  --bg: #000000;
+  --panel: #080808;
+  --panel2: #191919;
+  --header: #000000;
+  --border: #262626;
+  --t0: #ffffff;
+  --t1: #e7e7e7;
+  --t2: #9a9a9a;
+  --chat-bg: #000000;
+  --bubble-you: #141414;
+  --sel: #333333;
+  --row-hover: rgba(255, 255, 255, .075);
+  --st-ring: #000000;
+
+  color: #e7e7e7;
+}
+
+/* El fondo de cada pantalla sale del token del tema. */
 Page {
-  background-color: #0b141a;
-  color: #e8edf2;
-  font-size: 15;
+  background-color: var(--bg);
 }
 
+/* Tamaño de letra (preferencia del núcleo). Va en el layout raíz:
+   fontSize no está proxyado en los layouts, sólo en TextBase, así
+   que se aplica por CSS (font-size sí se hereda). */
+.fs-small { font-size: 13; }
+.fs-normal { font-size: 15; }
+.fs-large { font-size: 18; }
+
+/* ============================================================
+   Avatares (FoxAvatar) — el .avatar de la web
+   ============================================================ */
+
+.avatar {
+  background-color: var(--accent);
+}
+
+.avatar.has-photo {
+  background-color: transparent;
+}
+
+/* Avatar de mensaje (.msg-av): disco gris y letra apagada. */
+.avatar.flat {
+  background-color: var(--panel2);
+}
+
+.av-ini {
+  color: var(--on-accent);
+  font-weight: 600;
+  text-align: center;
+}
+
+.avatar.flat .av-ini {
+  color: var(--t2);
+}
+
+
+/* ============================================================
+   Barra de acción (las vistas que todavía no se rediseñaron)
+   ============================================================ */
+
+/* OJO: el color del TÍTULO de la barra en Android sale del tema
+   (styles.xml: android:titleTextColor), no de una propiedad CSS. */
 ActionBar {
-  background-color: #0b141a;
-  color: #ff751f;
-  title-text-color: #ff751f;
+  background-color: #2b2d31;
+  color: #dbdee1;
 }
 
-.fox-title {
-  color: #ff751f;
-  font-size: 34;
+.fox-light ActionBar {
+  background-color: #f2f3f5;
+  color: #313338;
+}
+
+.fox-black ActionBar {
+  background-color: #000000;
+  color: #e7e7e7;
+}
+
+/* ============================================================
+   Auth (login / registro / verificación) — estilo .auth-* de la web
+   ============================================================ */
+
+.auth-wrap {
+  background-color: var(--bg);
+  padding: 24 16;
+}
+
+.auth-card {
+  background-color: var(--panel);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 16;
+  padding: 30 26;
+  margin-bottom: 24;
+}
+
+.auth-logo {
+  margin: 0 0 14 0;
+  horizontal-align: center;
+}
+
+.auth-title {
+  color: var(--t0);
+  font-size: 24;
   font-weight: 700;
   text-align: center;
-  margin-top: 24;
+  margin: 0 0 2 0;
+}
+
+/* Ritmo vertical: 2px del título + 16px como en la web
+   (`.auth-title + form { margin-top: 16px }`). */
+.auth-first {
+  margin-top: 16;
+}
+
+.field-label {
+  color: var(--t2);
+  font-size: 13;
   margin-bottom: 4;
 }
 
+.input {
+  background-color: var(--panel2);
+  color: var(--t1);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  padding: 11 12;
+  margin-bottom: 14;
+  font-size: 16;
+  placeholder-color: #a3a3a3;
+}
+
+.form-err {
+  background-color: var(--err-bg);
+  color: var(--err);
+  border-width: 1;
+  border-color: var(--err);
+  border-radius: 8;
+  padding: 9 12;
+  margin-top: 16;
+  font-size: 14;
+  margin-bottom: 14;
+}
+
+.btn {
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border-radius: 8;
+  padding: 13 18;
+  margin-top: 4;
+  font-size: 16;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* NS no tiene pseudo-clase :disabled (no la dispara nadie), así que el
+   estado de "en curso" va por clase. */
+.btn.busy {
+  opacity: .55;
+}
+
+.btn-full {
+  horizontal-align: stretch;
+}
+
+.btn-link {
+  background-color: transparent;
+  border-width: 0;
+  color: var(--accent);
+  font-size: 14;
+  font-weight: 500;
+  text-align: center;
+  padding: 8 4;
+}
+
+.auth-alt {
+  margin-top: 8;
+}
+
+.auth-sep {
+  color: var(--t2);
+  text-align: center;
+  padding: 0 6;
+}
+
+/* ============================================================
+   Cabeceras (side-head / chat-head / mobile-page-head)
+   ============================================================ */
+
+/* Lista de chats: la barra de 56px de la web en móvil. */
+.side-head {
+  background-color: var(--panel);
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+  padding: 0 6 0 14;
+  height: 56;
+}
+
+.sh-title {
+  color: var(--t0);
+  font-size: 18;
+  font-weight: 700;
+  margin-left: 9;
+}
+
+/* Hueco entre botones de la barra (4px como en la web). */
+.side-head .icon-btn {
+  margin-left: 4;
+}
+
+.side-head .avatar {
+  margin-left: 6;
+}
+
+/* Punto rojo parpadeante de "sin conexión" (el de la web es de 8px). */
+.ws-dot {
+  width: 8;
+  height: 8;
+  border-radius: 4;
+  background-color: var(--err);
+  margin-right: 4;
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+/* Cabecera de la conversación: 56px sobre el lienzo del chat. */
+.chat-head {
+  background-color: var(--chat-bg);
+  border-bottom-width: 1;
+  border-bottom-color: rgba(0, 0, 0, .28);
+  padding: 0 6;
+  height: 56;
+}
+
+.ch-col {
+  margin-left: 8;
+}
+
+.ch-name {
+  color: var(--t0);
+  font-size: 16;
+  font-weight: 600;
+}
+
+.ch-status {
+  color: var(--t2);
+  font-size: 13;
+  margin-top: 1;
+}
+
+.ws-pill {
+  background-color: var(--panel2);
+  color: var(--t2);
+  font-size: 12;
+  border-radius: 12;
+  padding: 4 10;
+  margin-left: 8;
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+/* Botón redondo de icono (FoxIconBtn). 40px en cabeceras, como la web. */
+.icon-btn {
+  background-color: transparent;
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+.icon-btn.on {
+  background-color: var(--panel2);
+}
+
+.icon-btn.bare {
+  background-color: transparent;
+}
+
+.icon-btn.muted {
+  background-color: var(--panel2);
+}
+
+/* ============================================================
+   Lista de chats (estilo Discord, como la web)
+   ============================================================ */
+
+.list-page {
+  background-color: var(--panel);
+}
+
+.chat-list {
+  padding: 4 8 12 8;
+}
+
+.chat-item {
+  background-color: transparent;
+  border-radius: 12;
+  padding: 10 8;
+  margin-bottom: 0;
+}
+
+.ci-col {
+  margin-left: 11;
+}
+
+.ci-name {
+  color: var(--t1);
+  font-size: 16;
+  font-weight: 500;
+}
+
+.ci-time {
+  color: var(--t2);
+  font-size: 12;
+  margin-left: 8;
+}
+
+.ci-bot {
+  margin-top: 2;
+}
+
+.ci-prev {
+  color: var(--t2);
+  font-size: 14;
+}
+
+.badge {
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: 12;
+  font-weight: 600;
+  border-radius: 12;
+  padding: 2 6;
+  margin-left: 8;
+  min-width: 20;
+  text-align: center;
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+.ci-menu {
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+.list-empty {
+  color: var(--t2);
+  font-size: 14;
+  text-align: center;
+  padding: 40 22;
+}
+
+/* Aviso de conexión (versión nativa del ws-pill, sólo si no está en on) */
+.ws-strip {
+  background-color: var(--err-bg);
+  color: var(--err);
+  font-size: 12;
+  text-align: center;
+  padding: 5 8;
+}
+
+/* ============================================================
+   Conversación
+   ============================================================ */
+
+.chat-page {
+  background-color: var(--chat-bg);
+}
+
+.msgs {
+  background-color: var(--chat-bg);
+  padding: 14 12 10 12;
+}
+
+.msgs-load {
+  color: var(--t2);
+  font-size: 15;
+  text-align: center;
+  margin-top: 30;
+}
+
+/* Separador de día (píldora centrada, como la web) */
+.day-pill {
+  background-color: var(--panel2);
+  color: var(--t2);
+  font-size: 12;
+  font-weight: 500;
+  border-radius: 8;
+  padding: 4 12;
+  margin: 14 0 4 0;
+  horizontal-align: center;
+}
+
+/* Mensaje de sistema: centrado y apagado */
+.sys-msg {
+  color: var(--t2);
+  font-size: 12;
+  text-align: center;
+  margin: 8 0;
+}
+
+.msg {
+  margin-bottom: 6;
+}
+
+.msg.tight {
+  margin-bottom: 2;
+}
+
+/* Remitente del grupo: naranja, sobre la burbuja */
+.b-sender {
+  color: var(--accent);
+  font-size: 13;
+  font-weight: 600;
+  margin-bottom: 1;
+}
+
+.bubble {
+  background-color: var(--bubble-you);
+  border-radius: 8;
+  padding: 6 9 7 9;
+}
+
+.bubble.mine {
+  background-color: var(--bubble-me);
+}
+
+.b-body {
+  color: var(--t1);
+  font-size: 15;
+}
+
+.b-body.on-me {
+  color: #ffffff;
+}
+
+/* Pie de la burbuja: 12px, a la derecha, SIEMPRE debajo del texto */
+.b-meta {
+  color: var(--t2);
+  font-size: 12;
+  text-align: right;
+  margin-top: 3;
+}
+
+.b-meta.on-me {
+  color: rgba(255, 255, 255, .78);
+}
+
+/* Imagen dentro de la burbuja (W102) */
+.b-img {
+  border-radius: 8;
+  margin: 2 0;
+}
+
+.b-img-cap {
+  color: var(--t2);
+  font-size: 13;
+  margin-top: 2;
+}
+
+.b-img-cap.on-me {
+  color: rgba(255, 255, 255, .78);
+}
+
+/* Columna de avatar de mensaje: 28px + 8px de hueco = 36, como la web */
+.msg-av-col {
+  width: 28;
+}
+
+/* ============================================================
+   Compositor
+   ============================================================ */
+
+.composer {
+  background-color: var(--chat-bg);
+  padding: 8 10;
+  border-top-width: 1;
+  border-top-color: rgba(0, 0, 0, .2);
+}
+
+.composer-input {
+  background-color: var(--panel2);
+  color: var(--t1);
+  border-width: 0;
+  border-radius: 8;
+  padding: 11 14;
+  font-size: 16;
+  margin-right: 8;
+  min-height: 44;
+  placeholder-color: #a3a3a3;
+}
+
+/* Botón de enviar: círculo naranja de 42px con el icono oscuro */
+.send-btn {
+  background-color: var(--accent);
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+.send-btn.muted {
+  background-color: var(--panel2);
+}
+
+.composer-attach {
+  margin-right: 4;
+  vertical-align: center;
+}
+
+/* ============================================================
+   Utilidades heredadas de la app anterior (registro, verificación,
+   perfil, ajustes, personas…). Se conservan para no romper esas
+   vistas; los colores son ahora los de la web.
+   ============================================================ */
+
+.fox-title {
+  color: var(--t0);
+  font-size: 24;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 8;
+  margin-bottom: 2;
+}
+
 .fox-sub {
-  color: #8aa0ad;
+  color: var(--t2);
   font-size: 14;
   text-align: center;
   margin-bottom: 20;
 }
 
 .fox-field {
-  background-color: #16232c;
-  color: #e8edf2;
-  border-radius: 10;
+  background-color: var(--panel2);
+  color: var(--t1);
+  border-radius: 8;
   border-width: 1;
-  border-color: #24333d;
-  padding: 12;
-  margin-bottom: 12;
+  border-color: var(--border);
+  padding: 11 12;
+  margin-bottom: 14;
   font-size: 16;
 }
 
 .fox-btn {
-  background-color: #ff751f;
-  color: #12181c;
-  border-radius: 10;
-  padding: 13;
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border-radius: 8;
+  padding: 13 18;
   font-size: 16;
   font-weight: 600;
   text-align: center;
   margin-top: 4;
 }
 
-.fox-btn:disabled {
-  background-color: #7a4420;
-  color: #b9c4cb;
-}
-
 .fox-link {
-  color: #ff751f;
+  color: var(--accent);
   text-align: center;
   margin-top: 16;
   padding: 8;
+  font-size: 14;
 }
 
 .fox-err {
-  color: #ff7b72;
+  color: var(--err);
   font-size: 13;
   margin-bottom: 10;
 }
 
 .fox-ok {
-  color: #6ee7a8;
+  color: var(--ok);
   font-size: 13;
   margin-bottom: 10;
 }
 
 .fox-card {
-  background-color: #111d25;
-  border-radius: 14;
+  background-color: var(--panel);
+  border-radius: 12;
+  border-width: 1;
+  border-color: var(--border);
   padding: 16;
   margin: 12;
+}
+
+.fox-empty {
+  color: var(--t2);
+  text-align: center;
+  margin-top: 40;
+  font-size: 15;
 }

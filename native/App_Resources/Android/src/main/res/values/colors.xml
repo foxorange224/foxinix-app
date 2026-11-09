@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Barra de estado / barras de acción: el fondo oscuro de Foxinix. -->
-    <color name="ns_primary">#0B141A</color>
+    <!-- W103: la paleta nativa es la MISMA que la web (landing/static/css/
+         app.css, tema oscuro): panel #2b2d31, fondo #1e1f22, texto #f2f3f5. -->
+    <color name="ns_primary">#2B2D31</color>
 
     <!-- (API21+) Versión más oscura para la barra de estado. -->
-    <color name="ns_primaryDark">#060D12</color>
+    <color name="ns_primaryDark">#1E1F22</color>
 
     <!-- Acento de la marca (naranja Foxinix). -->
     <color name="ns_accent">#FF751F</color>
 
-    <color name="fox_bg">#0B141A</color>
-    <color name="fox_surface">#16232C</color>
-    <color name="fox_text">#E8EDF2</color>
+    <color name="fox_bg">#1E1F22</color>
+    <color name="fox_surface">#2B2D31</color>
+    <color name="fox_text">#F2F3F5</color>
 </resources>

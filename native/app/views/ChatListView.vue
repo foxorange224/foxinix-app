@@ -1,46 +1,67 @@
 <template>
-  <Page>
-    <ActionBar title="Chats">
-      <ActionItem text="Personas" @tap="goPeople" ios.position="right" />
-      <ActionItem text="Ajustes" @tap="goSettings" ios.position="right" />
-      <ActionItem text="Salir" @tap="doLogout" ios.position="right" />
-    </ActionBar>
+  <!-- W103: lista de chats con la barra de 56px de la web en móvil
+       (.side-head): marca, título, aviso de conexión, ＋, menú y mi
+       avatar. Las filas son las .chat-item de Discord. -->
+  <Page :class="'fox-' + theme">
+    <ActionBar actionBarHidden="true" />
 
-    <GridLayout rows="*,auto">
-      <ScrollView ref="scroller">
-        <StackLayout>
+    <GridLayout rows="auto,*,auto" class="list-page">
+      <!-- ---------- cabecera ---------- -->
+      <GridLayout row="0" class="side-head" columns="auto,*,auto,auto,auto,auto">
+        <Image col="0" class="sh-mark" src="res://ic_fox_logo_mark"
+               width="32" height="32" borderRadius="8" stretch="aspectFill"
+               :tintColor="accent" />
+        <Label col="1" class="sh-title" text="Chats" textWrap="false" />
+        <StackLayout v-if="store.ws !== 'on'" col="2" class="ws-dot"
+                     verticalAlignment="center" />
+        <FoxIconBtn col="3" icon="plus" bare @tap="goPeople" />
+        <FoxIconBtn col="4" icon="dots" @tap="goSettings" />
+        <FoxAvatar col="5" class="me-av" :src="meAvatar" :initial="meInitial"
+                   :size="40" :dot="meDot" :ring="panelRing" @tap="goSettings" />
+      </GridLayout>
+
+      <!-- ---------- lista ---------- -->
+      <ScrollView row="1" ref="scroller">
+        <StackLayout class="chat-list">
           <GridLayout
             v-for="c in chats"
             :key="c.id"
-            class="fox-row"
-            columns="auto,*,auto"
-            rows="auto,auto"
+            class="chat-item"
+            columns="auto,*"
+            :accessibilityLabel="'chat: ' + titleOf(c)"
             @tap="open(c.id)"
           >
-            <!-- avatar -->
-            <Label
-              class="fox-avatar"
-              row="0"
+            <FoxAvatar
               col="0"
-              rowspan="2"
-              :text="initials(c)"
-              :backgroundColor="c.pinned ? '#ff751f' : '#16232c'"
+              :src="avatarOf(c)"
+              :initial="initials(c)"
+              :size="48"
+              :dot="dotOf(c)"
+              :ring="panelRing"
             />
-            <!-- título -->
-            <Label class="fox-row-title" row="0" col="1" :text="titleOf(c)" textWrap="true" />
-            <!-- hora -->
-            <Label class="fox-row-time" row="0" col="2" :text="timeOf(c)" />
-            <!-- previsualización -->
-            <Label class="fox-row-sub" row="1" col="1" colSpan="2" :text="previewOf(c)" textWrap="true" />
+            <GridLayout col="1" class="ci-col" rows="auto,auto"
+                        columns="*,auto">
+              <Label row="0" col="0" class="ci-name" :text="titleOf(c)"
+                     textWrap="false" />
+              <Label row="0" col="1" class="ci-time" :text="timeOf(c)"
+                     textWrap="false" />
+              <Label row="1" col="0" class="ci-prev" :text="previewOf(c)"
+                     textWrap="false" />
+              <Label v-if="unreadOf(c)" row="1" col="1" class="badge"
+                     :text="String(unreadOf(c))" textWrap="false" />
+            </GridLayout>
           </GridLayout>
 
-          <Label v-if="!chats.length && loading" class="fox-empty" text="Cargando chats…" />
-          <Label v-else-if="!chats.length" class="fox-empty" text="Todavía no tenés chats." />
+          <Label v-if="!chats.length && loading" class="list-empty"
+                 text="Cargando chats…" textWrap="true" />
+          <Label v-else-if="!chats.length" class="list-empty"
+                 text="Todavía no tenés chats." textWrap="true" />
         </StackLayout>
       </ScrollView>
 
-      <!-- conexión en vivo -->
-      <Label class="fox-ws" row="1" :text="wsText" />
+      <!-- ---------- aviso de conexión ---------- -->
+      <Label v-if="store.ws !== 'on'" row="2" class="ws-strip"
+             :text="wsText" textWrap="true" />
     </GridLayout>
   </Page>
 </template>
@@ -48,65 +69,101 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'nativescript-vue';
   import { store } from '../core/store.js';
-  import { loadChats, chatTitle, openChat } from '../core/actions.js';
+  import { loadChats, chatTitle, openChat, mediaUrl } from '../core/actions.js';
   import { startWS } from '../core/realtime.js';
+  import { t } from '../core/i18n.js';
+  import { fmtListTime, dotState, tok } from '../fmt';
   import { nativeLogout } from '../fox';
   import { goView } from '../nav';
+  import FoxAvatar from '../components/FoxAvatar.vue';
+  import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   const loading = ref(true);
 
   /* La lista vive en el store compartido: la carga y el orden son los
      del núcleo (los mismos que en la web). */
   const chats = computed(() => store.chats || []);
+  const theme = computed(() => store.theme);
+
+  const accent = computed(() => tok(store.theme, 'accent'));
+
+  /* Aro del puntito: el color de la superficie donde vive (el panel). */
+  const panelRing = computed(() => tok(store.theme, 'panel'));
+
+  /* Mi avatar en la barra (la web lo abre en el perfil). */
+  const meAvatar = computed(() => {
+    const u: any = store.user;
+    return u && u.avatar_url ? mediaUrl(u.avatar_url) : '';
+  });
+  const meInitial = computed(() => {
+    const u: any = store.user;
+    const n = u && (u.display_name || u.username);
+    return n ? String(n).charAt(0).toUpperCase() : '?';
+  });
+  const meDot = computed(() => dotState(store.user, store.ws === 'on'));
 
   const wsText = computed(() => {
-    if (store.ws === 'on') return 'En línea';
-    if (store.ws === 'connecting') return 'Conectando…';
-    return 'Sin conexión — tirar para actualizar';
+    if (store.ws === 'connecting') return t('Conectando…');
+    return t('Sin conexión — tirar para actualizar');
   });
-
-  function initials(c: any): string {
-    const t = titleOf(c).trim();
-    if (!t) return '?';
-    const parts = t.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return t.slice(0, 2).toUpperCase();
-  }
 
   function titleOf(c: any): string {
     if (c.type === 'group') {
-      const t = c.title || {};
-      return t.display_name || 'Grupo';
+      const tt = c.title || {};
+      return tt.display_name || tt.name || t('Grupo');
     }
     return chatTitle(c);
+  }
+
+  function initials(c: any): string {
+    const name = titleOf(c).trim();
+    return name ? name.charAt(0).toUpperCase() : '?';
+  }
+
+  /* Foto del chat (avatar del DM o el del grupo), ya con la firma del
+     CDN puesta por mediaUrl(). */
+  function avatarOf(c: any): string {
+    if (!c) return '';
+    const url = c.type === 'dm' ? (c.title && c.title.avatar_url) : c.avatar_url;
+    return url ? mediaUrl(url) : '';
+  }
+
+  /* Puntito de estado: sólo los DM llevan usuario real. */
+  function dotOf(c: any): string {
+    return c.type === 'dm' ? dotState(c.title || null) : '';
   }
 
   function timeOf(c: any): string {
     const lm = c.last_message;
     if (!lm || !lm.created_at) return '';
-    const d = new Date(lm.created_at * 1000);
-    const now = new Date();
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    const sameDay = d.getDate() === now.getDate()
-      && d.getMonth() === now.getMonth()
-      && d.getFullYear() === now.getFullYear();
-    if (sameDay) return hh + ':' + mm;
-    return (d.getMonth() + 1) + '/' + d.getDate();
+    return fmtListTime(lm.created_at);
   }
 
+  function unreadOf(c: any): number {
+    return parseInt(c.unread, 10) || 0;
+  }
+
+  /* Previsualización: misma lógica que previewText() de la web. */
   function previewOf(c: any): string {
     const lm = c.last_message;
-    if (!lm) return c.type === 'group' ? 'Grupo nuevo' : 'Escribí para empezar';
+    if (!lm) return c.type === 'dm' ? t('Escribe para empezar') : t('Grupo nuevo');
+    const mine = !!(lm.sender && store.user && lm.sender.id === store.user.id);
+    let who = '';
+    if (mine) who = t('Tú: ');
+    else if (c.type === 'group' && lm.sender) {
+      who = (lm.sender.display_name || lm.sender.username) + ': ';
+    }
     if (lm.kind === 'system') return lm.body || '';
-    const mine = store.user && lm.sender && lm.sender.id === store.user.id;
-    const who = mine ? 'Tú: ' : (c.type === 'group' && lm.sender
-      ? ((lm.sender.display_name || lm.sender.username) + ': ') : '');
-    if (lm.kind === 'voice') return who + '🎤 Nota de voz';
-    if (lm.kind === 'image') return who + '🖼 Imagen';
-    if (lm.kind === 'video') return who + '🎬 Video';
-    if (lm.kind === 'file') return who + '📎 Archivo';
-    if (lm.kind === 'sticker') return who + 'Sticker';
+    if (lm.spoiler) return who + t('Spoiler');
+    if (lm.kind === 'image') return who + t('Imagen');
+    if (lm.kind === 'sticker') {
+      return who + (lm.media ? t('Sticker') : (lm.body || ''));
+    }
+    if (lm.kind === 'voice') return who + t('Nota de voz');
+    if (lm.kind === 'file') {
+      return who + (lm.media && /^video\//.test(lm.media.mime || '')
+        ? t('Video') : t('Archivo'));
+    }
     return who + (lm.body || '');
   }
 
@@ -121,10 +178,6 @@
 
   function open(id: number) {
     openChat(id);
-  }
-
-  function doLogout() {
-    nativeLogout();
   }
 
   /* Panel de personas: amigos, solicitudes y búsqueda. */
@@ -143,57 +196,3 @@
     try { startWS(); } catch (e) { /* sin WS: se actualiza al abrir */ }
   });
 </script>
-
-<style>
-.fox-row {
-  padding: 12 16;
-  border-bottom-width: 1;
-  border-bottom-color: #1d2b34;
-}
-
-.fox-avatar {
-  width: 46;
-  height: 46;
-  border-radius: 23;
-  color: #e8edf2;
-  font-size: 16;
-  font-weight: 600;
-  text-align: center;
-  vertical-align: center;
-  margin-right: 12;
-}
-
-.fox-row-title {
-  color: #e8edf2;
-  font-size: 16;
-  font-weight: 600;
-  vertical-align: center;
-}
-
-.fox-row-time {
-  color: #7d909c;
-  font-size: 12;
-  vertical-align: center;
-  margin-left: 8;
-}
-
-.fox-row-sub {
-  color: #8aa0ad;
-  font-size: 13;
-  vertical-align: center;
-}
-
-.fox-empty {
-  color: #8aa0ad;
-  text-align: center;
-  margin-top: 40;
-  font-size: 15;
-}
-
-.fox-ws {
-  color: #7d909c;
-  font-size: 12;
-  text-align: center;
-  padding: 4;
-}
-</style>

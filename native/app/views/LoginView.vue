@@ -1,63 +1,80 @@
 <template>
-  <Page>
-    <ActionBar title="Foxinix" />
+  <!-- W103: pantalla de login con la misma caja de la web (.auth-card):
+       marca arriba, un solo título, campos etiquetados y botón ancho. -->
+  <Page :class="'fox-' + theme">
+    <ActionBar actionBarHidden="true" />
 
     <ScrollView>
-      <StackLayout class="fox-wrap">
-        <Label class="fox-title" text="Foxinix" />
-        <Label class="fox-sub" text="Tus mensajes, en tu bolsillo" />
+      <StackLayout class="auth-wrap">
+        <StackLayout class="auth-card">
+          <!-- La marca manda: sin título de texto debajo (igual que la web
+               desde W27g). -->
+          <Image class="auth-logo" src="res://ic_fox_logo_word" width="140"
+                 height="56" stretch="aspectFit" :tintColor="accent" />
 
-        <TextField
-          class="fox-field"
-          hint="Usuario o correo"
-          :text="identifier"
-          @textChange="identifier = $event.value"
-          autocorrect="false"
-          autocapitalizationType="none"
-          :editable="!busy"
-        />
+          <Label class="auth-title" text="Inicia sesión en tu cuenta"
+                 textWrap="true" />
 
-        <TextField
-          class="fox-field"
-          hint="Contraseña"
-          secure="true"
-          :text="password"
-          @textChange="password = $event.value"
-          :editable="!busy"
-          @submit="submit"
-        />
+          <Label v-if="err" class="form-err auth-first" :text="err"
+                 textWrap="true" />
 
-        <Label v-if="err" class="fox-err" :text="err" textWrap="true" />
+          <!-- Ritmo vertical: 16px tras el título (o tras el aviso). -->
+          <Label class="field-label" :class="{ 'auth-first': !err }"
+                 text="Usuario o correo" />
+          <TextField class="input" hint="tu.usuario" :text="identifier"
+                     @textChange="identifier = $event.value" autocorrect="false"
+                     autocapitalizationType="none" :editable="!busy"
+                     returnKeyType="next" />
 
-        <Button class="fox-btn" :text="busy ? 'Entrando…' : 'Ingresar'" :enabled="!busy" @tap="submit" />
+          <Label class="field-label" text="Contraseña" />
+          <TextField class="input" hint="••••••••" secure="true" :text="password"
+                     @textChange="password = $event.value" :editable="!busy"
+                     @submit="submit" returnKeyType="go" />
 
-        <Label class="fox-link" text="¿No tienes cuenta? Regístrate" @tap="goRegister" />
+          <Button class="btn btn-full" :class="{ busy: busy }"
+                  :text="busy ? 'Entrando…' : 'Ingresar'" :enabled="!busy"
+                  @tap="submit" />
+
+          <Label class="btn-link auth-alt" text="¿No tienes cuenta? Regístrate"
+                 @tap="goRegister" />
+        </StackLayout>
       </StackLayout>
     </ScrollView>
   </Page>
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'nativescript-vue';
+  import { computed, ref } from 'nativescript-vue';
   import { nativeLogin } from '../fox';
-  import { go } from '../core/store.js';
+  import { go, store } from '../core/store.js';
+  import { t } from '../core/i18n.js';
+  import { tok } from '../fmt';
 
   const identifier = ref('');
   const password = ref('');
-  const err = ref('');
   const busy = ref(false);
+  const err = ref('');
+
+  const theme = computed(() => store.theme);
+
+  /* Color del logo: el acento cambia con el tema (en claro es más
+     oscuro para que contraste con el fondo). */
+  const accent = computed(() => tok(store.theme, 'accent'));
 
   async function submit() {
-    err.value = '';
-    if (!identifier.value || !password.value) {
-      err.value = 'Completa el usuario y la contraseña';
+    if (busy.value) return;
+    const id = identifier.value.trim();
+    if (!id || !password.value) {
+      err.value = t('Completa todos los campos');
       return;
     }
     busy.value = true;
+    err.value = '';
     try {
-      await nativeLogin(identifier.value.trim(), password.value);
+      await nativeLogin(id, password.value);
+      /* Si llega acá, store.user ya está: App.vue cambia de vista. */
     } catch (e: any) {
-      err.value = (e && e.detail) ? String(e.detail) : 'No se pudo iniciar sesión';
+      err.value = (e && (e.message || e.detail)) || t('No se pudo iniciar sesión');
     } finally {
       busy.value = false;
     }
@@ -67,9 +84,3 @@
     go('register');
   }
 </script>
-
-<style>
-.fox-wrap {
-  padding: 20;
-}
-</style>
