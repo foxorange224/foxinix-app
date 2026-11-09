@@ -13,12 +13,21 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        # Versión a publicar, sin la v (por ejemplo 0.2.3). Sirve para
+        # adjuntar el APK a una release YA existente (la etiqueta se
+        # toma de acá; sin el input se usaría github.ref_name, que en
+        # un dispatch desde main es "main" y crearía una release basura).
+        description: "Versión a publicar, sin la v (por ejemplo 0.2.3)"
+        required: true
+        default: "0.2.3"
 
 permissions:
   contents: write
 
 env:
-  FOXINIX_VERSION: ${{ github.ref_name }}
+  FOXINIX_VERSION: ${{ inputs.version || github.ref_name }}
 
 jobs:
   native-android:
@@ -112,5 +121,7 @@ jobs:
       - name: Adjuntar la APK a la release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          # En un dispatch la etiqueta sale del input (v + versión); en
+          # un push de tag, de la propia etiqueta.
+          tag_name: ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
           files: dist/Foxinix-*nativo-android.apk
