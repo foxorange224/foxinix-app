@@ -40,7 +40,7 @@ WANTED = [
     "smile", "pin", "bell-off", "phone", "lock", "key", "refresh",
     "download", "eye", "eye-off", "chevron-down", "alert", "info",
     "star", "star-fill", "archive", "forward", "reply", "play",
-    "pause", "vol", "mute", "expand", "collapse",
+    "pause", "vol", "mute", "expand", "collapse", "gear",
     "logo-mark", "logo-word",
 ]
 

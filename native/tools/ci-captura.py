@@ -106,11 +106,29 @@ def hide_keyboard() -> None:
     time.sleep(1)
 
 
+def texts(xml: str) -> list[str]:
+    """Todos los textos visibles de la pantalla (para diagnosticar)."""
+    out = []
+    for n in nodes(xml):
+        t = (n.get("text") or "").strip()
+        if t:
+            out.append(t)
+        d = (n.get("content-desc") or "").strip()
+        if d:
+            out.append("[" + d + "]")
+    return out
+
+
 def shot(out_dir: str, name: str) -> None:
     path = os.path.join(out_dir, name + ".png")
     with open(path, "wb") as f:
         subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=f, timeout=60)
     print("captura:", path, os.path.getsize(path), "bytes")
+
+
+# La app se abre en inglés por defecto (W97), así que el botón de
+# entrada puede estar en cualquiera de los dos idiomas.
+LOGIN_LABELS = ("Sign in", "Ingresar", "Log in", "Entrar", "Login")
 
 
 def main() -> int:
@@ -149,27 +167,65 @@ def main() -> int:
 
         xml = dump()
         shot(out_dir, "1-login-relleno")
-        btn = find(xml, cls="Button", contains="Ingresar") or find(xml, contains="Ingresar")
+        btn = None
+        for lbl in LOGIN_LABELS:
+            btn = find(xml, cls="Button", contains=lbl)
+            if btn:
+                break
+        if not btn:
+            # último recurso: el primer botón con texto de la pantalla
+            # (el de la web es el de ancho completo, el único con texto).
+            for n in nodes(xml):
+                if n.get("class", "").endswith("Button") and (n.get("text") or "").strip():
+                    btn = n
+                    break
         if not tap(btn):
             # si no se encuentra el botón, se manda Enter desde el campo
             subprocess.run(["adb", "shell", "input", "keyevent", "66"], timeout=30)
-        time.sleep(10)
+        else:
+            print("botón de entrada:", btn.get("text"))
+        time.sleep(12)
+    xml = dump()
     shot(out_dir, "2-tras-login")
+
+    # Si el login falló, se ve el campo de contraseña otra vez: se avisa
+    # en el log y se sacan los textos de la pantalla para diagnosticarlo.
+    still_login = [n for n in nodes(xml) if n.get("class", "").endswith("EditText")]
+    if still_login:
+        print("!! el login no entró (sigue la pantalla de entrada)")
+        print("   textos:", " | ".join(texts(xml)))
 
     # Si hay lista de chats, se abre el primero para ver la conversación.
     # Las filas llevan accessibilityLabel="chat: <nombre>" (W103), así que
     # se buscan por content-desc y no por el texto de un chat en concreto.
-    xml = dump()
-    row = find(xml, desc="chat:") or find(xml, contains="nsprobe")
+    row = find(xml, desc="chat:")
     if tap(row):
         time.sleep(6)
         shot(out_dir, "3-conversacion")
     else:
         print("no se encontró ninguna fila de chat para abrir")
+        print("   textos:", " | ".join(texts(xml)))
+        # Si no hay chats, se abre el panel de Personas desde la barra de
+        # pestañas (si está) para tener una segunda captura de la app.
+        for lbl in ("People", "Personas"):
+            tab = find(xml, contains=lbl)
+            if tab:
+                tap(tab)
+                time.sleep(5)
+                shot(out_dir, "3-personas.png")
+                break
 
     print("== logcat ==")
-    log = sh("adb", "logcat", "-d", "-t", "300")
-    tail = "\n".join(log.splitlines()[-80:])
+    # Sólo el log de la app: el resto es ruido del emulador.
+    # OJO: el flag de logcat pide --pid=<pid> (con el igual); con el
+    # valor separado no filtra y devuelve vacío.
+    pid = sh("adb", "shell", "pidof", PKG).strip().split()[0] if sh("adb", "shell", "pidof", PKG).strip() else ""
+    log = ""
+    if pid:
+        log = sh("adb", "logcat", "-d", "--pid=" + pid)
+    if not log:
+        log = sh("adb", "logcat", "-d", "-t", "2000")
+    tail = "\n".join(log.splitlines()[-120:])
     print(tail)
     with open(os.path.join(out_dir, "logcat.txt"), "w", encoding="utf-8") as f:
         f.write(log)

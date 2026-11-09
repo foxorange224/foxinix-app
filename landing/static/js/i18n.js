@@ -1128,6 +1128,13 @@ const EN = {
   'Sistema': 'System',
   'Noto': 'Noto',
   'Twemoji': 'Twemoji',
+  'Cargando chats…': 'Loading chats…',
+  'Todavía no tenés chats.': 'You have no chats yet.',
+  'No hay chats archivados.': 'No archived chats.',
+  'Sin conexión': 'No connection',
+  'Conectando…': 'Connecting…',
+  'Grupo': 'Group',
+  'Chat': 'Chat',
 };
 
 /**

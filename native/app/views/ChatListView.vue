@@ -10,7 +10,7 @@
         <Image col="0" class="sh-mark" src="res://ic_fox_logo_mark"
                width="32" height="32" borderRadius="8" stretch="aspectFill"
                :tintColor="accent" />
-        <Label col="1" class="sh-title" text="Chats" textWrap="false" />
+        <Label col="1" class="sh-title" :text="listTitle" textWrap="false" />
         <StackLayout v-if="store.ws !== 'on'" col="2" class="ws-dot"
                      verticalAlignment="center" />
         <FoxIconBtn col="3" icon="plus" bare @tap="goPeople" />
@@ -52,9 +52,11 @@
           </GridLayout>
 
           <Label v-if="!chats.length && loading" class="list-empty"
-                 text="Cargando chats…" textWrap="true" />
+                 :text="t('Cargando chats…')" textWrap="true" />
+          <Label v-else-if="!chats.length && store.showArchived" class="list-empty"
+                 :text="t('No hay chats archivados.')" textWrap="true" />
           <Label v-else-if="!chats.length" class="list-empty"
-                 text="Todavía no tenés chats." textWrap="true" />
+                 :text="t('Todavía no tenés chats.')" textWrap="true" />
         </StackLayout>
       </ScrollView>
 
@@ -80,9 +82,16 @@
   const loading = ref(true);
 
   /* La lista vive en el store compartido: la carga y el orden son los
-     del núcleo (los mismos que en la web). */
-  const chats = computed(() => store.chats || []);
+     del núcleo (los mismos que en la web). Los archivados van en su
+     propia pestaña (como en la web). */
+  const chats = computed(() => {
+    const want = !!store.showArchived;
+    return (store.chats || []).filter((c: any) => !!c.archived === want);
+  });
   const theme = computed(() => store.theme);
+
+  const listTitle = computed(() =>
+    store.showArchived ? t('Archivados') : t('Chats'));
 
   const accent = computed(() => tok(store.theme, 'accent'));
 
