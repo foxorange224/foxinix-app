@@ -843,7 +843,11 @@ ActionBar {
   border-top-width: 1;
   border-top-color: var(--border);
   padding: 4 8;
-  height: 58;
+  /* min-height y NO height: en Android el sistema le mete abajo el
+     padding del inset (la barra de navegación), y con una altura fija
+     el contenido (icono y rótulo) quedaba debajo de la barra del
+     sistema. */
+  min-height: 58;
 }
 
 .mt-btn {

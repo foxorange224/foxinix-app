@@ -145,6 +145,14 @@ def shot(out_dir: str, name: str) -> None:
 LOGIN_LABELS = ("Sign in", "Ingresar", "Log in", "Entrar", "Login")
 
 
+def on_login_screen(xml: str) -> bool:
+    """¿Seguimos en la pantalla de entrada? (el botón de entrar está)"""
+    for lbl in LOGIN_LABELS:
+        if find(xml, cls="Button", contains=lbl):
+            return True
+    return False
+
+
 def main() -> int:
     out_dir = sys.argv[1] if len(sys.argv) > 1 else "/tmp/opencode/capturas"
     user = sys.argv[2] if len(sys.argv) > 2 else "nsprobe"
@@ -214,10 +222,9 @@ def main() -> int:
             shot(out_dir, "2-tras-login")
             break
 
-    # Si el login falló, se ve el campo de contraseña otra vez: se avisa
+    # Si el login falló, sigue el botón de entrada en pantalla: se avisa
     # en el log y se sacan los textos de la pantalla para diagnosticarlo.
-    still_login = [n for n in nodes(xml) if n.get("class", "").endswith("EditText")]
-    if still_login:
+    if on_login_screen(xml):
         print("!! el login no entró (sigue la pantalla de entrada)")
         print("   textos:", " | ".join(texts(xml)))
 
