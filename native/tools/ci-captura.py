@@ -384,14 +384,26 @@ def open_voice_rec() -> bool:
     tap(btn)
     time.sleep(6)
     xml = dump()
-    if not find(xml, desc="cancel voice message"):
+    cancel = find(xml, desc="cancel voice message")
+    if not cancel:
         print("!! no apareció la barra de grabación")
         print("   textos:", " | ".join(texts(xml)))
         return False
+    # El reloj de la barra: el mm:ss que está en la MISMA fila que el
+    # botón de cancelar (las burbujas también muestran horas así).
+    cbox = bounds_box(cancel.get("bounds", ""))
+    clock = ""
     for n in nodes(xml):
-        if re.fullmatch(r"\d{1,2}:\d{2}", (n.get("text") or "").strip()):
-            print("barra de grabación:", n.get("text"))
+        t = (n.get("text") or "").strip()
+        if not re.fullmatch(r"\d{1,2}:\d{2}", t):
+            continue
+        box = bounds_box(n.get("bounds", ""))
+        if not box or not cbox:
+            continue
+        if abs((box[1] + box[3]) // 2 - (cbox[1] + cbox[3]) // 2) <= 24:
+            clock = t
             break
+    print("barra de grabación:", clock or "(sin reloj)")
     return True
 
 

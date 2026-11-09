@@ -61,10 +61,12 @@
                          :src="imgSrc(r.ref)" :width="imgSize(r.ref).w"
                          :height="imgSize(r.ref).h" stretch="aspectFit"
                          @tap="openImage(r.ref)" />
-                  <!-- W104: reproductor de la nota de voz -->
+                  <!-- W104: el reproductor. La onda tiene ancho FIJO
+                       (110px): con una columna "*" el GridLayout se
+                       estiraba y la burbuja quedaba demasiado ancha. -->
                   <GridLayout v-if="isVoice(r.ref)" class="b-player"
                               :class="{ 'on-me': r.mine }"
-                              columns="auto,*,auto">
+                              columns="auto,110,auto">
                     <FoxIconBtn col="0" class="au-btn"
                                 :icon="voicePlaying(r.ref) ? 'pause' : 'play'"
                                 :size="32" :ic="16" :tint="voiceTint(r.mine)"
@@ -72,10 +74,11 @@
                                 accessibilityLabel="play voice message"
                                 @tap="toggleVoice(r.ref)" />
                     <GridLayout col="1" class="au-wave" :columns="waveCols">
-                      <Placeholder v-for="(h, i) in waveOf(r.ref)" :key="i" :col="i"
-                                  class="au-wave-bar" :class="{ on: i <= waveBar(r.ref) }"
-                                  :height="h" horizontalAlignment="center"
-                                  verticalAlignment="center" />
+                      <Label v-for="(h, i) in waveOf(r.ref)" :key="i" :col="i"
+                             text="" textWrap="false" class="au-wave-bar"
+                             :class="{ on: i <= waveBar(r.ref) }"
+                             :height="h" horizontalAlignment="center"
+                             verticalAlignment="center" />
                     </GridLayout>
                     <Label col="2" class="au-time" :text="voiceTime(r.ref)"
                            textWrap="false" />
@@ -132,13 +135,14 @@
       </GridLayout>
 
       <GridLayout v-else row="2" class="composer rec-bar"
-                  columns="auto,auto,*,auto,auto">
-        <Placeholder col="0" class="rec-dot" />
+                  columns="auto,auto,90,auto,auto">
+        <Label col="0" class="rec-dot" text="" textWrap="false"
+               verticalAlignment="center" />
         <Label col="1" class="rec-time" :text="recTime" textWrap="false" />
         <GridLayout col="2" class="rec-wave" :columns="recCols">
-          <Placeholder v-for="(h, i) in recBars" :key="i" :col="i"
-                      class="rec-wave-bar" :height="h"
-                      horizontalAlignment="center" verticalAlignment="center" />
+          <Label v-for="(h, i) in recBars" :key="i" :col="i"
+                 text="" textWrap="false" class="rec-wave-bar" :height="h"
+                 horizontalAlignment="center" verticalAlignment="center" />
         </GridLayout>
         <FoxIconBtn col="3" class="rec-cancel" icon="x" bare
                     :tint="muted" accessibilityLabel="cancel voice message"
