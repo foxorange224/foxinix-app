@@ -21,7 +21,7 @@
       <!-- ---------- mensajes ---------- -->
       <ScrollView row="1" ref="scroller">
         <StackLayout class="msgs">
-          <Label v-if="loading" class="msgs-load" text="Cargando mensajes…"
+          <Label v-if="loading" class="msgs-load" :text="t('Cargando mensajes…')"
                  textWrap="true" />
 
           <template v-for="r in rows" :key="r.ref.id">
@@ -84,7 +84,7 @@
               <FoxAvatar :src="peerAvatar" :initial="peerInitial" :size="28"
                          :ring="chatRing" flat />
             </StackLayout>
-            <Label col="1" class="sys-msg" text="escribiendo…"
+            <Label col="1" class="sys-msg" :text="t('escribiendo…')"
                    horizontalAlignment="left" textWrap="false" />
             <StackLayout col="2" width="36" />
           </GridLayout>
@@ -96,7 +96,7 @@
         <FoxIconBtn col="0" class="composer-attach" icon="clip" bare
                     :tint="muted" @tap="attach" />
         <TextField col="1" class="composer-input" :text="draft"
-                   hint="Mensaje" autocorrect="true" :editable="!sending"
+                   :hint="t('Mensaje')" autocorrect="true" :editable="!sending"
                    @textChange="draft = $event.value" @submit="send"
                    returnKeyType="send" />
         <FoxIconBtn col="2" class="send-btn" icon="send"

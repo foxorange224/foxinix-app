@@ -40,7 +40,7 @@
           </GridLayout>
 
           <Label v-if="!friends.length" class="res-empty"
-                 :text="t('Todavía no tenés amigos. Buscá personas en el panel de Personas.')"
+                 :text="t('Aún no tienes amigos. ¡Busca personas arriba para empezar!')"
                  textWrap="true" />
         </StackLayout>
       </ScrollView>

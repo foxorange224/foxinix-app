@@ -71,7 +71,7 @@
                 <Label col="2" class="ppl-go" text="›" />
               </GridLayout>
               <Label v-if="loaded && !friends.length" class="fox-empty"
-                     :text="t('Todavía no tenés amigos. Buscá personas arriba para empezar.')"
+                     :text="t('Aún no tienes amigos. ¡Busca personas arriba para empezar!')"
                      textWrap="true" />
               <Label v-else-if="!loaded" class="fox-empty" :text="t('Cargando…')"
                      textWrap="true" />
@@ -111,7 +111,7 @@
             </GridLayout>
 
             <Label v-if="!sent.length && !recv.length" class="fox-empty"
-                   :text="t('No hay solicitudes por ahora.')" textWrap="true" />
+                   :text="t('No hay solicitudes pendientes')" textWrap="true" />
           </StackLayout>
         </StackLayout>
       </ScrollView>

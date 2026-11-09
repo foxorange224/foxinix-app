@@ -18,7 +18,7 @@
           <!-- ---------- correo ---------- -->
           <StackLayout class="field">
             <Label class="field-label" :text="t('Correo electrónico')" />
-            <TextField class="input" hint="tu_correo@mail.com" keyboardType="email"
+            <TextField class="input" :hint="t('tu_correo@mail.com')" keyboardType="email"
                        :text="email" @textChange="email = $event.value"
                        autocorrect="false" autocapitalizationType="none"
                        :editable="!busy" />
