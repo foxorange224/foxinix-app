@@ -2,8 +2,7 @@
   <!-- W103: lista de chats con la barra de 56px de la web en móvil
        (.side-head): marca, título, aviso de conexión, ＋, menú y mi
        avatar. Las filas son las .chat-item de Discord. -->
-  <Page :class="'fox-' + theme">
-    <ActionBar actionBarHidden="true" />
+  <Page :class="'fox-' + theme" actionBarHidden="true">
 
     <GridLayout rows="auto,*,auto" class="list-page">
       <!-- ---------- cabecera ---------- -->

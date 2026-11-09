@@ -1,66 +1,57 @@
 <template>
-  <Page>
-    <ActionBar :title="title">
-      <ActionItem text="Volver" @tap="close" ios.position="left" />
-    </ActionBar>
+  <!-- W103: ficha de usuario con el estilo de la web: portada, avatar
+       encima de la portada, nombre debajo (como Discord), estado, bio y
+       los botones de acción. -->
+  <Page :class="'fox-' + theme" actionBarHidden="true">
+    <GridLayout rows="auto,*" class="pf-page">
+      <!-- ---------- cabecera ---------- -->
+      <GridLayout row="0" class="side-head" columns="auto,*">
+        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="close" />
+        <Label col="1" class="sh-title" :text="t('Perfil')" textWrap="false" />
+      </GridLayout>
 
-    <ScrollView>
-      <StackLayout>
-        <!-- portada -->
-        <GridLayout class="fox-banner" rows="auto">
-          <Image
-            v-if="banner"
-            class="fox-banner-img"
-            :src="banner"
-            stretch="aspectFill"
-          />
-        </GridLayout>
-
-        <!-- avatar + datos -->
-        <GridLayout class="fox-pf-head" columns="auto,*" rows="auto,auto,auto">
-          <GridLayout row="0" col="0" rowspan="3" class="fox-av fox-av-big">
-            <Image
-              v-if="avatar"
-              class="fox-av-img fox-av-img-big"
-              :src="avatar"
-              stretch="aspectFill"
-            />
-            <Label v-else class="fox-avatar fox-avatar-big" :text="initial" backgroundColor="#16232c" />
+      <ScrollView row="1">
+        <StackLayout>
+          <!-- ---------- portada ---------- -->
+          <GridLayout class="pf-banner" rows="auto">
+            <Image v-if="banner" class="pf-banner-img" :src="banner"
+                   stretch="aspectFill" />
+            <Image v-else class="pf-banner-art" src="res://ic_fox_logo_mark"
+                   width="128" height="128" :tintColor="tokOnAccent" opacity="0.18" />
           </GridLayout>
-          <Label row="0" col="1" class="fox-pf-name" :text="name" textWrap="true" />
-          <Label row="1" col="1" class="fox-pf-user" :text="'@' + username" />
-          <Label row="2" col="1" class="fox-pf-status" :text="statusLine" textWrap="true" />
-        </GridLayout>
 
-        <!-- bio -->
-        <Label
-          v-if="bio"
-          class="fox-pf-bio"
-          :text="bio"
-          textWrap="true"
-        />
+          <!-- ---------- avatar (encima de la portada) ---------- -->
+          <StackLayout class="pf-idrow">
+            <FoxAvatar class="pf-av" :src="avatar" :initial="initial" :size="80"
+                       :dot="dot" :ring="ring" />
+          </StackLayout>
 
-        <!-- acción principal según la relación -->
-        <Button
-          class="fox-btn"
-          :class="{ ghost: relation === 'sent' || relation === 'blocked' }"
-          :text="mainAction"
-          :enabled="mainEnabled && !busy"
-          @tap="doMain"
-        />
+          <!-- ---------- nombre y usuario ---------- -->
+          <StackLayout class="pf-idbelow">
+            <Label class="pf-name" :text="name" textWrap="true" />
+            <Label class="pf-user" :text="'@' + username" textWrap="false" />
+          </StackLayout>
 
-        <!-- bloquear / desbloquear -->
-        <Button
-          v-if="relation !== 'me'"
-          class="fox-btn ghost"
-          :text="relation === 'blocked' ? 'Desbloquear' : 'Bloquear'"
-          :enabled="!busy"
-          @tap="toggleBlock"
-        />
+          <!-- ---------- estado ---------- -->
+          <Label v-if="statusLine" class="pf-status" :text="statusLine"
+                 textWrap="true" />
 
-        <Label v-if="err" class="fox-err" :text="err" textWrap="true" />
-      </StackLayout>
-    </ScrollView>
+          <!-- ---------- bio ---------- -->
+          <Label v-if="bio" class="pf-bio" :text="bio" textWrap="true" />
+
+          <!-- ---------- acción principal según la relación ---------- -->
+          <Button class="btn btn-full pf-act" :text="mainAction"
+                  :enabled="mainEnabled && !busy" @tap="doMain" />
+
+          <!-- bloquear / desbloquear -->
+          <Button v-if="relation !== 'me'" class="btn btn-ghost btn-full pf-act"
+                  :text="relation === 'blocked' ? t('Desbloquear') : t('Bloquear')"
+                  :enabled="!busy" @tap="toggleBlock" />
+
+          <Label v-if="err" class="form-err pf-err" :text="err" textWrap="true" />
+        </StackLayout>
+      </ScrollView>
+    </GridLayout>
   </Page>
 </template>
 
@@ -70,7 +61,11 @@
   import {
     blockUser, createDm, loadProfile, mediaUrl, sendFriendRequest, unblockUser,
   } from '../core/actions.js';
+  import { t } from '../core/i18n.js';
   import { back, backToChats } from '../nav';
+  import { tok, dotState } from '../fmt';
+  import FoxAvatar from '../components/FoxAvatar.vue';
+  import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   /* El id del usuario viene de la navegación nativa. */
   const props = defineProps<{ userId: number }>();
@@ -80,7 +75,10 @@
   const err = ref('');
   const busy = ref(false);
 
-  const title = computed(() => (user.value ? name.value : 'Perfil'));
+  const theme = computed(() => store.theme);
+  const accent = computed(() => tok(store.theme, 'accent'));
+  const tokOnAccent = computed(() => tok(store.theme, 'onAccent'));
+  const ring = computed(() => tok(store.theme, 'bg'));
 
   const name = computed(() => {
     const u = user.value;
@@ -109,23 +107,26 @@
 
   const bio = computed(() => (user.value && user.value.bio) || '');
 
+  /* Puntito de estado (como en la web). */
+  const dot = computed(() => (user.value ? dotState(user.value) : ''));
+
   const statusLine = computed(() => {
     const u = user.value;
     if (!u) return '';
     if (u.status_text) return u.status_text;
-    if (u.status_preset === 'busy') return 'Ausente';
-    if (u.status_preset === 'dnd') return 'No molestar';
-    if (u.status_preset === 'invisible') return 'Invisible';
-    return u.online ? 'En línea' : 'Desconectado';
+    if (u.status_preset === 'busy') return t('Ausente');
+    if (u.status_preset === 'dnd') return t('No molestar');
+    if (u.status_preset === 'invisible') return t('Invisible');
+    return u.online ? t('En línea') : t('Desconectado');
   });
 
   const mainAction = computed(() => {
-    if (relation.value === 'friend') return 'Mensaje';
-    if (relation.value === 'sent') return 'Solicitud pendiente';
-    if (relation.value === 'received') return 'Solicitud recibida';
-    if (relation.value === 'blocked') return 'Bloqueado';
-    if (relation.value === 'me') return 'Es tu cuenta';
-    return 'Enviar solicitud';
+    if (relation.value === 'friend') return t('Mensaje');
+    if (relation.value === 'sent') return t('Solicitud pendiente');
+    if (relation.value === 'received') return t('Solicitud recibida');
+    if (relation.value === 'blocked') return t('Bloqueado');
+    if (relation.value === 'me') return t('Es tu cuenta');
+    return t('Enviar solicitud');
   });
 
   const mainEnabled = computed(() => {
@@ -137,7 +138,7 @@
     Promise.resolve(fn()).then(() => {
       if (okMsg) toast(okMsg, 'ok');
     }).catch((e: any) => {
-      toast((e && e.detail) || 'No se pudo completar la acción', 'err');
+      toast((e && e.detail) || t('No se pudo completar la acción'), 'err');
     }).then(() => {
       busy.value = false;
     });
@@ -154,7 +155,7 @@
       run(async () => {
         await sendFriendRequest(user.value.username);
         relation.value = 'sent';
-      }, 'Solicitud enviada');
+      }, t('Solicitud enviada'));
     }
   }
 
@@ -164,12 +165,12 @@
       run(async () => {
         await unblockUser(user.value.username);
         relation.value = 'none';
-      }, 'Usuario desbloqueado');
+      }, t('Usuario desbloqueado'));
     } else {
       run(async () => {
         await blockUser(user.value.username);
         relation.value = 'blocked';
-      }, 'Usuario bloqueado');
+      }, t('Usuario bloqueado'));
     }
   }
 
@@ -184,79 +185,7 @@
       user.value = r.user;
       relation.value = r.relation;
     } catch (e: any) {
-      err.value = (e && e.detail) || 'No se pudo cargar el perfil';
+      err.value = (e && e.detail) || t('No se pudo cargar el perfil');
     }
   });
 </script>
-
-<style>
-.fox-banner {
-  height: 120;
-  background-color: #16232c;
-}
-
-.fox-banner-img {
-  width: 100%;
-  height: 120;
-}
-
-.fox-pf-head {
-  padding: 0 16;
-  margin-top: -26;
-}
-
-.fox-av-big {
-  width: 74;
-  height: 74;
-}
-
-.fox-av-img-big {
-  width: 74;
-  height: 74;
-  border-radius: 37;
-  border-width: 3;
-  border-color: #0b141a;
-}
-
-.fox-avatar-big {
-  width: 74;
-  height: 74;
-  border-radius: 37;
-  font-size: 28;
-  border-width: 3;
-  border-color: #0b141a;
-}
-
-.fox-pf-name {
-  color: #e8edf2;
-  font-size: 20;
-  font-weight: 700;
-  margin-left: 12;
-  margin-top: 32;
-}
-
-.fox-pf-user {
-  color: #8aa0ad;
-  font-size: 14;
-  margin-left: 12;
-}
-
-.fox-pf-status {
-  color: #7d909c;
-  font-size: 13;
-  margin-left: 12;
-}
-
-.fox-pf-bio {
-  color: #c7d3da;
-  font-size: 15;
-  padding: 14 16;
-}
-
-.fox-btn.ghost {
-  background-color: transparent;
-  color: #8aa0ad;
-  border-width: 1;
-  border-color: #2b3d49;
-}
-</style>

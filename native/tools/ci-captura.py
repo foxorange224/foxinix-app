@@ -86,6 +86,26 @@ def type_text(text: str) -> None:
     subprocess.run(["adb", "shell", "input", "text", safe], timeout=30)
 
 
+def keyboard_shown() -> bool:
+    """¿Está abierto el teclado en pantalla?"""
+    out = sh("adb", "shell", "dumpsys", "input_method")
+    for line in out.splitlines():
+        if "mInputShown=true" in line or "mVisible=true" in line:
+            return True
+    return False
+
+
+def hide_keyboard() -> None:
+    """Cierra el teclado (si está abierto) para poder tocar los campos
+    de verdad: con el teclado arriba, las coordenadas del campo de
+    contraseña caen sobre el teclado y el texto acaba en el campo
+    equivocado."""
+    if not keyboard_shown():
+        return
+    subprocess.run(["adb", "shell", "input", "keyevent", "4"], timeout=30)
+    time.sleep(1)
+
+
 def shot(out_dir: str, name: str) -> None:
     path = os.path.join(out_dir, name + ".png")
     with open(path, "wb") as f:
@@ -106,15 +126,28 @@ def main() -> int:
 
     xml = dump()
     print("== login ==")
-    fields = [n for n in nodes(xml) if n.get("class", "").endswith("EditText")]
+
+    def edit_texts() -> list[dict]:
+        return [n for n in nodes(dump()) if n.get("class", "").endswith("EditText")]
+
+    fields = edit_texts()
     print("campos encontrados:", len(fields))
     if fields:
+        # --- usuario ---
         tap(fields[0])
         type_text(user)
         time.sleep(1)
-        tap(fields[1])
-        type_text(pwd)
-        time.sleep(1)
+        hide_keyboard()
+
+        # --- contraseña (el teclado tapa el campo si no se cierra) ---
+        fields = edit_texts()
+        if len(fields) > 1:
+            tap(fields[1])
+            type_text(pwd)
+            time.sleep(1)
+        hide_keyboard()
+
+        xml = dump()
         shot(out_dir, "1-login-relleno")
         btn = find(xml, cls="Button", contains="Ingresar") or find(xml, contains="Ingresar")
         if not tap(btn):

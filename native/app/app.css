@@ -201,10 +201,64 @@ ActionBar {
   margin-top: 16;
 }
 
+/* Aviso con el correo enmascarado (verificación). */
+.verify-mail {
+  margin-bottom: 18;
+}
+
+.verify-mail Label {
+  color: var(--t2);
+  font-size: 14;
+  text-align: center;
+}
+
+.verify-mail .verify-mail-strong {
+  color: var(--t1);
+  font-weight: 600;
+}
+
+/* Código de 6 dígitos: grande y centrado, como en la web. */
+.code-input {
+  min-height: 64;
+  font-size: 32;
+  font-weight: 700;
+  letter-spacing: 8;
+  text-align: center;
+}
+
+/* Fila del enlace "reenviar código". */
+.resend-row {
+  margin-top: 4;
+  text-align: center;
+}
+
+/* Subtítulo de las vistas de auth (registro, verificación…). */
+.auth-sub {
+  color: var(--t2);
+  font-size: 14;
+  text-align: center;
+  margin-bottom: 22;
+}
+
+/* Grupo de campo: etiqueta + input (+ ayuda). */
+.field {
+  margin-bottom: 14;
+}
+
+.field .input {
+  margin-bottom: 0;
+}
+
+.hint {
+  color: var(--t2);
+  font-size: 12;
+  margin-top: 6;
+}
+
 .field-label {
   color: var(--t2);
   font-size: 13;
-  margin-bottom: 4;
+  margin-bottom: 6;
 }
 
 .input {
@@ -226,7 +280,6 @@ ActionBar {
   border-color: var(--err);
   border-radius: 8;
   padding: 9 12;
-  margin-top: 16;
   font-size: 14;
   margin-bottom: 14;
 }
@@ -591,6 +644,365 @@ ActionBar {
 .composer-attach {
   margin-right: 4;
   vertical-align: center;
+}
+
+/* ============================================================
+   Visor de imagen (como la luz de la web)
+   ============================================================ */
+
+.mv-page {
+  background-color: #0b0d10;
+}
+
+.mv-img {
+  /* La imagen se ve completa (contain) sin deformarse. */
+  width: 100%;
+  height: 100%;
+  background-color: #0b0d10;
+}
+
+.mv-top {
+  height: 56;
+  padding-right: 6;
+}
+
+.mv-cap {
+  color: #dbdee1;
+  font-size: 14;
+  padding: 12 16;
+  background-color: #16181c;
+}
+
+/* ============================================================
+   Grupo nuevo (estilo del modal de la web)
+   ============================================================ */
+
+.ng-page {
+  background-color: var(--panel);
+}
+
+.ng-name {
+  margin: 10 14;
+}
+
+.g-chips {
+  padding: 0 14 10 14;
+}
+
+.g-chip {
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 16;
+  padding: 2 2 2 10;
+  margin: 0 6 6 0;
+}
+
+.g-chip-name {
+  color: var(--t1);
+  font-size: 13;
+  vertical-align: center;
+}
+
+.ng-list {
+  padding: 0 0 10 0;
+}
+
+.res-item {
+  padding: 9 14;
+}
+
+.ri-col {
+  margin-left: 10;
+}
+
+.ri-name {
+  color: var(--t1);
+  font-size: 15;
+  font-weight: 500;
+}
+
+.ri-user {
+  color: var(--t2);
+  font-size: 13;
+}
+
+.res-empty {
+  color: var(--t2);
+  font-size: 14;
+  text-align: center;
+  padding: 26 16;
+}
+
+/* Pie con el botón (como el .m-foot de la web). */
+.m-foot {
+  background-color: var(--panel);
+  padding: 10 14;
+  border-top-width: 1;
+  border-top-color: var(--border);
+}
+
+/* ============================================================
+   Ficha de usuario (estilo .pf-* de la web)
+   ============================================================ */
+
+.pf-page {
+  background-color: var(--bg);
+}
+
+.pf-banner {
+  height: 132;
+  background-color: var(--panel2);
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.pf-banner-img {
+  width: 100%;
+  height: 132;
+}
+
+.pf-banner-art {
+  horizontal-align: right;
+  margin-right: 14;
+  margin-bottom: -22;
+}
+
+/* El avatar se monta sobre la portada, como en la web. */
+.pf-idrow {
+  padding: 0 16;
+}
+
+.pf-av {
+  margin-top: -30;
+}
+
+.pf-idbelow {
+  padding: 8 16 0 16;
+}
+
+.pf-name {
+  color: var(--t0);
+  font-size: 24;
+  font-weight: 700;
+}
+
+.pf-user {
+  color: var(--t2);
+  font-size: 14;
+  margin-top: 3;
+}
+
+.pf-status {
+  color: var(--t1);
+  font-size: 13;
+  padding: 12 16 0 16;
+}
+
+.pf-bio {
+  color: var(--t1);
+  font-size: 15;
+  padding: 14 16;
+}
+
+.pf-act {
+  margin: 6 16;
+}
+
+.pf-err {
+  margin: 0 16 16 16;
+}
+
+/* ============================================================
+   Panel de personas (estilo .ppl-* de la web)
+   ============================================================ */
+
+.ppl-page {
+  background-color: var(--panel);
+}
+
+/* Pestañas: la activa lleva el subrayado naranja. */
+.ppl-tabs {
+  padding: 6 10 0 10;
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.ppl-tab {
+  color: var(--t2);
+  font-size: 14;
+  font-weight: 600;
+  text-align: center;
+  padding: 8 0;
+  border-bottom-width: 2;
+  border-bottom-color: transparent;
+}
+
+.ppl-tab.on {
+  color: var(--t1);
+  border-bottom-color: var(--accent);
+}
+
+/* Buscador en pastilla (.search-pill). */
+.ppl-find {
+  background-color: var(--bg);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  margin: 8 10;
+  padding: 9 10;
+}
+
+.ppl-input {
+  background-color: transparent;
+  border-width: 0;
+  color: var(--t1);
+  font-size: 15;
+  margin-left: 8;
+  padding: 0;
+  placeholder-color: #a3a3a3;
+}
+
+/* Filas: avatar de 36, nombre y estado. */
+.ppl-list {
+  padding: 4 8 10 8;
+}
+
+.ppl-row {
+  padding: 7 6;
+  border-radius: 8;
+}
+
+.ppl-col {
+  margin-left: 8;
+  margin-right: 8;
+}
+
+.ppl-name {
+  color: var(--t1);
+  font-size: 14;
+  font-weight: 600;
+}
+
+.ppl-sub {
+  color: var(--t2);
+  font-size: 12;
+}
+
+.ppl-go {
+  color: var(--t2);
+  font-size: 20;
+}
+
+/* Botón chico de las filas. */
+.btn-xs {
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border-radius: 8;
+  padding: 6 10;
+  font-size: 13;
+  font-weight: 600;
+  margin-left: 6;
+  min-width: 44;
+}
+
+.btn-xs.ghost {
+  background-color: transparent;
+  color: var(--t2);
+  border-width: 1;
+  border-color: var(--border);
+}
+
+/* ============================================================
+   Ajustes (estilo .st-* de la web)
+   ============================================================ */
+
+.st-page {
+  background-color: var(--panel);
+}
+
+/* Encabezado de sección: en mayúsculas y apagado, como en la web. */
+.st-h {
+  color: var(--t2);
+  font-size: 12;
+  letter-spacing: 1;
+  text-transform: uppercase;
+  padding: 14 16 6 16;
+}
+
+/* Fila de ajuste: título (+ explicación) y el control a la derecha. */
+.st-row {
+  padding: 8 16;
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.st-col {
+  margin-right: 12;
+}
+
+.st-t {
+  color: var(--t1);
+  font-size: 14;
+  font-weight: 600;
+}
+
+.st-s {
+  color: var(--t2);
+  font-size: 13;
+}
+
+.st-lbl {
+  padding: 10 16 4 16;
+}
+
+/* Opciones en pastillas (tamaño de letra, estilo de emojis). */
+.st-pills {
+  padding: 0 12 8 12;
+}
+
+.ap-opt {
+  background-color: var(--panel2);
+  color: var(--t2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  padding: 8 0;
+  font-size: 14;
+  margin: 4 3;
+}
+
+.ap-opt.on {
+  border-color: var(--accent);
+  color: var(--t1);
+  font-weight: 600;
+}
+
+/* Botón chico (activar avisos). */
+.st-mini {
+  background-color: var(--panel2);
+  color: var(--t1);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  padding: 7 12;
+  font-size: 13;
+}
+
+/* Botón fantasma (cerrar sesión). */
+.btn-ghost {
+  background-color: transparent;
+  color: var(--t1);
+  border-width: 1;
+  border-color: var(--border);
+}
+
+.st-out {
+  margin: 4 16 16 16;
+}
+
+.st-err {
+  margin: 0 16 16 16;
 }
 
 /* ============================================================

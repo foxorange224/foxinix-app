@@ -1,131 +1,138 @@
 <template>
-  <Page>
-    <ActionBar title="Ajustes">
-      <ActionItem text="Volver" @tap="close" ios.position="left" />
-    </ActionBar>
+  <!-- W103: ajustes con el estilo de la web: cabecera con volver,
+       secciones en mayúsculas (.st-h) y filas con título + explicación
+       (.st-row / .st-col) separadas por líneas. -->
+  <Page :class="'fox-' + theme" actionBarHidden="true">
 
-    <ScrollView>
-      <StackLayout>
-        <!-- ===== Chat ===== -->
-        <Label class="fox-sec" text="Chat" />
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Sonido al recibir" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.sound"
-            @change="setBool('sound', $event.value)"
-          />
-        </GridLayout>
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Indicador de escritura" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.typing"
-            @change="setBool('typing', $event.value)"
-          />
-        </GridLayout>
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Recibos de lectura" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.receipts"
-            @change="setBool('receipts', $event.value)"
-          />
-        </GridLayout>
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Hora de 12 horas" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.h12"
-            @change="setBool('h12', $event.value)"
-          />
-        </GridLayout>
+    <GridLayout rows="auto,*" class="st-page">
+      <!-- ---------- cabecera ---------- -->
+      <GridLayout row="0" class="side-head" columns="auto,*">
+        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="close" />
+        <Label col="1" class="sh-title" :text="t('Ajustes')" textWrap="false" />
+      </GridLayout>
 
-        <!-- ===== Apariencia ===== -->
-        <Label class="fox-sec" text="Apariencia" />
+      <!-- ---------- cuerpo ---------- -->
+      <ScrollView row="1">
+        <StackLayout>
+          <!-- ===== Chat ===== -->
+          <Label class="st-h" :text="t('Chat')" />
 
-        <Label class="fox-row-title fox-lbl" text="Estilo de emojis" />
-        <StackLayout class="fox-seg" orientation="horizontal">
-          <Button
-            v-for="o in emoOptions"
-            :key="o.id"
-            class="fox-seg-btn"
-            :class="{ on: prefs.emo === o.id }"
-            :text="o.label"
-            @tap="setEmo(o.id)"
-          />
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Sonido al recibir')" textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.sound"
+                    @change="setBool('sound', $event.value)" />
+          </GridLayout>
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Avisar cuando escribo')" textWrap="true" />
+              <Label class="st-s" :text="t('Tus contactos ven “escribiendo…”')"
+                     textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.typing"
+                    @change="setBool('typing', $event.value)" />
+          </GridLayout>
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Recibos de lectura')" textWrap="true" />
+              <Label class="st-s" :text="t('Mostrar ✓✓ y avisar cuando lees')"
+                     textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.receipts"
+                    @change="setBool('receipts', $event.value)" />
+          </GridLayout>
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Formato de hora')" textWrap="true" />
+              <Label class="st-s" :text="t('En vez de 20:30, mostrar 8:30 pm')"
+                     textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.h12"
+                    @change="setBool('h12', $event.value)" />
+          </GridLayout>
+
+          <!-- ===== Apariencia ===== -->
+          <Label class="st-h" :text="t('Apariencia')" />
+
+          <Label class="st-t st-lbl" :text="t('Estilo de emojis')" textWrap="true" />
+          <GridLayout class="st-pills" columns="*,*,*">
+            <Button v-for="(o, i) in emoOptions" :key="o.id" :col="i"
+                    class="ap-opt" :class="{ on: prefs.emo === o.id }"
+                    :text="o.label" @tap="setEmo(o.id)" />
+          </GridLayout>
+
+          <Label class="st-t st-lbl" :text="t('Tamaño de letra')" textWrap="true" />
+          <GridLayout class="st-pills" columns="*,*,*">
+            <Button v-for="(o, i) in fontOptions" :key="o.id" :col="i"
+                    class="ap-opt" :class="{ on: font === o.id }"
+                    :text="o.label" @tap="setFontSize(o.id)" />
+          </GridLayout>
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Sin animaciones')" textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.noAnim"
+                    @change="setBool('noAnim', $event.value)" />
+          </GridLayout>
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Reducir estímulos')" textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.reduceStimuli"
+                    @change="setBool('reduceStimuli', $event.value)" />
+          </GridLayout>
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Cola de notas de voz')" textWrap="true" />
+            </StackLayout>
+            <Switch col="1" :checked="prefs.voiceQueue"
+                    @change="setBool('voiceQueue', $event.value)" />
+          </GridLayout>
+
+          <!-- ===== Avisos ===== -->
+          <Label class="st-h" :text="t('Avisos')" />
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="t('Notificaciones')" textWrap="true" />
+              <Label class="st-s" :text="notifState" textWrap="true" />
+            </StackLayout>
+            <Button v-if="notifState !== t('Concedido')" col="1" class="st-mini"
+                    :text="notifState === t('Bloqueado')
+                      ? t('Ajustes del sistema')
+                      : t('Activar')"
+                    @tap="askNotif" />
+          </GridLayout>
+
+          <!-- ===== Cuenta ===== -->
+          <Label class="st-h" :text="t('Cuenta')" />
+
+          <GridLayout class="st-row" columns="*,auto">
+            <StackLayout col="0" class="st-col">
+              <Label class="st-t" :text="'@' + username" textWrap="true" />
+              <Label class="st-s" :text="displayName" textWrap="true" />
+            </StackLayout>
+            <Label col="1" class="st-s" :text="verified ? t('verificada') : t('sin verificar')"
+                   textWrap="true" />
+          </GridLayout>
+
+          <!-- ===== Sesión ===== -->
+          <Label class="st-h" :text="t('Sesión')" />
+
+          <Button class="btn btn-ghost btn-full st-out" :text="t('Cerrar sesión')"
+                  @tap="doLogout" />
+
+          <Label v-if="err" class="form-err st-err" :text="err" textWrap="true" />
         </StackLayout>
-
-        <Label class="fox-row-title fox-lbl" text="Tamaño de letra" />
-        <StackLayout class="fox-seg" orientation="horizontal">
-          <Button
-            v-for="o in fontOptions"
-            :key="o.id"
-            class="fox-seg-btn"
-            :class="{ on: font === o.id }"
-            :text="o.label"
-            @tap="setFontSize(o.id)"
-          />
-        </StackLayout>
-
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Sin animaciones" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.noAnim"
-            @change="setBool('noAnim', $event.value)"
-          />
-        </GridLayout>
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Reducir estímulos" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.reduceStimuli"
-            @change="setBool('reduceStimuli', $event.value)"
-          />
-        </GridLayout>
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Cola de notas de voz" />
-          <Switch
-            col="1"
-            row="0"
-            :checked="prefs.voiceQueue"
-            @change="setBool('voiceQueue', $event.value)"
-          />
-        </GridLayout>
-
-        <!-- ===== Avisos ===== -->
-        <Label class="fox-sec" text="Avisos" />
-        <GridLayout class="fox-row" columns="*,auto" rows="auto">
-          <Label class="fox-row-title" col="0" row="0" text="Notificaciones" />
-          <Label class="fox-row-sub" col="1" row="0" :text="notifState" />
-        </GridLayout>
-        <Button
-          v-if="notifState !== 'Concedido'"
-          class="fox-btn"
-          :text="notifState === 'Bloqueado' ? 'Abrir ajustes del sistema' : 'Activar notificaciones'"
-          @tap="askNotif"
-        />
-
-        <!-- ===== Cuenta ===== -->
-        <Label class="fox-sec" text="Cuenta" />
-        <GridLayout class="fox-row" columns="*,auto" rows="auto,auto">
-          <Label class="fox-row-title" col="0" row="0" :text="'@' + username" />
-          <Label class="fox-row-sub" col="0" row="1" :text="displayName" />
-          <Label class="fox-row-sub" col="1" row="0" rowspan="2" :text="verified ? 'verificada' : 'sin verificar'" />
-        </GridLayout>
-
-        <Button class="fox-btn fox-out" text="Cerrar sesión" @tap="doLogout" />
-
-        <Label v-if="err" class="fox-err" :text="err" textWrap="true" />
-      </StackLayout>
-    </ScrollView>
+      </ScrollView>
+    </GridLayout>
   </Page>
 </template>
 
@@ -133,8 +140,11 @@
   import { ref, computed, onMounted } from 'nativescript-vue';
   import { store, setFont, setPref, setPrefStr } from '../core/store.js';
   import { session } from '../core/api.js';
+  import { t } from '../core/i18n.js';
   import { nativeLogout } from '../fox';
   import { back } from '../nav';
+  import { tok } from '../fmt';
+  import FoxIconBtn from '../components/FoxIconBtn.vue';
   import {
     askNotificationPermission,
     notificationState,
@@ -143,16 +153,19 @@
 
   const err = ref('');
 
+  const theme = computed(() => store.theme);
+  const accent = computed(() => tok(store.theme, 'accent'));
+
   /* W100: estado del permiso de avisos (el sistema lo concede en
      Android 13+; en Ajustes se puede volver a pedir o abrir los ajustes
      del sistema si está bloqueado). */
-  const notifState = ref('Pendiente');
+  const notifState = ref(t('Pendiente'));
 
   function notifLabel(p: string): string {
-    if (p === 'granted') return 'Concedido';
-    if (p === 'denied') return 'Bloqueado';
-    if (p === 'prompt') return 'Pendiente';
-    return 'No disponible';
+    if (p === 'granted') return t('Concedido');
+    if (p === 'denied') return t('Bloqueado');
+    if (p === 'prompt') return t('Pendiente');
+    return t('No disponible');
   }
 
   onMounted(async () => {
@@ -160,7 +173,7 @@
   });
 
   async function askNotif() {
-    if (notifState.value === 'Bloqueado') {
+    if (notifState.value === t('Bloqueado')) {
       /* Si el usuario lo bloqueó, el sistema no vuelve a mostrar el
          diálogo: hay que ir a los ajustes del sistema. */
       if (!openNotificationSettings()) {
@@ -184,14 +197,14 @@
   const verified = computed(() => !!(user.value && user.value.email_verified));
 
   const emoOptions = [
-    { id: 'system', label: 'Sistema' },
-    { id: 'noto', label: 'Noto' },
-    { id: 'twemoji', label: 'Twemoji' },
+    { id: 'system', label: t('Sistema') },
+    { id: 'noto', label: t('Noto') },
+    { id: 'twemoji', label: t('Twemoji') },
   ];
   const fontOptions = [
-    { id: 'small', label: 'Chica' },
-    { id: 'normal', label: 'Normal' },
-    { id: 'large', label: 'Grande' },
+    { id: 'small', label: t('Pequeño') },
+    { id: 'normal', label: t('Normal') },
+    { id: 'large', label: t('Grande') },
   ];
 
   function setBool(key: string, val: boolean) {
@@ -214,48 +227,3 @@
     back();
   }
 </script>
-
-<style>
-.fox-sec {
-  color: #7d909c;
-  font-size: 12;
-  font-weight: 700;
-  padding: 18 16 6 16;
-  text-transform: uppercase;
-}
-
-.fox-lbl {
-  padding: 10 16 4 16;
-}
-
-.fox-seg {
-  padding: 0 12 8 12;
-}
-
-.fox-seg-btn {
-  background-color: #16232c;
-  color: #8aa0ad;
-  border-radius: 8;
-  border-width: 1;
-  border-color: #24333d;
-  padding: 8 14;
-  font-size: 13;
-  margin: 4;
-  android-textAllCaps: false;
-}
-
-.fox-seg-btn.on {
-  background-color: #ff751f;
-  color: #12181c;
-  border-color: #ff751f;
-  font-weight: 600;
-}
-
-.fox-out {
-  background-color: transparent;
-  color: #ff8a5c;
-  border-width: 1;
-  border-color: #7a3b3b;
-  margin: 18 16;
-}
-</style>

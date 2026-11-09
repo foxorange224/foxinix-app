@@ -43,6 +43,11 @@ export function back(): void {
   view.value = stack.pop() || 'chats';
 }
 
+/* ¿Hay a dónde volver con el botón "atrás"? */
+export function canGoBack(): boolean {
+  return stack.length > 0;
+}
+
 /* Vuelve a la lista de chats y limpia la pila (tras abrir un chat). */
 export function backToChats(): void {
   stack.length = 0;

@@ -8,10 +8,11 @@ import { Application } from '@nativescript/core';
 import { api, applyAuth, bootstrap, loadSession, logout, session } from './core/api.js';
 import { store, go, goReplace, toast } from './core/store.js';
 import { t } from './core/i18n.js';
-import { loadChats, openChat, sendText } from './core/actions.js';
+import { closeChat, loadChats, openChat, sendText } from './core/actions.js';
 import { startWS, stopWS } from './core/realtime.js';
 import { askNotificationPermission, setupNotifications } from './notifier';
 import { setupBackgroundService } from './service';
+import { back, canGoBack, view } from './nav';
 
 /* El objeto `android` solo existe en el runtime de Android. */
 declare const android: any;
@@ -26,6 +27,9 @@ export async function bootNative(): Promise<void> {
   /* W101: servicio en primer plano para que el WebSocket sobreviva con
      la app en segundo plano (se arranca al salir, se para al volver). */
   setupBackgroundService();
+  /* W103: el botón "atrás" del teléfono (Android) tiene que hacer lo
+     mismo que el de las cabeceras: volver a la vista anterior. */
+  setupBackButton();
   loadSession();
   if (!store.hasSession) {
     goReplace('login');
@@ -51,6 +55,31 @@ export async function bootNative(): Promise<void> {
 export interface AuthResult {
   needsVerification: boolean;
   email?: string;
+}
+
+/* W103: botón físico "atrás" de Android.
+   - Si hay una vista encima (personas, perfil, ajustes…), se vuelve a
+     ella, igual que la flecha de la cabecera.
+   - Si no, con un chat abierto se cierra el chat y se vuelve a la lista.
+   - Si no hay nada, la app se cierra (comportamiento normal de Android). */
+function setupBackButton(): void {
+  try {
+    if (!Application.android) return;
+    const evt = (Application as any).AndroidApplication
+      ? (Application as any).AndroidApplication.activityBackPressedEvent
+      : 'activityBackPressed';
+    Application.android.on(evt, (args: any) => {
+      if (canGoBack()) {
+        args.cancel = true;
+        back();
+        return;
+      }
+      if (view.value === 'chats' && store.activeChatId) {
+        args.cancel = true;
+        try { closeChat(); } catch (e) { /* si falla, se sale */ }
+      }
+    });
+  } catch (e) { /* en iOS no existe este evento */ }
 }
 
 /* W100: pide el permiso de avisos del sistema (una sola vez; si el

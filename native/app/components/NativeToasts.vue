@@ -32,27 +32,25 @@
   margin-right: 16;
 }
 
+/* W103: el aviso flotante con los colores de la web (.toast). */
 .fox-toast {
-  background-color: #1d2b34;
-  color: #e8edf2;
-  border-radius: 10;
+  background-color: var(--panel2);
+  color: var(--t1);
+  border-radius: 12;
   border-width: 1;
-  border-color: #2b3d49;
-  padding: 10 14;
+  border-color: var(--border);
+  padding: 11 14;
   font-size: 14;
   text-align: center;
   android-elevation: 6;
 }
 
 .fox-toast.err {
-  background-color: #3a1f1f;
-  border-color: #7a3b3b;
-  color: #ffd9d9;
+  border-color: var(--err);
+  color: var(--err);
 }
 
 .fox-toast.ok {
-  background-color: #17301f;
-  border-color: #2f6b45;
-  color: #d7ffe6;
+  border-color: var(--accent);
 }
 </style>

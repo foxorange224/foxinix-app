@@ -1,173 +1,116 @@
 <template>
-  <Page>
-    <ActionBar title="Personas">
-      <ActionItem text="Chats" @tap="backToChats" ios.position="left" />
-      <ActionItem text="Grupo" @tap="goNewGroup" ios.position="right" />
-    </ActionBar>
+  <!-- W103: panel de personas con el estilo de la web: cabecera, pestañas
+       con subrayado naranja (.ppl-tab), buscador en pastilla (.search-pill)
+       y filas con avatar de 36 (.ppl-row). -->
+  <Page :class="'fox-' + theme" actionBarHidden="true">
+    <GridLayout rows="auto,auto,auto,*" class="ppl-page">
+      <!-- ---------- cabecera ---------- -->
+      <GridLayout row="0" class="side-head" columns="auto,*,auto">
+        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="backToChats" />
+        <Label col="1" class="sh-title" :text="t('Personas')" textWrap="false" />
+        <FoxIconBtn col="2" icon="users" bare :tint="accent" @tap="goNewGroup" />
+      </GridLayout>
 
-    <GridLayout rows="auto,auto,*">
-      <!-- pestañas -->
-      <StackLayout row="0" class="fox-tabs" orientation="horizontal">
-        <Button
-          class="fox-tab"
-          :class="{ on: tab === 'active' }"
-          text="Activos"
-          @tap="tab = 'active'"
-        />
-        <Button
-          class="fox-tab"
-          :class="{ on: tab === 'req' }"
-          :text="nReq ? 'Solicitudes (' + nReq + ')' : 'Solicitudes'"
-          @tap="tab = 'req'"
-        />
-      </StackLayout>
+      <!-- ---------- pestañas ---------- -->
+      <GridLayout row="1" class="ppl-tabs" columns="*,*">
+        <Label col="0" class="ppl-tab" :class="{ on: tab === 'active' }"
+               :text="t('Activos')" textWrap="false" @tap="tab = 'active'" />
+        <Label col="1" class="ppl-tab" :class="{ on: tab === 'req' }"
+               :text="nReq ? t('Solicitudes ({n})', { n: nReq }) : t('Solicitudes')"
+               textWrap="false" @tap="tab = 'req'" />
+      </GridLayout>
 
-      <!-- búsqueda -->
-      <TextField
-        row="1"
-        class="fox-search"
-        :text="q"
-        :hint="tab === 'active' ? 'Buscar personas por usuario' : 'Buscar solicitudes'"
-        autocorrect="false"
-        autocapitalizationType="none"
-        @textChange="onQuery"
-      />
+      <!-- ---------- buscador ---------- -->
+      <GridLayout row="2" class="ppl-find" columns="auto,*">
+        <Image col="0" src="res://ic_fox_search" width="18" height="18"
+               :tintColor="muted" verticalAlignment="center" />
+        <TextField col="1" class="ppl-input" :text="q"
+                   :hint="tab === 'active'
+                     ? t('Buscar personas por usuario')
+                     : t('Buscar solicitudes')"
+                   autocorrect="false" autocapitalizationType="none"
+                   @textChange="onQuery" />
+      </GridLayout>
 
-      <ScrollView row="2">
-        <StackLayout>
+      <!-- ---------- lista ---------- -->
+      <ScrollView row="3">
+        <StackLayout class="ppl-list">
           <!-- ===== pestaña Activos ===== -->
           <StackLayout v-if="tab === 'active'">
             <!-- resultados de búsqueda -->
             <StackLayout v-if="q.trim().length >= 2">
-              <GridLayout
-                v-for="u in results"
-                :key="'r' + u.id"
-                class="fox-row"
-                columns="auto,*,auto"
-                rows="auto,auto"
-                @tap="openResult(u)"
-              >
-                <GridLayout row="0" col="0" rowspan="2" class="fox-av">
-                  <Image
-                    v-if="avatarOf(u)"
-                    class="fox-av-img"
-                    :src="avatarOf(u)"
-                    stretch="aspectFill"
-                  />
-                  <Label
-                    v-else
-                    class="fox-avatar"
-                    :text="initial(u)"
-                    :backgroundColor="u.online ? '#1f4d33' : '#16232c'"
-                  />
-                </GridLayout>
-                <Label class="fox-row-title" row="0" col="1" :text="nameOf(u)" textWrap="true" />
-                <Label class="fox-row-sub" row="1" col="1" colSpan="2" :text="'@' + u.username" />
-                <Button
-                  row="0"
-                  col="2"
-                  rowspan="2"
-                  class="fox-act"
-                  :text="actionFor(u)"
-                  :enabled="actionFor(u) !== 'Solicitud enviada'"
-                  @tap="actOnSearch(u)"
-                />
+              <GridLayout v-for="u in results" :key="'r' + u.id" class="ppl-row"
+                          columns="auto,*,auto" @tap="openResult(u)">
+                <FoxAvatar col="0" :src="avatarOf(u)" :initial="initial(u)"
+                           :size="36" :dot="dotOf(u)" :ring="panelRing" />
+                <StackLayout col="1" class="ppl-col">
+                  <Label class="ppl-name" :text="nameOf(u)" textWrap="false" />
+                  <Label class="ppl-sub" :text="'@' + u.username" textWrap="false" />
+                </StackLayout>
+                <Button col="2" class="btn-xs" :text="actionFor(u)"
+                        :enabled="actionFor(u) !== t('Solicitud enviada')"
+                        @tap="actOnSearch(u)" />
               </GridLayout>
-              <Label v-if="!results.length && !searching" class="fox-empty" text="Sin resultados" />
-              <Label v-if="searching" class="fox-empty" text="Buscando…" />
+              <Label v-if="!results.length && !searching" class="fox-empty"
+                     :text="t('Sin resultados')" textWrap="true" />
+              <Label v-if="searching" class="fox-empty" :text="t('Buscando…')"
+                     textWrap="true" />
             </StackLayout>
 
             <!-- amigos -->
             <StackLayout v-else>
-              <GridLayout
-                v-for="u in friends"
-                :key="'f' + u.id"
-                class="fox-row"
-                columns="auto,*,auto"
-                rows="auto,auto"
-                @tap="openFriend(u)"
-              >
-                <GridLayout row="0" col="0" rowspan="2" class="fox-av">
-                  <Image
-                    v-if="avatarOf(u)"
-                    class="fox-av-img"
-                    :src="avatarOf(u)"
-                    stretch="aspectFill"
-                  />
-                  <Label
-                    v-else
-                    class="fox-avatar"
-                    :text="initial(u)"
-                    :backgroundColor="friendOn(u) ? '#1f4d33' : '#16232c'"
-                  />
-                </GridLayout>
-                <Label class="fox-row-title" row="0" col="1" :text="nameOf(u)" textWrap="true" />
-                <Label class="fox-row-sub" row="1" col="1" colSpan="2" :text="lineOf(u)" />
-                <Label
-                  row="0"
-                  col="2"
-                  rowspan="2"
-                  class="fox-go"
-                  text="›"
-                />
+              <GridLayout v-for="u in friends" :key="'f' + u.id" class="ppl-row"
+                          columns="auto,*,auto" @tap="openFriend(u)">
+                <FoxAvatar col="0" :src="avatarOf(u)" :initial="initial(u)"
+                           :size="36" :dot="dotOf(u)" :ring="panelRing" />
+                <StackLayout col="1" class="ppl-col">
+                  <Label class="ppl-name" :text="nameOf(u)" textWrap="false" />
+                  <Label class="ppl-sub" :text="lineOf(u)" textWrap="false" />
+                </StackLayout>
+                <Label col="2" class="ppl-go" text="›" />
               </GridLayout>
-              <Label v-if="loaded && !friends.length" class="fox-empty" text="Todavía no tenés amigos. Buscá personas arriba para empezar." />
-              <Label v-else-if="loaded && !friends.length" class="fox-empty" text="Cargando…" />
+              <Label v-if="loaded && !friends.length" class="fox-empty"
+                     :text="t('Todavía no tenés amigos. Buscá personas arriba para empezar.')"
+                     textWrap="true" />
+              <Label v-else-if="!loaded" class="fox-empty" :text="t('Cargando…')"
+                     textWrap="true" />
             </StackLayout>
           </StackLayout>
 
           <!-- ===== pestaña Solicitudes ===== -->
           <StackLayout v-else>
-            <Label v-if="sent.length" class="fox-sec" text="Enviadas" />
-            <GridLayout
-              v-for="r in sent"
-              :key="'s' + r.id"
-              class="fox-row"
-              columns="auto,*,auto"
-              rows="auto,auto"
-            >
-              <GridLayout row="0" col="0" rowspan="2" class="fox-av">
-                <Image
-                  v-if="avatarOf(r.user)"
-                  class="fox-av-img"
-                  :src="avatarOf(r.user)"
-                  stretch="aspectFill"
-                />
-                <Label v-else class="fox-avatar" :text="initial(r.user)" backgroundColor="#16232c" />
-              </GridLayout>
-              <Label class="fox-row-title" row="0" col="1" :text="nameOf(r.user)" textWrap="true" />
-              <Label class="fox-row-sub" row="1" col="1" colSpan="2" :text="'@' + (r.user && r.user.username || '')" />
-              <Button row="0" col="2" rowspan="2" class="fox-act ghost" text="Cancelar" @tap="cancelReq(r)" />
+            <Label v-if="sent.length" class="st-h" :text="t('Enviadas')" />
+            <GridLayout v-for="r in sent" :key="'s' + r.id" class="ppl-row"
+                        columns="auto,*,auto">
+              <FoxAvatar col="0" :src="avatarOf(r.user)" :initial="initial(r.user)"
+                         :size="36" :dot="dotOf(r.user)" :ring="panelRing" />
+              <StackLayout col="1" class="ppl-col">
+                <Label class="ppl-name" :text="nameOf(r.user)" textWrap="false" />
+                <Label class="ppl-sub"
+                       :text="'@' + (r.user && r.user.username || '')" textWrap="false" />
+              </StackLayout>
+              <Button col="2" class="btn-xs ghost" :text="t('Cancelar')"
+                      @tap="cancelReq(r)" />
             </GridLayout>
 
-            <Label v-if="recv.length" class="fox-sec" text="Recibidas" />
-            <GridLayout
-              v-for="r in recv"
-              :key="'v' + r.id"
-              class="fox-row"
-              columns="auto,*,auto,auto"
-              rows="auto,auto"
-            >
-              <GridLayout row="0" col="0" rowspan="2" class="fox-av">
-                <Image
-                  v-if="avatarOf(r.user)"
-                  class="fox-av-img"
-                  :src="avatarOf(r.user)"
-                  stretch="aspectFill"
-                />
-                <Label v-else class="fox-avatar" :text="initial(r.user)" backgroundColor="#16232c" />
-              </GridLayout>
-              <Label class="fox-row-title" row="0" col="1" :text="nameOf(r.user)" textWrap="true" />
-              <Label class="fox-row-sub" row="1" col="1" colSpan="3" :text="'@' + (r.user && r.user.username || '')" />
-              <Button row="0" col="2" rowspan="2" class="fox-act" text="Aceptar" @tap="acceptReq(r)" />
-              <Button row="0" col="3" rowspan="2" class="fox-act ghost" text="Rechazar" @tap="rejectReq(r)" />
+            <Label v-if="recv.length" class="st-h" :text="t('Recibidas')" />
+            <GridLayout v-for="r in recv" :key="'v' + r.id" class="ppl-row"
+                        columns="auto,*,auto,auto">
+              <FoxAvatar col="0" :src="avatarOf(r.user)" :initial="initial(r.user)"
+                         :size="36" :dot="dotOf(r.user)" :ring="panelRing" />
+              <StackLayout col="1" class="ppl-col">
+                <Label class="ppl-name" :text="nameOf(r.user)" textWrap="false" />
+                <Label class="ppl-sub"
+                       :text="'@' + (r.user && r.user.username || '')" textWrap="false" />
+              </StackLayout>
+              <Button col="2" class="btn-xs" :text="t('Aceptar')"
+                      @tap="acceptReq(r)" />
+              <Button col="3" class="btn-xs ghost" :text="t('Rechazar')"
+                      @tap="rejectReq(r)" />
             </GridLayout>
 
-            <Label
-              v-if="!sent.length && !recv.length"
-              class="fox-empty"
-              text="No hay solicitudes por ahora."
-            />
+            <Label v-if="!sent.length && !recv.length" class="fox-empty"
+                   :text="t('No hay solicitudes por ahora.')" textWrap="true" />
           </StackLayout>
         </StackLayout>
       </ScrollView>
@@ -182,12 +125,21 @@
     acceptFriendRequest, cancelFriendRequest, createDm, loadPeople, mediaUrl,
     rejectFriendRequest, searchUsers, sendFriendRequest,
   } from '../core/actions.js';
+  import { t } from '../core/i18n.js';
   import { backToChats, goProfile, goView } from '../nav';
+  import { tok, dotState } from '../fmt';
+  import FoxAvatar from '../components/FoxAvatar.vue';
+  import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   const tab = ref<'active' | 'req'>('active');
   const q = ref('');
   const results = ref<any[]>([]);
   const searching = ref(false);
+
+  const theme = computed(() => store.theme);
+  const accent = computed(() => tok(store.theme, 'accent'));
+  const muted = computed(() => tok(store.theme, 't2'));
+  const panelRing = computed(() => tok(store.theme, 'panel'));
 
   const people = computed(() => store.people || { friends: [], sent: [], received: [] });
   const loaded = computed(() => !!store.people);
@@ -229,12 +181,17 @@
     return n ? n.charAt(0).toUpperCase() : '?';
   }
 
+  /* Puntito de estado (como el de la web). */
+  function dotOf(u: any): string {
+    return u ? dotState(u) : '';
+  }
+
   function lineOf(u: any): string {
-    if (!friendOn(u)) return 'Desconectado';
+    if (!friendOn(u)) return t('Desconectado');
     if (u.status_text) return u.status_text;
-    if (u.status_preset === 'busy') return 'Ausente';
-    if (u.status_preset === 'dnd') return 'No molestar';
-    return 'En línea';
+    if (u.status_preset === 'busy') return t('Ausente');
+    if (u.status_preset === 'dnd') return t('No molestar');
+    return t('En línea');
   }
 
   function isFriend(u: any): boolean {
@@ -252,9 +209,9 @@
   }
 
   function actionFor(u: any): string {
-    if (isFriend(u)) return 'Mensaje';
-    if (sentTo(u)) return 'Solicitud enviada';
-    return 'Enviar solicitud';
+    if (isFriend(u)) return t('Mensaje');
+    if (sentTo(u)) return t('Solicitud enviada');
+    return t('Enviar solicitud');
   }
 
   /* Búsqueda con rebote de 300 ms (mínimo 2 caracteres), igual que la
@@ -285,7 +242,7 @@
     Promise.resolve(fn()).then(() => {
       if (okMsg) toast(okMsg, 'ok');
     }).catch((err: any) => {
-      toast((err && err.detail) || 'No se pudo completar la acción', 'err');
+      toast((err && err.detail) || t('No se pudo completar la acción'), 'err');
     });
   }
 
@@ -317,7 +274,7 @@
       return;
     }
     if (sentTo(u)) return;
-    run(() => sendFriendRequest(u.username), 'Solicitud enviada');
+    run(() => sendFriendRequest(u.username), t('Solicitud enviada'));
   }
 
   function openResult(u: any) {
@@ -343,128 +300,3 @@
     await loadPeople();
   });
 </script>
-
-<style>
-.fox-tabs {
-  padding: 8 12 0 12;
-}
-
-.fox-tab {
-  background-color: transparent;
-  color: #8aa0ad;
-  font-size: 14;
-  font-weight: 600;
-  padding: 10 14;
-  margin-right: 6;
-  border-radius: 8;
-  border-width: 0;
-  android-textAllCaps: false;
-}
-
-.fox-tab.on {
-  background-color: #16232c;
-  color: #ff751f;
-}
-
-.fox-search {
-  background-color: #16232c;
-  color: #e8edf2;
-  border-radius: 10;
-  border-width: 1;
-  border-color: #24333d;
-  padding: 10;
-  margin: 12;
-  font-size: 15;
-}
-
-.fox-row {
-  padding: 10 14;
-  border-bottom-width: 1;
-  border-bottom-color: #1d2b34;
-}
-
-.fox-av {
-  width: 44;
-  height: 44;
-  margin-right: 12;
-}
-
-.fox-av-img {
-  width: 44;
-  height: 44;
-  border-radius: 22;
-  background-color: #16232c;
-}
-
-.fox-avatar {
-  width: 44;
-  height: 44;
-  border-radius: 22;
-  color: #e8edf2;
-  font-size: 17;
-  font-weight: 600;
-  text-align: center;
-  vertical-align: center;
-}
-
-.fox-row-title {
-  color: #e8edf2;
-  font-size: 15;
-  font-weight: 600;
-  vertical-align: center;
-}
-
-.fox-row-sub {
-  color: #8aa0ad;
-  font-size: 12;
-  vertical-align: center;
-}
-
-.fox-go {
-  color: #7d909c;
-  font-size: 22;
-  vertical-align: center;
-  padding-left: 10;
-}
-
-.fox-act {
-  background-color: #ff751f;
-  color: #12181c;
-  border-radius: 8;
-  padding: 8 12;
-  font-size: 12;
-  font-weight: 600;
-  margin-left: 8;
-  android-textAllCaps: false;
-}
-
-.fox-act.ghost {
-  background-color: transparent;
-  color: #8aa0ad;
-  border-width: 1;
-  border-color: #2b3d49;
-}
-
-.fox-act:disabled {
-  background-color: transparent;
-  color: #56666f;
-  border-width: 1;
-  border-color: #24333d;
-}
-
-.fox-sec {
-  color: #7d909c;
-  font-size: 12;
-  font-weight: 700;
-  padding: 14 16 6 16;
-  text-transform: uppercase;
-}
-
-.fox-empty {
-  color: #8aa0ad;
-  text-align: center;
-  margin-top: 28;
-  font-size: 14;
-  padding: 0 24;
-}
-</style>

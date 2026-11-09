@@ -2,8 +2,7 @@
   <!-- W103: conversación con la cabecera de 56px de la web (.chat-head),
        las filas de mensaje con su columna de avatar (.msg) y el
        compositor redondo (.composer + .send-btn). -->
-  <Page :class="'fox-' + theme">
-    <ActionBar actionBarHidden="true" />
+  <Page :class="'fox-' + theme" actionBarHidden="true">
 
     <GridLayout rows="auto,*,auto" class="chat-page">
       <!-- ---------- cabecera ---------- -->

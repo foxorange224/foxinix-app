@@ -1,71 +1,55 @@
 <template>
-  <Page>
-    <ActionBar title="Grupo nuevo">
-      <ActionItem text="Cancelar" @tap="cancel" ios.position="left" />
-    </ActionBar>
+  <!-- W103: grupo nuevo con el estilo de la web: nombre arriba, los
+       miembros elegidos en pastilles (.g-chip) y la lista de amigos con
+       el tilde de elegido (.ri-check). -->
+  <Page :class="'fox-' + theme" actionBarHidden="true">
+    <GridLayout rows="auto,auto,auto,*,auto" class="ng-page">
+      <!-- ---------- cabecera ---------- -->
+      <GridLayout row="0" class="side-head" columns="auto,*">
+        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="cancel" />
+        <Label col="1" class="sh-title" :text="t('Grupo nuevo')" textWrap="false" />
+      </GridLayout>
 
-    <GridLayout rows="auto,auto,*,auto">
-      <!-- nombre del grupo -->
-      <TextField
-        row="0"
-        class="fox-search"
-        :text="title"
-        hint="Nombre del grupo"
-        autocorrect="true"
-        @textChange="title = $event.value"
-      />
+      <!-- ---------- nombre del grupo ---------- -->
+      <TextField row="1" class="input ng-name" :text="title"
+                 :hint="t('Nombre del grupo')" autocorrect="true"
+                 @textChange="title = $event.value" />
 
-      <!-- miembros elegidos -->
-      <Label
-        row="1"
-        class="fox-picked"
-        :text="picked.length ? 'Miembros (' + picked.length + '): ' + pickedNames : 'Elegí a los miembros del grupo'"
-        textWrap="true"
-      />
+      <!-- ---------- miembros elegidos ---------- -->
+      <WrapLayout v-if="picked.length" row="2" class="g-chips">
+        <GridLayout v-for="u in picked" :key="u.id" class="g-chip">
+          <Label class="g-chip-name" :text="nameOf(u)" textWrap="false" />
+          <FoxIconBtn icon="x" bare :size="20" :ic="12" :tint="muted"
+                      @tap="toggle(u)" />
+        </GridLayout>
+      </WrapLayout>
 
-      <ScrollView row="2">
-        <StackLayout>
-          <GridLayout
-            v-for="u in friends"
-            :key="u.id"
-            class="fox-row"
-            columns="auto,auto,*"
-            rows="auto,auto"
-            @tap="toggle(u)"
-          >
-            <GridLayout row="0" col="0" rowspan="2" class="fox-av">
-              <Image
-                v-if="avatarOf(u)"
-                class="fox-av-img"
-                :src="avatarOf(u)"
-                stretch="aspectFill"
-              />
-              <Label v-else class="fox-avatar" :text="initial(u)" backgroundColor="#16232c" />
-            </GridLayout>
-            <Label
-              row="0"
-              col="1"
-              rowspan="2"
-              class="fox-check"
-              :class="{ on: isPicked(u) }"
-              :text="isPicked(u) ? '✓' : ''"
-            />
-            <Label class="fox-row-title" row="0" col="2" :text="nameOf(u)" textWrap="true" />
-            <Label class="fox-row-sub" row="1" col="2" :text="'@' + u.username" />
+      <!-- ---------- lista de amigos ---------- -->
+      <ScrollView row="3">
+        <StackLayout class="ng-list">
+          <GridLayout v-for="u in friends" :key="u.id" class="res-item"
+                      columns="auto,*,auto" @tap="toggle(u)">
+            <FoxAvatar col="0" :src="avatarOf(u)" :initial="initial(u)"
+                       :size="36" :ring="panelRing" />
+            <StackLayout col="1" class="ri-col">
+              <Label class="ri-name" :text="nameOf(u)" textWrap="false" />
+              <Label class="ri-user" :text="'@' + u.username" textWrap="false" />
+            </StackLayout>
+            <Image v-if="isPicked(u)" col="2" src="res://ic_fox_check" width="18"
+                   height="18" :tintColor="accent" />
           </GridLayout>
 
-          <Label v-if="!friends.length" class="fox-empty" text="Todavía no tenés amigos. Buscá personas en el panel de Personas." />
+          <Label v-if="!friends.length" class="res-empty"
+                 :text="t('Todavía no tenés amigos. Buscá personas en el panel de Personas.')"
+                 textWrap="true" />
         </StackLayout>
       </ScrollView>
 
-      <!-- crear -->
-      <Button
-        row="3"
-        class="fox-create"
-        text="Crear grupo"
-        :enabled="canCreate && !busy"
-        @tap="create"
-      />
+      <!-- ---------- crear ---------- -->
+      <GridLayout row="4" class="m-foot" columns="*">
+        <Button col="0" class="btn" :text="busy ? t('Creando…') : t('Crear grupo')"
+                :enabled="canCreate && !busy" @tap="create" />
+      </GridLayout>
     </GridLayout>
   </Page>
 </template>
@@ -74,18 +58,25 @@
   import { ref, computed, onMounted } from 'nativescript-vue';
   import { store, toast } from '../core/store.js';
   import { createGroup, loadPeople, mediaUrl } from '../core/actions.js';
+  import { t } from '../core/i18n.js';
   import { backToChats } from '../nav';
+  import { tok } from '../fmt';
+  import FoxAvatar from '../components/FoxAvatar.vue';
+  import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   const title = ref('');
   const picked = ref<any[]>([]);
   const busy = ref(false);
 
+  const theme = computed(() => store.theme);
+  const accent = computed(() => tok(store.theme, 'accent'));
+  const muted = computed(() => tok(store.theme, 't2'));
+  const panelRing = computed(() => tok(store.theme, 'panel'));
+
   const friends = computed(() => {
     const p = store.people || { friends: [] };
     return p.friends || [];
   });
-
-  const pickedNames = computed(() => picked.value.map((u) => u.display_name || u.username).join(', '));
 
   /* Con el creador siempre son 2: el grupo puede tener un solo miembro
      (el que lo crea). */
@@ -130,7 +121,7 @@
       picked.value = [];
       backToChats();
     } catch (e: any) {
-      toast((e && e.detail) || 'No se pudo crear el grupo', 'err');
+      toast((e && e.detail) || t('No se pudo crear el grupo'), 'err');
     } finally {
       busy.value = false;
     }
@@ -144,47 +135,3 @@
     if (!store.people) await loadPeople();
   });
 </script>
-
-<style>
-.fox-picked {
-  color: #8aa0ad;
-  font-size: 12;
-  padding: 0 16 10 16;
-}
-
-.fox-check {
-  width: 26;
-  height: 26;
-  border-radius: 13;
-  border-width: 2;
-  border-color: #2b3d49;
-  color: #12181c;
-  background-color: transparent;
-  text-align: center;
-  vertical-align: center;
-  font-size: 15;
-  font-weight: 700;
-  margin-right: 12;
-}
-
-.fox-check.on {
-  background-color: #ff751f;
-  border-color: #ff751f;
-}
-
-.fox-create {
-  background-color: #ff751f;
-  color: #12181c;
-  border-radius: 10;
-  padding: 13;
-  font-size: 16;
-  font-weight: 600;
-  margin: 12;
-  android-textAllCaps: false;
-}
-
-.fox-create:disabled {
-  background-color: #7a4420;
-  color: #b9c4cb;
-}
-</style>
