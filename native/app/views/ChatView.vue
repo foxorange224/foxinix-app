@@ -54,8 +54,23 @@
                 <Label v-if="r.showSender" class="b-sender"
                        :text="r.avatar ? r.avatar.name : ''" textWrap="false"
                        horizontalAlignment="left" />
+                <!-- W105: mantener pulsado el mensaje abre la hoja de
+                     acciones (responder, reaccionar, copiar, fijar,
+                     reenviar, editar, eliminar). -->
                 <StackLayout class="bubble" :class="{ mine: r.mine }"
-                             :maxWidth="maxBubble">
+                             :maxWidth="maxBubble"
+                             @longPress="openSheet(r.ref)">
+                  <!-- W105: la cita del mensaje al que se responde -->
+                  <GridLayout v-if="r.ref.reply_to" class="b-reply"
+                              columns="auto,*">
+                    <Label col="0" class="br-bar" />
+                    <StackLayout col="1" class="br-col">
+                      <Label class="br-name" :text="replyName(r.ref)"
+                             textWrap="false" />
+                      <Label class="br-text" :text="replyText(r.ref)"
+                             textWrap="false" />
+                    </StackLayout>
+                  </GridLayout>
                   <!-- W102: la imagen se ve DENTRO de la burbuja -->
                   <Image v-if="isImage(r.ref)" class="b-img"
                          :src="imgSrc(r.ref)" :width="imgSize(r.ref).w"
@@ -91,6 +106,22 @@
                          :class="{ 'on-me': r.mine }" :text="timeOf(r.ref)"
                          textWrap="false" />
                 </StackLayout>
+                <!-- W105: las reacciones, bajo la burbuja (como en la
+                     web: una píldora por emoji, con el conteo). -->
+                <GridLayout v-if="reactsOf(r.ref).length" class="b-reacts"
+                            :columns="reactColsOf(r.ref)"
+                            :horizontalAlignment="r.mine ? 'right' : 'left'">
+                  <GridLayout v-for="(rr, i) in reactsOf(r.ref)" :key="i"
+                              :col="i" class="react-chip"
+                              :class="{ mine: myReaction(r.ref) === rr.emoji }"
+                              columns="auto,auto"
+                              @tap="react(r.ref, rr.emoji)">
+                    <Label col="0" class="rc-emo" :text="rr.emoji"
+                           textWrap="false" />
+                    <Label v-if="rr.count > 1" col="1" class="rc-n"
+                           :text="String(rr.count)" textWrap="false" />
+                  </GridLayout>
+                </GridLayout>
               </StackLayout>
 
               <!-- avatar propio: a la derecha, como en la web -->
@@ -118,19 +149,33 @@
       <!-- ---------- compositor ---------- -->
       <!-- W104: el botón del micrófono graba una nota de voz; mientras
            se graba, el composer se sustituye por la barra de grabación
-           (punto + tiempo + onda + cancelar + enviar), como en la web. -->
+           (punto + tiempo + onda + cancelar + enviar), como en la web.
+           W105: arriba del composer va la barra de respuesta (o de
+           edición), como el .reply-bar de la web. -->
       <GridLayout v-if="rec === 'off'" row="2" class="composer"
-                  columns="auto,*,auto,auto">
-        <FoxIconBtn col="0" class="composer-attach" icon="clip" bare
+                  rows="auto,auto" columns="auto,*,auto,auto">
+        <!-- W105: a quién se responde (o qué se está editando) -->
+        <GridLayout v-if="replyFor || editFor" row="0" col="0" colSpan="4"
+                    class="reply-bar" columns="auto,*,auto">
+          <Image col="0" class="rb-ic" :src="barIcon"
+                 :tintColor="accentColor" stretch="aspectFit" />
+          <StackLayout col="1" class="rb-col">
+            <Label class="rb-name" :text="barTitle" textWrap="false" />
+            <Label class="rb-text" :text="barText" textWrap="false" />
+          </StackLayout>
+          <FoxIconBtn col="2" class="rb-x" icon="x" bare :tint="muted"
+                      accessibilityLabel="cancel reply" @tap="cancelBar" />
+        </GridLayout>
+        <FoxIconBtn row="1" col="0" class="composer-attach" icon="clip" bare
                     :tint="muted" @tap="attach" />
-        <TextField col="1" class="composer-input" :text="draft"
+        <TextField row="1" col="1" class="composer-input" :text="draft"
                    :hint="t('Mensaje')" autocorrect="true" :editable="!sending"
                    @textChange="draft = $event.value" @submit="send"
                    returnKeyType="send" />
-        <FoxIconBtn v-if="!draft.trim()" col="2" class="composer-mic"
+        <FoxIconBtn v-if="!draft.trim()" row="1" col="2" class="composer-mic"
                     icon="mic" bare :tint="muted"
                     accessibilityLabel="voice message" @tap="startRec" />
-        <FoxIconBtn col="3" class="send-btn" icon="send"
+        <FoxIconBtn row="1" col="3" class="send-btn" icon="send"
                     :class="{ muted: !canSend }" :tint="sendTint"
                     accessibilityLabel="send" @tap="send" />
       </GridLayout>
@@ -153,28 +198,43 @@
                     :tint="sendTint" accessibilityLabel="send voice message"
                     @tap="stopRec(true)" />
       </GridLayout>
+
+      <!-- ---------- W105: hoja de acciones del mensaje ----------
+           Es la ÚLTIMA hija del GridLayout de la página: en NS no hay
+           z-index, así que lo que va después se dibuja encima. Cubre
+           las tres filas (cabecera, mensajes y compositor). -->
+      <MsgSheet v-if="sheetFor" row="0" rowSpan="3"
+                :msg="sheetFor" :mine="isMine(sheetFor)"
+                :admin="isAdmin" :pinned="!!sheetFor.pinned"
+                @close="closeSheet" @reply="doReply" @react="doReact"
+                @copy="doCopy" @pin="doPin" @forward="doForward"
+                @edit="doEdit" @delete="doDelete" />
     </GridLayout>
   </Page>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch } from 'nativescript-vue';
-  import { Screen } from '@nativescript/core';
+  import { Dialogs, Screen } from '@nativescript/core';
   import { store, toast } from '../core/store.js';
   import {
     openChat, sendText, closeChat, sendMedia, mediaUrl,
+    toggleReaction, togglePin, editMessage,
   } from '../core/actions.js';
   import { t } from '../core/i18n.js';
   import { dayKey, dayLabel, fmtTime, connLine, dotState, tok } from '../fmt';
   import { pickFile } from '../files';
   import { imageBox, imageUrl, isImageMsg } from '../img';
-  import { openMedia } from '../nav';
+  import { openMedia, openForward } from '../nav';
+  import { deleteMessage } from '../msgactions';
+  import { DomAdapter } from '../core/platform/index.js';
   import {
     canRecord, cancelRecording, currentVoiceTime, micLevel, onVoiceState,
     startRecording, stopRecording, stopVoice, toggleVoice as toggleVoicePlay,
   } from '../voice';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
+  import MsgSheet from '../components/MsgSheet.vue';
 
   const draft = ref('');
   const sending = ref(false);
@@ -376,6 +436,188 @@
     if (m.kind === 'file') return '📎 Archivo';
     if (m.kind === 'sticker') return 'Sticker';
     return m.body || '';
+  }
+
+  /* ---------- W105: acciones del mensaje ---------- */
+
+  /* El mensaje al que se le pidió acción (la hoja abierta). */
+  const sheetFor = ref<any>(null);
+  /* El mensaje al que se responde (barra del compositor). */
+  const replyFor = ref<any>(null);
+  /* El mensaje que se está editando (barra del compositor). */
+  const editFor = ref<any>(null);
+
+  const accentColor = computed(() => tok(store.theme, 'accent'));
+
+  /* ¿Soy owner o admin del grupo? (puedo borrar el mensaje de otro) */
+  const isAdmin = computed(() => {
+    const c: any = chat.value;
+    return !!(c && c.type === 'group'
+      && (c.my_role === 'owner' || c.my_role === 'admin'));
+  });
+
+  /* Mantener pulsado el mensaje abre la hoja de acciones. */
+  function openSheet(m: any) {
+    if (!m || m.kind === 'system') return;
+    sheetFor.value = m;
+  }
+
+  function closeSheet() {
+    sheetFor.value = null;
+  }
+
+  /* Las reacciones del mensaje, agrupadas por emoji (como la web). */
+  function reactsOf(m: any): { emoji: string; count: number }[] {
+    const rs = (m && m.reactions) || [];
+    const out: { emoji: string; count: number }[] = [];
+    for (const r of rs) {
+      let g: any = null;
+      for (const o of out) if (o.emoji === r.emoji) g = o;
+      if (g) g.count++;
+      else out.push({ emoji: r.emoji, count: 1 });
+    }
+    return out;
+  }
+
+  /* Mi reacción en este mensaje (el server guarda una por usuario). */
+  function myReaction(m: any): string {
+    const uid = store.user && store.user.id;
+    const rs = (m && m.reactions) || [];
+    for (const r of rs) if (r.user_id === uid) return r.emoji;
+    return '';
+  }
+
+  /* Una columna por píldora de reacción. */
+  function reactColsOf(m: any): string {
+    return reactsOf(m).map(() => 'auto').join(',');
+  }
+
+  /* Poner o quitar una reacción (si ya era la misma, la quita). */
+  async function react(m: any, emoji: string) {
+    closeSheet();
+    if (!m || !emoji) return;
+    try {
+      await toggleReaction(store.activeChatId, m.id, emoji);
+    } catch (e: any) {
+      toast((e && e.detail) || t('No se pudo reaccionar'), 'err');
+    }
+  }
+
+  /* El texto que resume un mensaje (para las citas). */
+  function previewOf(rp: any): string {
+    if (!rp) return '';
+    /* Citar un spoiler no lo destapa. */
+    if (rp.spoiler) return t('Spoiler');
+    const txt = rp.body || '';
+    if (txt) return txt.length > 90 ? txt.slice(0, 90) + '…' : txt;
+    if (rp.kind === 'voice') return t('Nota de voz');
+    if (rp.kind === 'image') return t('Imagen');
+    if (rp.kind === 'system') return '';
+    return t('Archivo adjunto');
+  }
+
+  /* Quién escribió el mensaje citado. */
+  function replyName(m: any): string {
+    const rp = m && m.reply_to;
+    if (!rp || !rp.sender) return '';
+    if (typeof rp.sender === 'string') return rp.sender;
+    return rp.sender.display_name || rp.sender.username || '';
+  }
+
+  /* El texto del mensaje citado. */
+  function replyText(m: any): string {
+    return previewOf(m && m.reply_to);
+  }
+
+  /* La barra del compositor: responde o edita. */
+  const barTitle = computed(() => {
+    if (editFor.value) return t('Editando mensaje');
+    const s = replyFor.value && replyFor.value.sender;
+    if (!s) return t('Responder');
+    if (typeof s === 'string') return s;
+    return s.display_name || s.username || t('Responder');
+  });
+
+  const barText = computed(() => {
+    if (editFor.value) return previewOf(editFor.value);
+    return previewOf(replyFor.value);
+  });
+
+  const barIcon = computed(() =>
+    'res://ic_fox_' + (editFor.value ? 'pencil' : 'reply'));
+
+  /* --- las acciones de la hoja --- */
+
+  function doReply() {
+    const m = sheetFor.value;
+    closeSheet();
+    if (!m) return;
+    replyFor.value = m;
+    editFor.value = null;
+  }
+
+  function doCopy() {
+    const m = sheetFor.value;
+    closeSheet();
+    if (!m || !m.body) return;
+    if (DomAdapter.copyToClipboard(m.body)) {
+      toast(t('Mensaje copiado'));
+    } else {
+      toast(t('No se pudo copiar el texto'), 'err');
+    }
+  }
+
+  async function doPin() {
+    const m = sheetFor.value;
+    closeSheet();
+    if (!m) return;
+    try {
+      await togglePin(store.activeChatId, m.id, !m.pinned);
+    } catch (e: any) {
+      toast((e && e.detail) || t('No se pudo fijar el mensaje'), 'err');
+    }
+  }
+
+  function doForward() {
+    const m = sheetFor.value;
+    closeSheet();
+    if (!m) return;
+    openForward(m, store.activeChatId);
+  }
+
+  function doEdit() {
+    const m = sheetFor.value;
+    closeSheet();
+    if (!m) return;
+    editFor.value = m;
+    replyFor.value = null;
+    draft.value = m.body || '';
+  }
+
+  async function doDelete() {
+    const m = sheetFor.value;
+    closeSheet();
+    if (!m) return;
+    let ok = false;
+    try {
+      ok = await Dialogs.confirm({
+        title: t('Eliminar mensaje'),
+        message: t('Se borra el mensaje para ti y para todos los del chat.\nEsta acción no se puede deshacer.'),
+        okButtonText: t('Eliminar'),
+        cancelButtonText: t('Cancelar'),
+      });
+    } catch (e) { ok = false; }
+    if (!ok) return;
+    await deleteMessage(store.activeChatId, m.id);
+  }
+
+  /* Cancelar la respuesta (o la edición). */
+  function cancelBar() {
+    replyFor.value = null;
+    if (editFor.value) {
+      editFor.value = null;
+      draft.value = '';
+    }
   }
 
   /* ---------- W104: notas de voz ---------- */
@@ -619,7 +861,15 @@
     if (!text || sending.value) return;
     sending.value = true;
     try {
-      await sendText(store.activeChatId, text);
+      if (editFor.value) {
+        /* W105: editar el mensaje (no se manda uno nuevo). */
+        await editMessage(store.activeChatId, editFor.value.id, text);
+        editFor.value = null;
+      } else {
+        /* W105: si hay respuesta, el mensaje nuevo la lleva. */
+        await sendText(store.activeChatId, text, replyFor.value);
+        replyFor.value = null;
+      }
       draft.value = '';
       await new Promise((r) => setTimeout(r, 120));
       scrollToEnd();
@@ -689,5 +939,14 @@
     if (!n) return;
     await new Promise((r) => setTimeout(r, 80));
     scrollToEnd();
+  });
+
+  /* Al cambiar de chat se limpia la respuesta/edición (y el borrador:
+     si no, el texto de un chat aparece en otro). */
+  watch(() => store.activeChatId, () => {
+    sheetFor.value = null;
+    replyFor.value = null;
+    editFor.value = null;
+    draft.value = '';
   });
 </script>

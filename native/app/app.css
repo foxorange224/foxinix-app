@@ -761,6 +761,192 @@ ActionBar {
 }
 
 /* ============================================================
+   Acciones del mensaje (W105)
+
+   Lo mismo que la web: la cita del mensaje respondido dentro de la
+   burbuja (.b-reply), las reacciones debajo (.b-reacts) y la barra de
+   respuesta/edición arriba del compositor (.reply-bar). La hoja de
+   acciones (.sheet) es propia del móvil: en la web el menú se ancla a
+   la burbuja, acá sale pegada abajo.
+   ============================================================ */
+
+/* Cita del mensaje respondido (dentro de la burbuja) */
+.b-reply {
+  background-color: rgba(0, 0, 0, .16);
+  border-left-width: 3;
+  border-left-color: var(--accent);
+  border-radius: 8;
+  padding: 3 8;
+  margin-bottom: 3;
+}
+
+.br-col {
+  min-width: 0;
+}
+
+.br-name {
+  color: var(--accent);
+  font-size: 13;
+  font-weight: 600;
+}
+
+.br-text {
+  color: var(--t2);
+  font-size: 13;
+}
+
+/* Las reacciones, debajo de la burbuja */
+.b-reacts {
+  margin-top: 3;
+}
+
+.react-chip {
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 13;
+  padding: 3 8;
+  margin-right: 4;
+  margin-bottom: 2;
+}
+
+.react-chip.mine {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.rc-emo {
+  font-size: 14;
+  color: var(--t1);
+}
+
+.rc-n {
+  font-size: 12;
+  font-weight: 600;
+  color: var(--t1);
+  margin-left: 3;
+}
+
+.react-chip.mine .rc-emo,
+.react-chip.mine .rc-n {
+  color: var(--on-accent);
+}
+
+/* Barra de respuesta (o de edición) arriba del compositor */
+.reply-bar {
+  background-color: var(--panel2);
+  border-left-width: 3;
+  border-left-color: var(--accent);
+  border-radius: 8;
+  padding: 6 8 6 10;
+  margin-bottom: 6;
+}
+
+.rb-ic {
+  width: 18;
+  height: 18;
+  margin-right: 8;
+  vertical-align: center;
+}
+
+.rb-col {
+  min-width: 0;
+}
+
+.rb-name {
+  color: var(--t1);
+  font-size: 13;
+  font-weight: 600;
+}
+
+.rb-text {
+  color: var(--t2);
+  font-size: 13;
+}
+
+.rb-x {
+  vertical-align: center;
+}
+
+/* ---------- la hoja de acciones ---------- */
+
+.sheet-veil {
+  background-color: rgba(0, 0, 0, .55);
+}
+
+.sheet {
+  background-color: var(--panel);
+  border-top-width: 1;
+  border-color: var(--border);
+  border-top-left-radius: 16;
+  border-top-right-radius: 16;
+  padding: 4 0 0 0;
+}
+
+/* Las 12 reacciones rápidas */
+.sheet-reacts {
+  padding: 4 8 8 8;
+}
+
+.sheet-react {
+  font-size: 24;
+  width: 44;
+  height: 44;
+  text-align: center;
+  vertical-align: center;
+}
+
+/* La lista de acciones */
+.sheet-list {
+  border-top-width: 1;
+  border-color: var(--border);
+  padding: 4 0;
+}
+
+.sheet-act {
+  height: 46;
+  padding-left: 16;
+  padding-right: 16;
+}
+
+.sheet-ic {
+  width: 22;
+  height: 22;
+  margin-right: 14;
+  vertical-align: center;
+}
+
+.sheet-tx {
+  color: var(--t1);
+  font-size: 15;
+  vertical-align: center;
+}
+
+.sheet-tx.danger {
+  color: var(--err);
+}
+
+/* Cancelar (al pie de la hoja) */
+.sheet-cancel {
+  height: 46;
+  border-top-width: 1;
+  border-color: var(--border);
+  color: var(--t1);
+  font-size: 15;
+  font-weight: 600;
+  text-align: center;
+  vertical-align: center;
+}
+
+/* ============================================================
+   Reenviar un mensaje (W105)
+   ============================================================ */
+
+.fwd-page {
+  background-color: var(--chat-bg);
+}
+
+/* ============================================================
    Visor de imagen (como la luz de la web)
    ============================================================ */
 

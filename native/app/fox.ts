@@ -12,6 +12,7 @@ import { closeChat, loadChats, openChat, sendText } from './core/actions.js';
 import { startWS, stopWS } from './core/realtime.js';
 import { askNotificationPermission, setupNotifications } from './notifier';
 import { setupBackgroundService } from './service';
+import { installClipboard } from './clipboard';
 import { back, canGoBack, view } from './nav';
 
 /* El objeto `android` solo existe en el runtime de Android. */
@@ -20,6 +21,8 @@ declare const android: any;
 /* Arranque: carga la sesión guardada y, si hay una válida, entra a la
    app; si no, al login. */
 export async function bootNative(): Promise<void> {
+  /* W105: el portapapeles nativo (copiar el texto de un mensaje). */
+  installClipboard();
   /* W100: el notificador se engancha ANTES de abrir el WebSocket: si
      llega un mensaje con la app en segundo plano, el aviso del sistema
      tiene que salir. */

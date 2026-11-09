@@ -25,6 +25,9 @@
            desde la burbuja, el chat sigue activo (activeChatId) y el
            visor debe taparlo. -->
       <MediaViewer v-else-if="view === 'media'" />
+      <!-- W105: la pantalla de reenviar también va antes que el chat
+           (el chat sigue abierto debajo). -->
+      <ForwardView v-else-if="view === 'forward'" />
       <!-- con un chat abierto va la conversación; si no, la lista o
            el panel de personas -->
       <ChatView v-else-if="activeChatId" />
@@ -56,6 +59,7 @@
   import ChatListView from './views/ChatListView.vue';
   import ChatView from './views/ChatView.vue';
   import MediaViewer from './views/MediaViewer.vue';
+  import ForwardView from './views/ForwardView.vue';
   import PeopleView from './views/PeopleView.vue';
   import NewGroupView from './views/NewGroupView.vue';
   import ProfileView from './views/ProfileView.vue';

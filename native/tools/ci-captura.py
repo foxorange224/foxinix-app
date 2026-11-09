@@ -416,6 +416,145 @@ def cancel_voice_rec() -> None:
     go_back()
 
 
+def long_press(node: dict | None, ms: int = 900) -> bool:
+    """Mantiene pulsado un nodo (un swipe sin movimiento)."""
+    if not node:
+        return False
+    c = bounds_center(node.get("bounds", ""))
+    if not c:
+        return False
+    subprocess.run(
+        ["adb", "shell", "input", "swipe", str(c[0]), str(c[1]),
+         str(c[0]), str(c[1]), str(ms)],
+        timeout=30)
+    return True
+
+
+def find_message_text(xml: str) -> dict | None:
+    """El texto de un mensaje de la conversación (para mantener pulsado).
+
+    Se descartan la cabecera, el compositor, las horas y el separador
+    del día. Se elige el texto más largo: los nombres de remitente y
+    los avisos del sistema son más cortos que un mensaje de verdad.
+    """
+    _w, h = screen_size()
+    best = None
+    for n in nodes(xml):
+        if not n.get("class", "").endswith("TextView"):
+            continue
+        t = (n.get("text") or "").strip()
+        if len(t) < 3:
+            continue
+        if re.fullmatch(r"\d{1,2}:\d{2}", t):
+            continue          # la hora de un mensaje
+        if t.isupper():
+            continue          # "HOY" / "TODAY"
+        box = bounds_box(n.get("bounds", ""))
+        if not box:
+            continue
+        _x1, y1, _x2, y2 = box
+        if y1 < 150 or y2 > h - 110:
+            continue          # cabecera o compositor
+        if best is None or len(t) > len(best.get("text", "")):
+            best = n
+    return best
+
+
+def open_msg_actions() -> bool:
+    """Mantiene pulsado un mensaje: debe salir la hoja de acciones (W105).
+
+    La hoja se reconoce por la acción "Responder" (su accessibilityLabel
+    es "reply").
+    """
+    print("== acciones del mensaje ==")
+    xml = dump()
+    msg = find_message_text(xml)
+    if not msg:
+        print("!! no se encontró un mensaje que pulsar")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("mensaje:", repr(msg.get("text", ""))[:40], msg.get("bounds"))
+    long_press(msg)
+    time.sleep(4)
+    xml = dump()
+    if not find(xml, desc="reply"):
+        print("!! no salió la hoja de acciones")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("hoja de acciones abierta")
+    return True
+
+
+def close_msg_actions() -> None:
+    """Cierra la hoja de acciones (el botón "Cancelar")."""
+    xml = dump()
+    if tap(find(xml, desc="close message actions")):
+        time.sleep(2)
+        return
+    go_back()
+
+
+def has_reaction_chip(xml: str) -> bool:
+    """¿Se ve la píldora de una reacción en una burbuja?
+
+    El emoji de la píldora es un Label SIN accessibilityLabel (los de la
+    hoja sí lo tienen: "react 👍").
+    """
+    for n in nodes(xml):
+        if (n.get("text") or "").strip() == "👍" and not (n.get("content-desc") or ""):
+            return True
+    return False
+
+
+def react_to_message() -> bool:
+    """Reacciona con 👍 al mensaje de la hoja (W105).
+
+    Si ya hay una reacción puesta, no se toca nada: el server la quita
+    si se manda la misma otra vez.
+    """
+    xml = dump()
+    if has_reaction_chip(xml):
+        print("el mensaje ya tiene una reacción: no se toca")
+        return True
+    btn = find(xml, desc="react ")
+    if not btn:
+        print("!! no se vio la reacción rápida")
+        return False
+    tap(btn)
+    time.sleep(4)
+    xml = dump()
+    if not has_reaction_chip(xml):
+        print("!! no apareció la píldora de la reacción")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("reacción puesta")
+    return True
+
+
+def open_reply_bar() -> bool:
+    """Toca "Responder": debe salir la barra de respuesta arriba del
+    compositor (W105)."""
+    xml = dump()
+    if not tap(find(xml, desc="reply")):
+        print("!! no se vio la acción Responder")
+        return False
+    time.sleep(3)
+    xml = dump()
+    if not find(xml, desc="cancel reply"):
+        print("!! no apareció la barra de respuesta")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("barra de respuesta abierta")
+    return True
+
+
+def close_reply_bar() -> None:
+    """Cierra la barra de respuesta (la X)."""
+    xml = dump()
+    if tap(find(xml, desc="cancel reply")):
+        time.sleep(2)
+
+
 # ---------------------------------------------------------------- API
 # Auto-reparación del paso del visor: las imágenes de prueba que había
 # en la cuenta medían 1x1 px (el server guarda las dimensiones reales),
@@ -871,6 +1010,20 @@ def main() -> int:
     if tap(row):
         time.sleep(8)
         shot(out_dir, "4-conversacion")
+
+        # W105: mantener pulsado un mensaje abre la hoja de acciones.
+        if open_msg_actions():
+            shot(out_dir, "12-acciones")
+            # La reacción rápida: al tocarla se cierra la hoja y la
+            # burbuja muestra la píldora de la reacción.
+            if react_to_message():
+                shot(out_dir, "13-reaccion")
+            # La acción "Responder": sale la barra de respuesta arriba
+            # del compositor.
+            if open_msg_actions() and open_reply_bar():
+                shot(out_dir, "14-respuesta")
+                close_reply_bar()
+            close_msg_actions()
 
         # W104: el micrófono del compositor debe abrir la barra de
         # grabación (si el emulador no tiene micrófono, sólo avisa).

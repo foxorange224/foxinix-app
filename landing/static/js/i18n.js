@@ -370,6 +370,11 @@ const EN = {
   'No se pudo iniciar la grabación': 'Could not start the recording',
   'Este dispositivo no tiene micrófono': 'This device has no microphone',
   'No se pudo abrir la nota de voz': 'Could not open the voice message',
+  /* W105: acciones del mensaje en la app nativa. */
+  'Mensaje copiado': 'Message copied',
+  'Editando mensaje': 'Editing message',
+  'Mensaje reenviado': 'Message forwarded',
+  'No se pudo reenviar el mensaje': 'Could not forward the message',
   'Cerrar (Esc)': 'Close (Esc)',
   'Click o rueda para ampliar · arrastra para mover': 'Click or scroll to zoom in · drag to move',
   'Mensajería propia': 'Your own messaging',

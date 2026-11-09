@@ -41,6 +41,9 @@ WANTED = [
     "download", "eye", "eye-off", "chevron-down", "alert", "info",
     "star", "star-fill", "archive", "forward", "reply", "play",
     "pause", "vol", "mute", "expand", "collapse", "gear",
+    # W105: acciones del mensaje (responder, reaccionar, copiar, editar,
+    # borrar, reenviar, fijar).
+    "copy", "pencil", "trash", "pin-off",
     "logo-mark", "logo-word",
 ]
 
