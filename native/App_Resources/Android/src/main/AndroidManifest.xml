@@ -16,6 +16,11 @@
 	     app en segundo plano, sin Firebase). -->
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+	<!-- W104: notas de voz (grabación del micrófono). -->
+	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+	<!-- El micrófono es opcional: la app se puede instalar en tablets
+	     o dispositivos sin él (sólo se pierde la nota de voz). -->
+	<uses-feature android:name="android.hardware.microphone" android:required="false"/>
 
 	<application
 		android:name="com.tns.NativeScriptApplication"

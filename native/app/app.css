@@ -675,6 +675,92 @@ ActionBar {
 }
 
 /* ============================================================
+   Notas de voz (W104)
+
+   Mismos elementos que la web: el botón del micrófono en el
+   compositor, la barra de grabación (punto + tiempo + onda +
+   cancelar + enviar) y el reproductor dentro de la burbuja.
+   ============================================================ */
+
+.composer-mic {
+  margin-right: 4;
+  vertical-align: center;
+}
+
+/* La barra de grabación sustituye al composer mientras se graba. */
+.rec-bar {
+  background-color: var(--panel2);
+  border-radius: 22;
+  padding: 5 6 5 14;
+}
+
+.rec-dot {
+  width: 10;
+  height: 10;
+  border-radius: 5;
+  background-color: var(--err);
+  vertical-align: center;
+}
+
+.rec-time {
+  color: var(--t1);
+  font-size: 14;
+  font-weight: 600;
+  margin-left: 10;
+  vertical-align: center;
+}
+
+/* Onda en vivo: 22 barras (las mismas que la web). */
+.rec-wave {
+  margin-left: 10;
+  margin-right: 10;
+}
+
+.rec-wave-bar {
+  width: 2;
+  border-radius: 1;
+  background-color: var(--accent);
+}
+
+.rec-cancel {
+  margin-right: 6;
+  vertical-align: center;
+}
+
+.rec-send {
+  width: 38;
+  height: 38;
+}
+
+/* Reproductor de la nota de voz (el .b-player de la web). */
+.au-wave-bar {
+  width: 2;
+  border-radius: 1;
+  background-color: var(--t1);
+  opacity: .35;
+}
+
+.au-wave-bar.on {
+  opacity: .95;
+}
+
+/* En la burbuja propia (naranja) la onda va en blanco. */
+.b-player.on-me .au-wave-bar {
+  background-color: #ffffff;
+}
+
+.au-time {
+  color: var(--t2);
+  font-size: 12;
+  margin-left: 8;
+  vertical-align: center;
+}
+
+.b-player.on-me .au-time {
+  color: rgba(255, 255, 255, .78);
+}
+
+/* ============================================================
    Visor de imagen (como la luz de la web)
    ============================================================ */
 

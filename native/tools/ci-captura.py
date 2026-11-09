@@ -363,6 +363,41 @@ def open_media() -> bool:
     return True
 
 
+def open_voice_rec() -> bool:
+    """Toca el micrófono del compositor: debe salir la barra de grabación.
+
+    W104. El emulador del CI se lanza con -no-audio: si allí no hay
+    micrófono la app avisa con un toast y no abre la barra. Eso NO es
+    un fallo del smoke (la app no se rompe), así que sólo se avisa.
+    """
+    print("== nota de voz ==")
+    xml = dump()
+    btn = find(xml, desc="voice message")
+    if not btn:
+        print("!! no se vio el botón del micrófono")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    tap(btn)
+    time.sleep(5)
+    xml = dump()
+    for n in nodes(xml):
+        if re.fullmatch(r"\d{1,2}:\d{2}", (n.get("text") or "").strip()):
+            print("barra de grabación:", n.get("text"))
+            return True
+    print("!! no apareció la barra de grabación")
+    print("   textos:", " | ".join(texts(xml)))
+    return False
+
+
+def cancel_voice_rec() -> None:
+    """Cancela la grabación (la X) y vuelve al compositor normal."""
+    xml = dump()
+    if tap(find(xml, desc="cancel")):
+        time.sleep(3)
+        return
+    go_back()
+
+
 # ---------------------------------------------------------------- API
 # Auto-reparación del paso del visor: las imágenes de prueba que había
 # en la cuenta medían 1x1 px (el server guarda las dimensiones reales),
@@ -521,13 +556,13 @@ def png_bytes(width: int = 320, height: int = 200) -> bytes:
             + chunk(b"IEND", b""))
 
 
-def upload_png(token: str, data: bytes, filename: str = "visor.png") -> int:
-    """Sube el PNG al server (multipart, campo 'file'). Devuelve el id."""
+def upload_bytes(token: str, data: bytes, filename: str, mime: str) -> int:
+    """Sube un archivo al server (multipart, campo 'file'). Devuelve el id."""
     boundary = "----FoxinixSmoke" + os.urandom(8).hex()
     body = b"".join([
         ("--%s\r\n" % boundary).encode(),
         ('Content-Disposition: form-data; name="file"; filename="%s"\r\n' % filename).encode(),
-        b"Content-Type: image/png\r\n\r\n",
+        ("Content-Type: %s\r\n\r\n" % mime).encode(),
         data,
         ("\r\n--%s--\r\n" % boundary).encode(),
     ])
@@ -542,9 +577,67 @@ def upload_png(token: str, data: bytes, filename: str = "visor.png") -> int:
     except Exception:  # noqa: BLE001
         print("!! respuesta de subida no JSON")
         return 0
-    print("subida:", out.get("name"), out.get("width"), "x", out.get("height"),
-          out.get("size"), "bytes")
+    print("subida:", out.get("name"), out.get("mime"), out.get("width"),
+          "x", out.get("height"), out.get("size"), "bytes")
     return int(out.get("id") or 0)
+
+
+def wav_bytes(secs: float = 1.2, freq: int = 440, rate: int = 8000) -> bytes:
+    """Un WAV corto (un tono) generado en memoria, sin dependencias.
+
+    Es la nota de voz de prueba: sin ella la burbuja de voz no aparece
+    en las capturas (no hay ningún mensaje de voz en la cuenta).
+    """
+    import math
+
+    n = int(secs * rate)
+    frames = bytearray()
+    for i in range(n):
+        # un tono suave con una envolvente para que no suene a pitido
+        env = min(1.0, i / 400.0, (n - i) / 400.0)
+        v = int(9000 * env * math.sin(2 * math.pi * freq * i / rate))
+        frames += struct.pack("<h", v)
+    data = bytes(frames)
+    head = b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVE"
+    head += b"fmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16)
+    head += b"data" + struct.pack("<I", len(data))
+    return head + data
+
+
+def chat_has_voice(token: str, chat_id: int) -> bool:
+    """¿Tiene este chat alguna nota de voz?"""
+    st, out = api_json("GET", f"/chats/{chat_id}/messages?limit=50", token=token)
+    if st != 200 or not out:
+        return False
+    for m in out.get("messages") or []:
+        if m.get("kind") == "voice" and m.get("media"):
+            return True
+    return False
+
+
+def ensure_real_voice(token: str, chat_id: int) -> bool:
+    """Deja una nota de voz REAL en el chat (si no hay ninguna).
+
+    Sin ella, la burbuja de voz (el reproductor) no sale en las capturas.
+    """
+    if chat_has_voice(token, chat_id):
+        print("ya hay una nota de voz en el chat", chat_id)
+        return True
+    media_id = upload_bytes(token, wav_bytes(), "nota-de-voz.wav", "audio/wav")
+    if not media_id:
+        return False
+    st, out = api_json("POST", f"/chats/{chat_id}/messages", token=token, payload={
+        "kind": "voice",
+        "media_id": media_id,
+        "body": "",
+        "dur": 1,
+        "peaks": json.dumps([12, 28, 45, 60, 48, 70, 55, 30, 22, 40]),
+    })
+    if not (200 <= st < 300):
+        print("!! no se pudo enviar la nota de voz:", st)
+        return False
+    print("nota de voz enviada al chat", chat_id)
+    return True
 
 
 def send_image_message(token: str, chat_id: int, media_id: int) -> bool:
@@ -557,12 +650,15 @@ def send_image_message(token: str, chat_id: int, media_id: int) -> bool:
     return True
 
 
-def ensure_real_image(user: str, pwd: str) -> tuple[int, str]:
-    """Deja una imagen REAL en la cuenta. Devuelve (chat_id, título).
+def ensure_test_media(user: str, pwd: str) -> tuple[int, str]:
+    """Deja los medios de prueba en la cuenta. Devuelve (chat_id, título).
 
-    Si ya hay una imagen grande en algún chat visible, no escribe nada y
-    devuelve ese chat. Si no, sube un PNG de 320x200 y lo manda al chat
-    más reciente (el primero de la lista) para que el barrido lo encuentre.
+    - Una imagen REAL (>100 px): sin ella el visor no se abre nunca
+      (las imágenes de prueba medían 1x1 px).
+    - Una nota de voz: sin ella la burbuja con el reproductor no sale
+      en las capturas.
+
+    Si ya están, no escribe nada (el smoke puede correr mil veces).
     """
     token = api_login(user, pwd)
     if not token:
@@ -570,22 +666,25 @@ def ensure_real_image(user: str, pwd: str) -> tuple[int, str]:
     found, title = find_chat_with_image(token)
     if found:
         print("imagen real ya presente en el chat", found, repr(title))
-        return found, title
-    print("no hay ninguna imagen real: se sube una")
-    st, out = api_json("GET", "/chats", token=token)
-    if st != 200 or not out or not out.get("chats"):
-        print("!! la cuenta no tiene chats donde enviar la imagen")
-        return 0, ""
-    # El chat más reciente de la lista (el server los ordena por actividad).
-    chat = out["chats"][0]
-    chat_id = int(chat["id"])
-    media_id = upload_png(token, png_bytes())
-    if not media_id:
-        return 0, ""
-    if not send_image_message(token, chat_id, media_id):
-        return 0, ""
-    print("imagen enviada al chat", chat_id)
-    return chat_id, chat_ui_title(chat)
+    else:
+        print("no hay ninguna imagen real: se sube una")
+        st, out = api_json("GET", "/chats", token=token)
+        if st != 200 or not out or not out.get("chats"):
+            print("!! la cuenta no tiene chats donde enviar la imagen")
+            return 0, ""
+        # El chat más reciente de la lista (el server los ordena por actividad).
+        chat = out["chats"][0]
+        chat_id = int(chat["id"])
+        media_id = upload_bytes(token, png_bytes(), "visor.png", "image/png")
+        if not media_id:
+            return 0, ""
+        if not send_image_message(token, chat_id, media_id):
+            return 0, ""
+        print("imagen enviada al chat", chat_id)
+        found, title = chat_id, chat_ui_title(chat)
+    # La nota de voz va al mismo chat (el que se abre en el barrido).
+    ensure_real_voice(token, found)
+    return found, title
 
 
 def main() -> int:
@@ -594,10 +693,11 @@ def main() -> int:
     pwd = sys.argv[3] if len(sys.argv) > 3 else "NSProbe!2026"
     os.makedirs(out_dir, exist_ok=True)
 
-    # La imagen real se deja ANTES de arrancar la app: así la burbuja
-    # ya está en el historial cuando se abre la conversación.
-    print("== imagen real para el visor ==")
-    image_chat, image_title = ensure_real_image(user, pwd)
+    # Los medios de prueba (imagen real y nota de voz) se dejan ANTES de
+    # arrancar la app: así las burbujas ya están en el historial cuando
+    # se abre la conversación.
+    print("== medios de prueba ==")
+    image_chat, image_title = ensure_test_media(user, pwd)
     if not image_chat:
         print("!! no se pudo dejar una imagen real; el paso del visor puede fallar")
 
@@ -753,6 +853,12 @@ def main() -> int:
     if tap(row):
         time.sleep(8)
         shot(out_dir, "4-conversacion")
+
+        # W104: el micrófono del compositor debe abrir la barra de
+        # grabación (si el emulador no tiene micrófono, sólo avisa).
+        if open_voice_rec():
+            shot(out_dir, "11-voz-grabando")
+            cancel_voice_rec()
 
         if open_media():
             shot(out_dir, "7-visor")

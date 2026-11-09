@@ -365,6 +365,11 @@ const EN = {
   'Enviar': 'Send',
   'Grabando nota de voz…': 'Recording voice message…',
   'Enviar nota de voz': 'Send voice message',
+  /* W104: notas de voz en la app nativa. */
+  'Enviando nota de voz…': 'Sending voice message…',
+  'No se pudo iniciar la grabación': 'Could not start the recording',
+  'Este dispositivo no tiene micrófono': 'This device has no microphone',
+  'No se pudo abrir la nota de voz': 'Could not open the voice message',
   'Cerrar (Esc)': 'Close (Esc)',
   'Click o rueda para ampliar · arrastra para mover': 'Click or scroll to zoom in · drag to move',
   'Mensajería propia': 'Your own messaging',

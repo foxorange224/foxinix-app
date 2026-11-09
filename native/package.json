@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@master.technology/websockets": "^2.0.5",
+    "@nativescript-community/audio": "^6.4.14",
+    "@nativescript-community/perms": "^3.0.12",
     "@nativescript-community/ui-document-picker": "^1.1.29",
     "@nativescript/core": "~9.1.0",
     "@nativescript/local-notifications": "^7.0.0",

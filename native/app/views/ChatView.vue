@@ -61,6 +61,25 @@
                          :src="imgSrc(r.ref)" :width="imgSize(r.ref).w"
                          :height="imgSize(r.ref).h" stretch="aspectFit"
                          @tap="openImage(r.ref)" />
+                  <!-- W104: reproductor de la nota de voz -->
+                  <GridLayout v-if="isVoice(r.ref)" class="b-player"
+                              :class="{ 'on-me': r.mine }"
+                              columns="auto,*,auto">
+                    <FoxIconBtn col="0" class="au-btn"
+                                :icon="voicePlaying(r.ref) ? 'pause' : 'play'"
+                                :size="32" :ic="16" :tint="voiceTint(r.mine)"
+                                :bare="true"
+                                accessibilityLabel="play voice message"
+                                @tap="toggleVoice(r.ref)" />
+                    <GridLayout col="1" class="au-wave" :columns="waveCols">
+                      <View v-for="(h, i) in waveOf(r.ref)" :key="i" :col="i"
+                            class="au-wave-bar" :class="{ on: i <= waveBar(r.ref) }"
+                            :height="h" horizontalAlignment="center"
+                            verticalAlignment="center" />
+                    </GridLayout>
+                    <Label col="2" class="au-time" :text="voiceTime(r.ref)"
+                           textWrap="false" />
+                  </GridLayout>
                   <Label v-if="bodyOf(r.ref)" class="b-body"
                          :class="{ 'on-me': r.mine }" :text="bodyOf(r.ref)"
                          textWrap="true" horizontalAlignment="stretch" />
@@ -93,23 +112,47 @@
       </ScrollView>
 
       <!-- ---------- compositor ---------- -->
-      <GridLayout row="2" class="composer" columns="auto,*,auto">
+      <!-- W104: el botón del micrófono graba una nota de voz; mientras
+           se graba, el composer se sustituye por la barra de grabación
+           (punto + tiempo + onda + cancelar + enviar), como en la web. -->
+      <GridLayout v-if="rec === 'off'" row="2" class="composer"
+                  columns="auto,*,auto,auto">
         <FoxIconBtn col="0" class="composer-attach" icon="clip" bare
                     :tint="muted" @tap="attach" />
         <TextField col="1" class="composer-input" :text="draft"
                    :hint="t('Mensaje')" autocorrect="true" :editable="!sending"
                    @textChange="draft = $event.value" @submit="send"
                    returnKeyType="send" />
-        <FoxIconBtn col="2" class="send-btn" icon="send"
+        <FoxIconBtn v-if="!draft.trim()" col="2" class="composer-mic"
+                    icon="mic" bare :tint="muted"
+                    accessibilityLabel="voice message" @tap="startRec" />
+        <FoxIconBtn col="3" class="send-btn" icon="send"
                     :class="{ muted: !canSend }" :tint="sendTint"
                     accessibilityLabel="send" @tap="send" />
+      </GridLayout>
+
+      <GridLayout v-else row="2" class="composer rec-bar"
+                  columns="auto,auto,*,auto,auto">
+        <View col="0" class="rec-dot" />
+        <Label col="1" class="rec-time" :text="recTime" textWrap="false" />
+        <GridLayout col="2" class="rec-wave" :columns="recCols">
+          <View v-for="(h, i) in recBars" :key="i" :col="i"
+                class="rec-wave-bar" :height="h"
+                horizontalAlignment="center" verticalAlignment="center" />
+        </GridLayout>
+        <FoxIconBtn col="3" class="rec-cancel" icon="x" bare
+                    :tint="muted" accessibilityLabel="cancel"
+                    @tap="cancelRec" />
+        <FoxIconBtn col="4" class="send-btn rec-send" icon="send"
+                    :tint="sendTint" accessibilityLabel="send"
+                    @tap="stopRec(true)" />
       </GridLayout>
     </GridLayout>
   </Page>
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'nativescript-vue';
+  import { ref, computed, onMounted, onUnmounted, watch } from 'nativescript-vue';
   import { Screen } from '@nativescript/core';
   import { store, toast } from '../core/store.js';
   import {
@@ -120,6 +163,10 @@
   import { pickFile } from '../files';
   import { imageBox, imageUrl, isImageMsg } from '../img';
   import { openMedia } from '../nav';
+  import {
+    canRecord, cancelRecording, currentVoiceTime, micLevel, onVoiceState,
+    startRecording, stopRecording, stopVoice, toggleVoice as toggleVoicePlay,
+  } from '../voice';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
 
@@ -128,6 +175,22 @@
   const sendingFile = ref(false);
   const loading = ref(true);
   const scroller = ref<any>(null);
+
+  /* ---------- W104: notas de voz ---------- */
+
+  const rec = ref<'off' | 'on'>('off');
+  const recSecs = ref(0);
+  /* Onda en vivo: los últimos niveles (0..100), como los 22 picos de
+     la web. */
+  const REC_WAVE_N = 22;
+  const recWave = ref<number[]>([]);
+  let recTimer: any = null;
+  let recPeaks: number[] = [];
+  let recPeakTimer: any = null;
+
+  /* Estado del reproductor (lo cuenta voice.ts). */
+  const voiceState = ref<any>({ id: 0, playing: false, current: 0, duration: 0 });
+  let voiceTick: any = null;
 
   const chat = computed(() => {
     const id = store.activeChatId;
@@ -286,8 +349,10 @@
 
   function bodyOf(m: any): string {
     if (m.kind === 'voice') {
-      const d = m.dur ? Math.round(m.dur) + ' s' : '';
-      return '🎤 Nota de voz' + (d ? ' · ' + d : '');
+      /* W104: si hay media, la burbuja muestra el reproductor (no hace
+         falta el texto); si todavía no hay media, se avisa. */
+      if (m.media) return m.body || '';
+      return '🎤 ' + t('Enviando nota de voz…');
     }
     if (m.kind === 'image') {
       /* W102: la imagen se ve dentro de la burbuja; aquí va sólo el pie
@@ -300,6 +365,197 @@
     if (m.kind === 'file') return '📎 Archivo';
     if (m.kind === 'sticker') return 'Sticker';
     return m.body || '';
+  }
+
+  /* ---------- W104: notas de voz ---------- */
+
+  const REC_WAVE_H = 24;   /* alto de la barra de la onda en vivo */
+  const WAVE_N = 34;       /* barras de la onda del mensaje (como la web) */
+  const WAVE_H = 26;       /* alto de la onda del mensaje */
+  /* NS no tiene flexbox: la onda se reparte el ancho con un GridLayout
+     de columnas iguales (como el flex:1 de cada barra en la web). */
+  const waveCols = Array(WAVE_N).fill('*').join(',');
+  const recCols = Array(REC_WAVE_N).fill('*').join(',');
+
+  /* La hora de la grabación (mm:ss). */
+  const recTime = computed(() => {
+    const s = recSecs.value;
+    return Math.floor(s / 60) + ':' + pad2(s % 60);
+  });
+
+  function pad2(n: number): string {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  /* Las 22 barras de la onda en vivo (altura en px). */
+  const recBars = computed(() => {
+    const out: number[] = [];
+    for (let i = 0; i < REC_WAVE_N; i++) {
+      const v = recWave.value[i] || 0;
+      out.push(Math.max(3, Math.round((v / 100) * REC_WAVE_H)));
+    }
+    return out;
+  });
+
+  /* Empieza a grabar. */
+  async function startRec() {
+    if (rec.value === 'on') return;
+    if (!canRecord()) {
+      toast(t('Este dispositivo no tiene micrófono'), 'err');
+      return;
+    }
+    try {
+      await startRecording();
+    } catch (e: any) {
+      const msg = String((e && e.message) || e || '');
+      if (msg.indexOf('permiso') >= 0) {
+        toast(t('Permiso de micrófono necesario para la nota de voz'), 'err');
+      } else {
+        toast(t('No se pudo iniciar la grabación'), 'err');
+      }
+      return;
+    }
+    rec.value = 'on';
+    recSecs.value = 0;
+    recWave.value = [];
+    recPeaks = [];
+    recTimer = setInterval(() => {
+      recSecs.value++;
+      if (recSecs.value >= 300) stopRec(true);   // tope 5 min
+    }, 1000);
+    /* Los picos: se leen del micrófono cada 80 ms (mismo paso que la
+       web) y forman la onda en vivo y la del mensaje enviado. */
+    recPeakTimer = setInterval(() => {
+      const p = micLevel();
+      recPeaks.push(p);
+      const last = recWave.value.length
+        ? recWave.value[recWave.value.length - 1] : p;
+      recWave.value.push(Math.round(p * 0.65 + last * 0.35));
+      while (recWave.value.length > REC_WAVE_N) recWave.value.shift();
+    }, 80);
+  }
+
+  /* Para la grabación. Si `send` es true, manda la nota de voz. */
+  async function stopRec(send: boolean) {
+    if (rec.value !== 'on') return;
+    const chatId = store.activeChatId;
+    const secs = recSecs.value;
+    const peaks = recPeaks.slice();
+    clearRecTimers();
+    rec.value = 'off';
+    const file = await stopRecording();
+    if (!send || !file) {
+      if (file) await cancelRecording();
+      return;
+    }
+    /* La onda del mensaje: ≤96 picos (0..100), como la web. */
+    let outPeaks: number[] | null = null;
+    if (peaks.length) {
+      const n = Math.min(96, peaks.length);
+      const step = peaks.length / n;
+      outPeaks = [];
+      for (let i = 0; i < n; i++) {
+        const a = Math.floor(i * step);
+        const b = Math.max(a + 1, Math.floor((i + 1) * step));
+        let s = 0;
+        for (let j = a; j < b && j < peaks.length; j++) {
+          if (peaks[j] > s) s = peaks[j];
+        }
+        outPeaks.push(s);
+      }
+    }
+    const dur = Math.max(1, Math.round(secs));
+    try {
+      await sendMedia(chatId, file as any, 'voice', null, null,
+                      outPeaks, dur);
+      await new Promise((r) => setTimeout(r, 120));
+      scrollToEnd();
+    } catch (e: any) {
+      toast((e && e.detail) || t('No se pudo enviar la nota de voz'), 'err');
+    }
+  }
+
+  /* Cancela la grabación (no se manda nada). */
+  async function cancelRec() {
+    if (rec.value !== 'on') return;
+    clearRecTimers();
+    rec.value = 'off';
+    await cancelRecording();
+  }
+
+  function clearRecTimers() {
+    if (recTimer) { clearInterval(recTimer); recTimer = null; }
+    if (recPeakTimer) { clearInterval(recPeakTimer); recPeakTimer = null; }
+    recSecs.value = 0;
+    recWave.value = [];
+    recPeaks = [];
+  }
+
+  /* ¿Este mensaje es una nota de voz con audio? */
+  function isVoice(m: any): boolean {
+    return !!(m && m.kind === 'voice' && m.media);
+  }
+
+  /* El color del reproductor: blanco en la burbuja propia. */
+  function voiceTint(mine: boolean): string {
+    return mine ? '#ffffff' : tok(store.theme, 't1');
+  }
+
+  /* ¿Suena ahora mismo este mensaje? */
+  function voicePlaying(m: any): boolean {
+    return voiceState.value.playing && voiceState.value.id === m.id;
+  }
+
+  /* Las 34 barras de la onda del mensaje (altura en px). */
+  function waveOf(m: any): number[] {
+    const p = m && m.peaks;
+    const out: number[] = [];
+    if (p && p.length) {
+      const step = p.length / WAVE_N;
+      for (let i = 0; i < WAVE_N; i++) {
+        const a = Math.floor(i * step);
+        const b = Math.max(a + 1, Math.floor((i + 1) * step));
+        let s = 0;
+        for (let j = a; j < b && j < p.length; j++) {
+          if (p[j] > s) s = p[j];
+        }
+        out.push(Math.max(3, Math.round((Math.max(10, Math.min(100, s)) / 100) * WAVE_H)));
+      }
+    } else {
+      /* Grabaciones viejas sin picos: un perfil neutro. */
+      for (let i = 0; i < WAVE_N; i++) {
+        out.push(Math.round((30 + ((i * 7) % 5) * 9) / 100 * WAVE_H));
+      }
+    }
+    return out;
+  }
+
+  /* Cuántas barras van "sonadas" (el progreso). */
+  function waveBar(m: any): number {
+    const st = voiceState.value;
+    if (!st.playing || st.id !== m.id) return -1;
+    const total = st.duration || m.dur || 0;
+    if (!total) return -1;
+    return Math.floor((st.current / total) * WAVE_N);
+  }
+
+  /* El tiempo que se ve: la posición si suena, si no la duración. */
+  function voiceTime(m: any): string {
+    const st = voiceState.value;
+    let secs = m.dur || 0;
+    if (st.playing && st.id === m.id) secs = Math.floor(st.current || 0);
+    return Math.floor(secs / 60) + ':' + pad2(secs % 60);
+  }
+
+  /* Play/pausa de una nota de voz. */
+  async function toggleVoice(m: any) {
+    if (!m || !m.media || !m.media.url) return;
+    const url = mediaUrl(m.media.url);
+    if (!url) {
+      toast(t('No se pudo abrir la nota de voz'), 'err');
+      return;
+    }
+    await toggleVoicePlay(m.id, url, m.dur || 0);
   }
 
   /* --- W102: la imagen dentro de la burbuja --- */
@@ -383,6 +639,30 @@
     loading.value = false;
     await new Promise((r) => setTimeout(r, 150));
     scrollToEnd();
+    /* W104: el reproductor avisa de su estado (play/pausa) y un tick
+       suave mantiene al día la posición. */
+    onVoiceState((s) => { voiceState.value = s; });
+    voiceTick = setInterval(() => {
+      if (voiceState.value.playing) {
+        voiceState.value = Object.assign({}, voiceState.value, {
+          current: currentVoiceTime(),
+        });
+      }
+    }, 250);
+  });
+
+  onUnmounted(() => {
+    /* Si se sale del chat grabando, el micrófono se suelta (si no, la
+       grabación seguiría en marcha sin que nadie la detenga). */
+    if (rec.value === 'on') {
+      rec.value = 'off';
+      cancelRecording();
+    }
+    if (recTimer) { clearInterval(recTimer); recTimer = null; }
+    if (recPeakTimer) { clearInterval(recPeakTimer); recPeakTimer = null; }
+    if (voiceTick) { clearInterval(voiceTick); voiceTick = null; }
+    onVoiceState(null);
+    stopVoice();
   });
 
   /* Al llegar mensajes nuevos (por WebSocket) se baja al final. */

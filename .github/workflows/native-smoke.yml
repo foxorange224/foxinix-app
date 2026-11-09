@@ -104,6 +104,9 @@ jobs:
             -camera-back none -camera-front none
           script: |
             adb install -r app-debug.apk
+            # W104: permiso de micrófono concedido por adelantado (si no,
+            # el diálogo del sistema bloquearía el barrido).
+            adb shell pm grant io.foxinix.nativa android.permission.RECORD_AUDIO || true
             mkdir -p capturas
             python3 "$GITHUB_WORKSPACE/native/tools/ci-captura.py" capturas
 

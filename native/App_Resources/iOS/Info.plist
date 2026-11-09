@@ -20,6 +20,10 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>0.1.0</string>
+	<!-- W104: notas de voz. iOS cierra la app si se usa el micrófono
+	     sin esta descripción. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Foxinix usa el micrófono para grabar notas de voz.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
