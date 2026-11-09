@@ -503,6 +503,13 @@
     }
   }
 
+  /* W105: la hoja de acciones manda una reacción rápida. */
+  function doReact(emoji: string) {
+    const m = sheetFor.value;
+    if (!m) return;
+    react(m, emoji);
+  }
+
   /* El texto que resume un mensaje (para las citas). */
   function previewOf(rp: any): string {
     if (!rp) return '';

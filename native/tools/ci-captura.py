@@ -11,6 +11,7 @@ Uso: python3 ci-captura.py <salida> [usuario] [contraseña]
 from __future__ import annotations
 
 import binascii
+import html
 import json
 import os
 import re
@@ -80,12 +81,17 @@ def screen_size() -> tuple[int, int]:
 
 
 def nodes(xml: str) -> list[dict]:
-    """Lista de nodos con sus atributos (usa regex: el XML es plano)."""
+    """Lista de nodos con sus atributos (usa regex: el XML es plano).
+
+    uiautomator escapa los emojis como entidades numéricas ("&#128077;"),
+    así que los valores se desescapan: si no, el emoji de la reacción
+    nunca coincidiría con el de verdad.
+    """
     out = []
     for m in re.finditer(r"<node\b([^>]*?)/?>", xml):
         attrs = {}
         for a in re.finditer(r"([\w-]+)=\"([^\"]*)\"", m.group(1)):
-            attrs[a.group(1)] = a.group(2)
+            attrs[a.group(1)] = html.unescape(a.group(2))
         out.append(attrs)
     return out
 
@@ -486,12 +492,18 @@ def open_msg_actions() -> bool:
 
 
 def close_msg_actions() -> None:
-    """Cierra la hoja de acciones (el botón "Cancelar")."""
+    """Cierra la hoja de acciones (el botón "Cancelar").
+
+    OJO: si la hoja ya se cerró sola (tocar "Responder" la cierra), NO
+    se toca "atrás": eso sacaría la app de la conversación y el resto
+    del barrido se haría sobre la lista de chats.
+    """
     xml = dump()
     if tap(find(xml, desc="close message actions")):
         time.sleep(2)
         return
-    go_back()
+    if find(xml, desc="reply"):
+        print("!! la hoja de acciones sigue abierta")
 
 
 def has_reaction_chip(xml: str) -> bool:
