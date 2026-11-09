@@ -73,7 +73,8 @@
                                 :bare="true"
                                 accessibilityLabel="play voice message"
                                 @tap="toggleVoice(r.ref)" />
-                    <GridLayout col="1" class="au-wave" :columns="waveCols">
+                    <GridLayout col="1" class="au-wave" :columns="waveCols"
+                                verticalAlignment="center">
                       <Label v-for="(h, i) in waveOf(r.ref)" :key="i" :col="i"
                              text="" textWrap="false" class="au-wave-bar"
                              :class="{ on: i <= waveBar(r.ref) }"
@@ -139,7 +140,8 @@
         <Label col="0" class="rec-dot" text="" textWrap="false"
                verticalAlignment="center" />
         <Label col="1" class="rec-time" :text="recTime" textWrap="false" />
-        <GridLayout col="2" class="rec-wave" :columns="recCols">
+        <GridLayout col="2" class="rec-wave" :columns="recCols"
+                    verticalAlignment="center">
           <Label v-for="(h, i) in recBars" :key="i" :col="i"
                  text="" textWrap="false" class="rec-wave-bar" :height="h"
                  horizontalAlignment="center" verticalAlignment="center" />
