@@ -453,7 +453,7 @@ def find_message_text(xml: str) -> dict | None:
         if not box:
             continue
         _x1, y1, _x2, y2 = box
-        if y1 < 150 or y2 > h - 110:
+        if y1 < 80 or y2 > h - 110:
             continue          # cabecera o compositor
         if best is None or len(t) > len(best.get("text", "")):
             best = n
