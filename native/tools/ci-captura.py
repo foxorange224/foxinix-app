@@ -10,14 +10,33 @@ Uso: python3 ci-captura.py <salida> [usuario] [contraseña]
 """
 from __future__ import annotations
 
+import binascii
+import json
 import os
 import re
+import struct
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
+import zlib
 
 PKG = "io.foxinix.nativa"
 ACT = "com.tns.NativeScriptActivity"
+
+# ---------------------------------------------------------------- API
+# El script habla con la API real (la misma que usa la app) para dejar
+# una imagen REAL en la cuenta de pruebas: las imágenes que había
+# medían 1x1 px (invisibles en la burbuja), así que el visor no se
+# abría nunca. Sólo escribe cuando de verdad no hay ninguna grande.
+API_BASE = "https://api.foxinix.qzz.io"
+# OJO: el proxy bloquea el User-Agent por defecto de Python-urllib
+# (403): hay que mandar uno de navegador.
+UA = "Mozilla/5.0 (X11; Linux x86_64) FoxinixSmoke/1.0"
+# Una imagen cuenta como "real" si el server la mide por encima de esto
+# (las de prueba medían 1x1).
+IMG_MIN_PX = 100
 
 
 def sh(*args: str, **kw) -> str:
@@ -189,6 +208,22 @@ def find_at(xml: str) -> dict | None:
     return None
 
 
+def find_chat_row(xml: str, title: str) -> dict | None:
+    """La fila del chat con ESE título exacto.
+
+    Las filas llevan accessibilityLabel="chat: <título>". La coincidencia
+    es exacta (no startswith) porque dos chats pueden compartir prefijo
+    ("Prueba nativa 123" y "Prueba nativa 1234").
+    """
+    if not title:
+        return None
+    want = "chat: " + title
+    for n in nodes(xml):
+        if n.get("content-desc") == want:
+            return n
+    return None
+
+
 def is_profile(xml: str) -> bool:
     """¿Estamos en la ficha de usuario? (título Perfil/Profile)"""
     return bool(find(xml, cls="TextView", text="Profile")
@@ -328,11 +363,243 @@ def open_media() -> bool:
     return True
 
 
+# ---------------------------------------------------------------- API
+# Auto-reparación del paso del visor: las imágenes de prueba que había
+# en la cuenta medían 1x1 px (el server guarda las dimensiones reales),
+# así que la burbuja quedaba invisible y el visor no se abría nunca.
+# Antes de barrer, el script comprueba por API si hay alguna imagen de
+# verdad (>100 px) en algún chat; si no, sube un PNG real y lo manda al
+# chat que va a abrir. Sólo escribe cuando de verdad falta.
+
+def api(method: str, path: str, token: str = "", body: bytes | None = None,
+        headers: dict | None = None, timeout: int = 60) -> tuple[int, bytes]:
+    """Petición HTTP a la API. Devuelve (código, cuerpo)."""
+    url = API_BASE + path
+    h = {"User-Agent": UA, "Accept": "application/json"}
+    if token:
+        h["Authorization"] = "Bearer " + token
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, data=body, headers=h, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+    except Exception as e:  # noqa: BLE001
+        print("api falló:", method, path, e)
+        return 0, b""
+
+
+def api_json(method: str, path: str, token: str = "", payload: dict | None = None):
+    """Petición JSON a la API. Devuelve (código, objeto o None).
+
+    Cualquier 2xx es éxito (el alta de mensajes/media devuelve 201).
+    """
+    body = None
+    headers = {}
+    if payload is not None:
+        body = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    st, raw = api(method, path, token=token, body=body, headers=headers)
+    if not (200 <= st < 300):
+        print("api", method, path, "->", st, raw[:200])
+        return st, None
+    try:
+        return st, json.loads(raw.decode("utf-8"))
+    except Exception as e:  # noqa: BLE001
+        print("respuesta no JSON:", method, path, e)
+        return st, None
+
+
+def api_login(user: str, pwd: str) -> str:
+    """Devuelve el access token de la cuenta de pruebas (o '')."""
+    st, out = api_json("POST", "/auth/login", payload={"identifier": user, "password": pwd})
+    if not (200 <= st < 300) or not out:
+        print("!! no se pudo iniciar sesión por API:", st)
+        return ""
+    return (out.get("tokens") or {}).get("access") or ""
+
+
+def chat_ui_title(c: dict) -> str:
+    """El título tal como lo muestra la app (ChatListView.titleOf).
+
+    La fila lleva accessibilityLabel="chat: <título>", así que el
+    script tiene que calcular EXACTAMENTE el mismo texto para abrirla
+    por su etiqueta en vez de por posición (la posición cambia cuando
+    se manda un mensaje nuevo).
+    """
+    t = c.get("title") or {}
+    if c.get("type") == "group":
+        return t.get("display_name") or t.get("name") or ""
+    return t.get("display_name") or t.get("username") or ""
+
+
+def chat_has_real_image(token: str, chat_id: int) -> bool:
+    """¿Tiene este chat algún mensaje de imagen con tamaño real?"""
+    st, out = api_json("GET", f"/chats/{chat_id}/messages?limit=50", token=token)
+    if st != 200 or not out:
+        return False
+    for m in out.get("messages") or []:
+        if m.get("kind") != "image":
+            continue
+        md = m.get("media") or {}
+        w, h = int(md.get("width") or 0), int(md.get("height") or 0)
+        if w > IMG_MIN_PX and h > IMG_MIN_PX:
+            return True
+    return False
+
+
+def find_chat_with_image(token: str) -> tuple[int, str]:
+    """(id, título) de un chat que ya tiene una imagen real.
+
+    Sólo mira los primeros chats de la lista: son los que se ven en la
+    pantalla sin desplazar, así que el barrido puede abrir ese chat.
+    Si ninguno tiene una imagen grande, devuelve (0, '').
+    """
+    st, out = api_json("GET", "/chats", token=token)
+    if st != 200 or not out:
+        return 0, ""
+    chats = out.get("chats") or []
+    for c in chats[:8]:
+        cid = c.get("id")
+        if not cid:
+            continue
+        # El last_message con media ya trae las dimensiones: si es una
+        # imagen real, el chat sirve sin pedir el historial entero.
+        lm = c.get("last_message") or {}
+        md = lm.get("media") or {}
+        if (lm.get("kind") == "image" and int(md.get("width") or 0) > IMG_MIN_PX
+                and int(md.get("height") or 0) > IMG_MIN_PX):
+            return int(cid), chat_ui_title(c)
+        if chat_has_real_image(token, int(cid)):
+            return int(cid), chat_ui_title(c)
+    return 0, ""
+
+
+def png_bytes(width: int = 320, height: int = 200) -> bytes:
+    """Un PNG naranja (zorro) generado en memoria, sin dependencias.
+
+    Se arma a mano (zlib + struct) para no depender de Pillow en el
+    runner: el server lo recodifica a WebP y guarda las dimensiones
+    reales, que es lo que hace visible la burbuja.
+    """
+    # Lienzo RGB con el zorro de la marca.
+    px = bytearray()
+    for y in range(height):
+        for x in range(width):
+            # fondo transparente-ish oscuro (RGB) y cabeza naranja
+            r, g, b = 0x1E, 0x1F, 0x22
+            cx, cy = width * 0.5, height * 0.55
+            dx, dy = (x - cx) / (width * 0.30), (y - cy) / (height * 0.34)
+            if dx * dx + dy * dy <= 1.0:
+                r, g, b = 0xFF, 0x75, 0x1F
+                # orejas
+                if (abs(x - cx) > width * 0.16 and y < cy - height * 0.05):
+                    r, g, b = 0xFF, 0x8A, 0x3D
+                # hocico
+                if dy > 0.25 and abs(dx) < 0.35:
+                    r, g, b = 0xF2, 0x3F, 0x43
+                # ojos
+                if abs(dx) > 0.22 and abs(dx) < 0.45 and abs(dy) < 0.18:
+                    r, g, b = 0x1E, 0x1F, 0x22
+            px += bytes((r, g, b))
+
+    raw = bytearray()
+    stride = width * 3
+    for y in range(height):
+        raw.append(0)  # filtro "none"
+        raw += px[y * stride:(y + 1) * stride]
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + tag + data
+                + struct.pack(">I", binascii.crc32(tag + data) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
+            + chunk(b"IEND", b""))
+
+
+def upload_png(token: str, data: bytes, filename: str = "visor.png") -> int:
+    """Sube el PNG al server (multipart, campo 'file'). Devuelve el id."""
+    boundary = "----FoxinixSmoke" + os.urandom(8).hex()
+    body = b"".join([
+        ("--%s\r\n" % boundary).encode(),
+        ('Content-Disposition: form-data; name="file"; filename="%s"\r\n' % filename).encode(),
+        b"Content-Type: image/png\r\n\r\n",
+        data,
+        ("\r\n--%s--\r\n" % boundary).encode(),
+    ])
+    st, raw = api("POST", "/media", token=token, body=body, headers={
+        "Content-Type": "multipart/form-data; boundary=" + boundary,
+    })
+    if not (200 <= st < 300):
+        print("!! la subida falló:", st, raw[:200])
+        return 0
+    try:
+        out = json.loads(raw.decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        print("!! respuesta de subida no JSON")
+        return 0
+    print("subida:", out.get("name"), out.get("width"), "x", out.get("height"),
+          out.get("size"), "bytes")
+    return int(out.get("id") or 0)
+
+
+def send_image_message(token: str, chat_id: int, media_id: int) -> bool:
+    """Manda el mensaje de imagen al chat."""
+    st, out = api_json("POST", f"/chats/{chat_id}/messages", token=token,
+                       payload={"kind": "image", "media_id": media_id, "body": ""})
+    if not (200 <= st < 300):
+        print("!! no se pudo enviar la imagen:", st)
+        return False
+    return True
+
+
+def ensure_real_image(user: str, pwd: str) -> tuple[int, str]:
+    """Deja una imagen REAL en la cuenta. Devuelve (chat_id, título).
+
+    Si ya hay una imagen grande en algún chat visible, no escribe nada y
+    devuelve ese chat. Si no, sube un PNG de 320x200 y lo manda al chat
+    más reciente (el primero de la lista) para que el barrido lo encuentre.
+    """
+    token = api_login(user, pwd)
+    if not token:
+        return 0, ""
+    found, title = find_chat_with_image(token)
+    if found:
+        print("imagen real ya presente en el chat", found, repr(title))
+        return found, title
+    print("no hay ninguna imagen real: se sube una")
+    st, out = api_json("GET", "/chats", token=token)
+    if st != 200 or not out or not out.get("chats"):
+        print("!! la cuenta no tiene chats donde enviar la imagen")
+        return 0, ""
+    # El chat más reciente de la lista (el server los ordena por actividad).
+    chat = out["chats"][0]
+    chat_id = int(chat["id"])
+    media_id = upload_png(token, png_bytes())
+    if not media_id:
+        return 0, ""
+    if not send_image_message(token, chat_id, media_id):
+        return 0, ""
+    print("imagen enviada al chat", chat_id)
+    return chat_id, chat_ui_title(chat)
+
+
 def main() -> int:
     out_dir = sys.argv[1] if len(sys.argv) > 1 else "/tmp/opencode/capturas"
     user = sys.argv[2] if len(sys.argv) > 2 else "nsprobe"
     pwd = sys.argv[3] if len(sys.argv) > 3 else "NSProbe!2026"
     os.makedirs(out_dir, exist_ok=True)
+
+    # La imagen real se deja ANTES de arrancar la app: así la burbuja
+    # ya está en el historial cuando se abre la conversación.
+    print("== imagen real para el visor ==")
+    image_chat, image_title = ensure_real_image(user, pwd)
+    if not image_chat:
+        print("!! no se pudo dejar una imagen real; el paso del visor puede fallar")
 
     print("== arrancando la app ==")
     subprocess.run(["adb", "shell", "am", "force-stop", PKG], timeout=30)
@@ -462,12 +729,27 @@ def main() -> int:
     # Si hay lista de chats, se abre uno para ver la conversación.
     # Las filas llevan accessibilityLabel="chat: <nombre>" (W103), así que
     # se buscan por content-desc y no por el texto de un chat en concreto.
-    # Se abre el SEGUNDO: el primero suele ser un grupo recién creado (sin
-    # mensajes) y el segundo tiene conversación para ver las burbujas.
+    # Se abre el chat que tiene la imagen REAL (el que dejó la
+    # auto-reparación), no "el segundo": al mandar el mensaje nuevo el
+    # chat cambia de posición en la lista.
     print("== conversación ==")
     xml = dump()
-    rows = find_all(xml, desc="chat:")
-    row = rows[1] if len(rows) > 1 else (rows[0] if rows else None)
+    row = find_chat_row(xml, image_title) if image_title else None
+    if row is None and image_title:
+        # La fila puede estar más abajo de la lista: se desplaza y se
+        # busca otra vez.
+        print("el chat", repr(image_title), "no está a la vista; se busca")
+        for _ in range(6):
+            scroll_down()
+            xml = dump()
+            row = find_chat_row(xml, image_title)
+            if row:
+                break
+    if row is None:
+        # Sin chat conocido: se cae al segundo de la lista (como antes).
+        rows = find_all(xml, desc="chat:")
+        row = rows[1] if len(rows) > 1 else (rows[0] if rows else None)
+        print("se abre el chat por posición (sin título conocido)")
     if tap(row):
         time.sleep(8)
         shot(out_dir, "4-conversacion")
