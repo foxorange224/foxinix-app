@@ -252,9 +252,14 @@ sudo bash tools/fix-ns-cli-gradle.sh
 - **La imagen se ve dentro de la burbuja** (W102): miniatura del servidor
   (`?thumb=1`) respetando la proporción real y, al tocarla, un visor a
   pantalla completa con el original.
+- **Notas de voz** (W104): el botón del micrófono del compositor graba
+  con `@nativescript-community/audio` (MediaRecorder en Android,
+  AVAudioRecorder en iOS), con la barra de grabación de la web (punto,
+  tiempo, onda en vivo) y el reproductor dentro de la burbuja (play/pausa
+  y onda de picos). El archivo se sube con el mismo `sendMedia()` del
+  núcleo y el server lo sirve firmado desde el CDN.
 
  pendiente:
-- Notas de voz (plugin de audio).
 - Push remoto (FCM/APNs) para los avisos cuando la app está cerrada de
   verdad (el usuario la arrastró fuera y el sistema no la levanta).
 - Compilación para iOS (hace falta un Mac).
