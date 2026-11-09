@@ -108,6 +108,13 @@ Page {
   background-color: var(--bg);
 }
 
+/* W103: el layout raíz de la app lleva el fondo del tema: es lo que se
+   ve en la franja de la barra de navegación del sistema (la raíz se
+   queda dentro de la zona segura y abajo queda su padding). */
+.app-root {
+  background-color: var(--bg);
+}
+
 /* Tamaño de letra (preferencia del núcleo). Va en el layout raíz:
    fontSize no está proxyado en los layouts, sólo en TextBase, así
    que se aplica por CSS (font-size sí se hereda). */

@@ -7,7 +7,15 @@
        hereden los tokens (también las que todavía no se rediseñaron),
        y el tamaño de letra porque font-size es heredado y así el
        usuario lo nota en toda la app. -->
-  <GridLayout rows="*,auto"
+  <!-- W103: androidOverflowEdge="none" en la raíz = la raíz se queda
+       DENTRO de la zona segura: los insets del sistema (barra de estado
+       arriba, barra de navegación abajo y teclado) se le suman como
+       padding y el contenido se dibuja entre ellos.
+       OJO: va en la RAÍZ y no en la barra de pestañas, porque la raíz
+       tiene la altura fija (100%) y el padding sólo le encoge el
+       contenido; en la barra de pestañas (altura automática) el padding
+       se le come el hueco de los iconos y las etiquetas. -->
+  <GridLayout rows="*,auto" androidOverflowEdge="none" class="app-root"
               :class="'fs-' + (store.font || 'normal') + ' fox-' + (store.theme || 'dark')">
     <Frame row="0">
       <LoginView v-if="route === 'login'" />
@@ -30,12 +38,10 @@
     <!-- W103: barra de pestañas de abajo (como la .mobile-tabs de la web).
          Los avisos flotantes van en la fila 0 con rowSpan=2 para que
          queden ENCIMA de todo (en NS no hay z-index: manda el orden).
-         OJO: androidOverflowEdge="none" es lo mismo que pone la Page:
-         que la barra NO se dibuje debajo de la barra de navegación del
-         sistema (si no, las etiquetas quedan tapadas). -->
-    <FoxTabBar v-if="showTabs" row="1" androidOverflowEdge="none"
-               :tab="currentTab" @tab="onTab" />
-    <NativeToasts row="0" rowSpan="2" />
+         La barra queda por encima de la barra de navegación del sistema
+         porque la raíz ya se quedó dentro de la zona segura. -->
+    <FoxTabBar v-if="showTabs" row="1" :tab="currentTab" @tab="onTab" />
+    <NativeToasts row="0" rowSpan="2" :offset="showTabs ? 76 : 22" />
   </GridLayout>
 </template>
 

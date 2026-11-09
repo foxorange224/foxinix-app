@@ -231,6 +231,13 @@ def main() -> int:
     # La barra de pestañas: se comprueba que exista, se abre la pestaña
     # de Personas (el panel con más texto) y se vuelve a los chats.
     xml = dump()
+    # Se guarda el XML de la pantalla: sirve para ver dónde están las
+    # cosas (alturas y posiciones) cuando una captura no se entiende.
+    with open(os.path.join(out_dir, "ui-tras-login.xml"), "w", encoding="utf-8") as f:
+        f.write(xml)
+    tabs = find_all(xml, desc="tab:")
+    for t in tabs:
+        print("pestaña:", t.get("content-desc"), t.get("bounds"))
     if find(xml, desc="tab: people"):
         print("barra de pestañas: OK")
         tap(find(xml, desc="tab: people"))
