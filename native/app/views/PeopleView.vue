@@ -28,6 +28,7 @@
                    :hint="tab === 'active'
                      ? t('Buscar personas por usuario')
                      : t('Buscar solicitudes')"
+                   :placeholderColor="muted"
                    autocorrect="false" autocapitalizationType="none"
                    @textChange="onQuery" />
       </GridLayout>

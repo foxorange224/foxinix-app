@@ -27,13 +27,11 @@
       <ChatListView v-else />
     </Frame>
 
-    <!-- W103: barra de pestañas de abajo (como la .mobile-tabs de la web)
-         con los avisos flotantes ENCIMA (en un Frame: el que va después
-         se dibuja arriba). -->
-    <Frame row="1">
-      <FoxTabBar v-if="showTabs" :tab="currentTab" @tab="onTab" />
-      <NativeToasts />
-    </Frame>
+    <!-- W103: barra de pestañas de abajo (como la .mobile-tabs de la web).
+         Los avisos flotantes van en la fila 0 con rowSpan=2 para que
+         queden ENCIMA de todo (en NS no hay z-index: manda el orden). -->
+    <FoxTabBar v-if="showTabs" row="1" :tab="currentTab" @tab="onTab" />
+    <NativeToasts row="0" rowSpan="2" />
   </GridLayout>
 </template>
 

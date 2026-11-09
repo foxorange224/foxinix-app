@@ -4,7 +4,7 @@
        avatar. Las filas son las .chat-item de Discord. -->
   <Page :class="'fox-' + theme" actionBarHidden="true">
 
-    <GridLayout rows="auto,*,auto" class="list-page">
+    <GridLayout rows="auto,auto,*,auto" class="list-page">
       <!-- ---------- cabecera ---------- -->
       <GridLayout row="0" class="side-head" columns="auto,*,auto,auto,auto,auto">
         <Image col="0" class="sh-mark" src="res://ic_fox_logo_mark"
@@ -19,8 +19,21 @@
                    :size="40" :dot="meDot" :ring="panelRing" @tap="goSettings" />
       </GridLayout>
 
+      <!-- ---------- buscador (como el .search-pill de la web) ---------- -->
+      <GridLayout row="1" class="side-search" columns="auto,*,auto">
+        <Image col="0" src="res://ic_fox_search" width="18" height="18"
+               :tintColor="muted" verticalAlignment="center" />
+        <TextField col="1" class="search-input" :text="q"
+                   :hint="store.showArchived ? t('Buscar archivados') : t('Buscar chats y grupos')"
+                   :placeholderColor="muted"
+                   autocorrect="false" autocapitalizationType="none"
+                   @textChange="onQuery" />
+        <FoxIconBtn v-if="q" col="2" icon="x" bare :size="28" :ic="14"
+                    :tint="muted" @tap="q = ''" />
+      </GridLayout>
+
       <!-- ---------- lista ---------- -->
-      <ScrollView row="1" ref="scroller">
+      <ScrollView row="2" ref="scroller">
         <StackLayout class="chat-list">
           <GridLayout
             v-for="c in chats"
@@ -51,18 +64,20 @@
             </GridLayout>
           </GridLayout>
 
-          <Label v-if="!chats.length && loading" class="list-empty"
+          <Label v-if="!filtered.length && q" class="list-empty"
+                 :text="t('Sin resultados')" textWrap="true" />
+          <Label v-else-if="!filtered.length && loading" class="list-empty"
                  :text="t('Cargando chats…')" textWrap="true" />
-          <Label v-else-if="!chats.length && store.showArchived" class="list-empty"
+          <Label v-else-if="!filtered.length && store.showArchived" class="list-empty"
                  :text="t('No hay chats archivados.')" textWrap="true" />
-          <Label v-else-if="!chats.length" class="list-empty"
+          <Label v-else-if="!filtered.length" class="list-empty"
                  :text="t('Todavía no tenés chats.')" textWrap="true" />
         </StackLayout>
       </ScrollView>
 
-      <!-- ---------- aviso de conexión ---------- -->
-      <Label v-if="store.ws !== 'on'" row="2" class="ws-strip"
-             :text="wsText" textWrap="true" />
+      <!-- ---------- aviso de conexión (tocable: recarga) ---------- -->
+      <Label v-if="store.ws !== 'on'" row="3" class="ws-strip"
+             :text="wsText" textWrap="true" @tap="refresh" />
     </GridLayout>
   </Page>
 </template>
@@ -80,6 +95,7 @@
   import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   const loading = ref(true);
+  const q = ref('');
 
   /* La lista vive en el store compartido: la carga y el orden son los
      del núcleo (los mismos que en la web). Los archivados van en su
@@ -88,12 +104,31 @@
     const want = !!store.showArchived;
     return (store.chats || []).filter((c: any) => !!c.archived === want);
   });
+
+  /* Filtro del buscador (como el filteredChats de la web): por nombre
+     del chat o por usuario del DM. */
+  const filtered = computed(() => {
+    const s = q.value.trim().toLowerCase();
+    if (!s) return chats.value;
+    return chats.value.filter((c: any) => {
+      const name = titleOf(c).toLowerCase();
+      if (name.indexOf(s) >= 0) return true;
+      const u = c.title && c.title.username;
+      return !!u && String(u).toLowerCase().indexOf(s) >= 0;
+    });
+  });
+
+  function onQuery(ev: any) {
+    q.value = (ev && ev.value) || '';
+  }
+
   const theme = computed(() => store.theme);
 
   const listTitle = computed(() =>
     store.showArchived ? t('Archivados') : t('Chats'));
 
   const accent = computed(() => tok(store.theme, 'accent'));
+  const muted = computed(() => tok(store.theme, 't2'));
 
   /* Aro del puntito: el color de la superficie donde vive (el panel). */
   const panelRing = computed(() => tok(store.theme, 'panel'));

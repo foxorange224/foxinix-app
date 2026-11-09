@@ -354,6 +354,27 @@ ActionBar {
   margin-left: 6;
 }
 
+/* Buscador de la lista: la píldora de la web (.search-pill). */
+.side-search {
+  background-color: var(--panel);
+  padding: 8 12;
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.search-input {
+  background-color: var(--bg);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 12;
+  color: var(--t1);
+  font-size: 15;
+  height: 40;
+  padding: 0 12;
+  margin-left: 8;
+  margin-right: 6;
+}
+
 /* Punto rojo parpadeante de "sin conexión" (el de la web es de 8px). */
 .ws-dot {
   width: 8;
@@ -928,7 +949,6 @@ ActionBar {
   font-size: 15;
   margin-left: 8;
   padding: 0;
-  placeholder-color: #a3a3a3;
 }
 
 /* Filas: avatar de 36, nombre y estado. */

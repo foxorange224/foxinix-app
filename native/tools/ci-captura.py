@@ -188,6 +188,18 @@ def main() -> int:
     xml = dump()
     shot(out_dir, "2-tras-login")
 
+    # Android 13+ pide permiso para los avisos: el diálogo del sistema
+    # tapa la app, así que se acepta (si aparece) para ver la pantalla.
+    for lbl in ("Allow", "Permitir", "Allow all", "OK"):
+        dlg = find(xml, cls="Button", text=lbl)
+        if dlg:
+            print("diálogo del sistema:", lbl)
+            tap(dlg)
+            time.sleep(3)
+            xml = dump()
+            shot(out_dir, "2-tras-login")
+            break
+
     # Si el login falló, se ve el campo de contraseña otra vez: se avisa
     # en el log y se sacan los textos de la pantalla para diagnosticarlo.
     still_login = [n for n in nodes(xml) if n.get("class", "").endswith("EditText")]
