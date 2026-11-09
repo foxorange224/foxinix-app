@@ -5,7 +5,8 @@
   <GridLayout class="mt-bar" columns="*,*,*,*">
     <!-- Chats -->
     <GridLayout col="0" class="mt-btn" :class="{ on: tab === 'chats' }"
-                rows="auto,auto,auto" @tap="goChats">
+                rows="auto,auto,auto" accessibilityLabel="tab: chats"
+                @tap="goChats">
       <StackLayout row="0" class="mt-top" :class="{ on: tab === 'chats' }" />
       <Image row="1" class="mt-ic" src="res://ic_fox_chat" width="24" height="24"
              :tintColor="tab === 'chats' ? accent : muted" />
@@ -14,7 +15,8 @@
 
     <!-- Personas -->
     <GridLayout col="1" class="mt-btn" :class="{ on: tab === 'people' }"
-                rows="auto,auto,auto" @tap="goPeople">
+                rows="auto,auto,auto" accessibilityLabel="tab: people"
+                @tap="goPeople">
       <StackLayout row="0" class="mt-top" :class="{ on: tab === 'people' }" />
       <GridLayout row="1" class="mt-ic-wrap">
         <Image class="mt-ic" src="res://ic_fox_users" width="24" height="24"
@@ -26,7 +28,8 @@
 
     <!-- Archivados -->
     <GridLayout col="2" class="mt-btn" :class="{ on: tab === 'archived' }"
-                rows="auto,auto,auto" @tap="goArchived">
+                rows="auto,auto,auto" accessibilityLabel="tab: archived"
+                @tap="goArchived">
       <StackLayout row="0" class="mt-top" :class="{ on: tab === 'archived' }" />
       <Image row="1" class="mt-ic" src="res://ic_fox_archive" width="24" height="24"
              :tintColor="tab === 'archived' ? accent : muted" />
@@ -35,7 +38,8 @@
 
     <!-- Ajustes -->
     <GridLayout col="3" class="mt-btn" :class="{ on: tab === 'settings' }"
-                rows="auto,auto,auto" @tap="goSettings">
+                rows="auto,auto,auto" accessibilityLabel="tab: settings"
+                @tap="goSettings">
       <StackLayout row="0" class="mt-top" :class="{ on: tab === 'settings' }" />
       <Image row="1" class="mt-ic" src="res://ic_fox_gear" width="24" height="24"
              :tintColor="tab === 'settings' ? accent : muted" />

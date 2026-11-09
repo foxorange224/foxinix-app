@@ -70,6 +70,20 @@ def find(xml: str, *, cls: str = "", text: str = "", contains: str = "",
     return None
 
 
+def find_all(xml: str, *, cls: str = "", contains: str = "", desc: str = "") -> list[dict]:
+    """Todos los nodos que cumplen el filtro (en orden de aparición)."""
+    out = []
+    for n in nodes(xml):
+        if cls and not n.get("class", "").endswith(cls):
+            continue
+        if contains and contains.lower() not in n.get("text", "").lower():
+            continue
+        if desc and not n.get("content-desc", "").startswith(desc):
+            continue
+        out.append(n)
+    return out
+
+
 def tap(node: dict | None) -> bool:
     if not node:
         return False
@@ -207,25 +221,34 @@ def main() -> int:
         print("!! el login no entró (sigue la pantalla de entrada)")
         print("   textos:", " | ".join(texts(xml)))
 
-    # Si hay lista de chats, se abre el primero para ver la conversación.
+    # La barra de pestañas: se comprueba que exista, se abre la pestaña
+    # de Personas (el panel con más texto) y se vuelve a los chats.
+    xml = dump()
+    if find(xml, desc="tab: people"):
+        print("barra de pestañas: OK")
+        tap(find(xml, desc="tab: people"))
+        time.sleep(6)
+        shot(out_dir, "3-personas")
+        xml = dump()
+        tap(find(xml, desc="tab: chats"))
+        time.sleep(4)
+    else:
+        print("!! no se ve la barra de pestañas")
+
+    # Si hay lista de chats, se abre uno para ver la conversación.
     # Las filas llevan accessibilityLabel="chat: <nombre>" (W103), así que
     # se buscan por content-desc y no por el texto de un chat en concreto.
-    row = find(xml, desc="chat:")
+    # Se abre el SEGUNDO: el primero suele ser un grupo recién creado (sin
+    # mensajes) y el segundo tiene conversación para ver las burbujas.
+    xml = dump()
+    rows = find_all(xml, desc="chat:")
+    row = rows[1] if len(rows) > 1 else (rows[0] if rows else None)
     if tap(row):
-        time.sleep(6)
-        shot(out_dir, "3-conversacion")
+        time.sleep(8)
+        shot(out_dir, "4-conversacion")
     else:
         print("no se encontró ninguna fila de chat para abrir")
         print("   textos:", " | ".join(texts(xml)))
-        # Si no hay chats, se abre el panel de Personas desde la barra de
-        # pestañas (si está) para tener una segunda captura de la app.
-        for lbl in ("People", "Personas"):
-            tab = find(xml, contains=lbl)
-            if tab:
-                tap(tab)
-                time.sleep(5)
-                shot(out_dir, "3-personas.png")
-                break
 
     print("== logcat ==")
     # Sólo el log de la app: el resto es ruido del emulador.

@@ -101,7 +101,7 @@
                    returnKeyType="send" />
         <FoxIconBtn col="2" class="send-btn" icon="send"
                     :class="{ muted: !canSend }" :tint="sendTint"
-                    @tap="send" />
+                    accessibilityLabel="send" @tap="send" />
       </GridLayout>
     </GridLayout>
   </Page>

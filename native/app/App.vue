@@ -29,8 +29,12 @@
 
     <!-- W103: barra de pestañas de abajo (como la .mobile-tabs de la web).
          Los avisos flotantes van en la fila 0 con rowSpan=2 para que
-         queden ENCIMA de todo (en NS no hay z-index: manda el orden). -->
-    <FoxTabBar v-if="showTabs" row="1" :tab="currentTab" @tab="onTab" />
+         queden ENCIMA de todo (en NS no hay z-index: manda el orden).
+         OJO: androidOverflowEdge="none" es lo mismo que pone la Page:
+         que la barra NO se dibuje debajo de la barra de navegación del
+         sistema (si no, las etiquetas quedan tapadas). -->
+    <FoxTabBar v-if="showTabs" row="1" androidOverflowEdge="none"
+               :tab="currentTab" @tab="onTab" />
     <NativeToasts row="0" rowSpan="2" />
   </GridLayout>
 </template>
