@@ -95,7 +95,7 @@ jobs:
             --key-store-path "$RUNNER_TEMP/foxinix-release.jks" \
             --key-store-password "$ANDROID_KEY_STORE_PASSWORD" \
             --key-store-alias "$ANDROID_KEY_ALIAS" \
-            --key-alias-password "$ANDROID_KEY_STORE_PASSWORD"
+            --key-store-alias-password "$ANDROID_KEY_STORE_PASSWORD"
           ls -lh platforms/android/app/build/outputs/apk/release/
 
       - name: Preparar el artefacto
