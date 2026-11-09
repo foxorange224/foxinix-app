@@ -6,7 +6,7 @@
 
     <GridLayout rows="auto,auto,*,auto" class="list-page">
       <!-- ---------- cabecera ---------- -->
-      <GridLayout row="0" class="side-head" columns="auto,*,auto,auto,auto,auto">
+      <GridLayout row="0" class="side-head" columns="auto,*,auto,auto,auto">
         <Image col="0" class="sh-mark" src="res://ic_fox_logo_mark"
                width="32" height="32" borderRadius="8" stretch="aspectFill"
                :tintColor="accent" />
@@ -14,9 +14,8 @@
         <StackLayout v-if="store.ws !== 'on'" col="2" class="ws-dot"
                      verticalAlignment="center" />
         <FoxIconBtn col="3" icon="plus" bare @tap="goPeople" />
-        <FoxIconBtn col="4" icon="dots" @tap="goSettings" />
-        <FoxAvatar col="5" class="me-av" :src="meAvatar" :initial="meInitial"
-                   :size="40" :dot="meDot" :ring="panelRing" @tap="goSettings" />
+        <FoxAvatar col="4" class="me-av" :src="meAvatar" :initial="meInitial"
+                   :size="32" :dot="meDot" :ring="panelRing" @tap="goSettings" />
       </GridLayout>
 
       <!-- ---------- buscador (como el .search-pill de la web) ---------- -->
