@@ -72,10 +72,10 @@
                                 accessibilityLabel="play voice message"
                                 @tap="toggleVoice(r.ref)" />
                     <GridLayout col="1" class="au-wave" :columns="waveCols">
-                      <View v-for="(h, i) in waveOf(r.ref)" :key="i" :col="i"
-                            class="au-wave-bar" :class="{ on: i <= waveBar(r.ref) }"
-                            :height="h" horizontalAlignment="center"
-                            verticalAlignment="center" />
+                      <Placeholder v-for="(h, i) in waveOf(r.ref)" :key="i" :col="i"
+                                  class="au-wave-bar" :class="{ on: i <= waveBar(r.ref) }"
+                                  :height="h" horizontalAlignment="center"
+                                  verticalAlignment="center" />
                     </GridLayout>
                     <Label col="2" class="au-time" :text="voiceTime(r.ref)"
                            textWrap="false" />
@@ -133,18 +133,18 @@
 
       <GridLayout v-else row="2" class="composer rec-bar"
                   columns="auto,auto,*,auto,auto">
-        <View col="0" class="rec-dot" />
+        <Placeholder col="0" class="rec-dot" />
         <Label col="1" class="rec-time" :text="recTime" textWrap="false" />
         <GridLayout col="2" class="rec-wave" :columns="recCols">
-          <View v-for="(h, i) in recBars" :key="i" :col="i"
-                class="rec-wave-bar" :height="h"
-                horizontalAlignment="center" verticalAlignment="center" />
+          <Placeholder v-for="(h, i) in recBars" :key="i" :col="i"
+                      class="rec-wave-bar" :height="h"
+                      horizontalAlignment="center" verticalAlignment="center" />
         </GridLayout>
         <FoxIconBtn col="3" class="rec-cancel" icon="x" bare
-                    :tint="muted" accessibilityLabel="cancel"
+                    :tint="muted" accessibilityLabel="cancel voice message"
                     @tap="cancelRec" />
         <FoxIconBtn col="4" class="send-btn rec-send" icon="send"
-                    :tint="sendTint" accessibilityLabel="send"
+                    :tint="sendTint" accessibilityLabel="send voice message"
                     @tap="stopRec(true)" />
       </GridLayout>
     </GridLayout>
@@ -187,6 +187,11 @@
   let recTimer: any = null;
   let recPeaks: number[] = [];
   let recPeakTimer: any = null;
+  /* OJO: en NativeScript los setInterval se ejecutan en el hilo de la
+     interfaz: si el hilo se bloquea, las llamadas pendientes se
+     acumulan y saltan todas juntas. Por eso el tiempo se mide con el
+     reloj (Date.now) y no contando ticks. */
+  let recStart = 0;
 
   /* Estado del reproductor (lo cuenta voice.ts). */
   const voiceState = ref<any>({ id: 0, playing: false, current: 0, duration: 0 });
@@ -419,13 +424,20 @@
     recSecs.value = 0;
     recWave.value = [];
     recPeaks = [];
+    recStart = Date.now();
     recTimer = setInterval(() => {
-      recSecs.value++;
+      /* El tiempo sale del reloj: los ticks pueden llegar de golpe. */
+      recSecs.value = Math.floor((Date.now() - recStart) / 1000);
       if (recSecs.value >= 300) stopRec(true);   // tope 5 min
     }, 1000);
     /* Los picos: se leen del micrófono cada 80 ms (mismo paso que la
        web) y forman la onda en vivo y la del mensaje enviado. */
     recPeakTimer = setInterval(() => {
+      /* Si los ticks se acumularon, se descartan los picos viejos: la
+         onda debe ir con el tiempo real de la grabación. */
+      const elapsed = (Date.now() - recStart) / 1000;
+      const maxPeaks = Math.ceil(elapsed / 0.08) + 2;
+      while (recPeaks.length > maxPeaks) recPeaks.shift();
       const p = micLevel();
       recPeaks.push(p);
       const last = recWave.value.length
@@ -489,6 +501,7 @@
     recSecs.value = 0;
     recWave.value = [];
     recPeaks = [];
+    recStart = 0;
   }
 
   /* ¿Este mensaje es una nota de voz con audio? */

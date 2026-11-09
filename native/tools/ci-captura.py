@@ -366,9 +366,13 @@ def open_media() -> bool:
 def open_voice_rec() -> bool:
     """Toca el micrófono del compositor: debe salir la barra de grabación.
 
-    W104. El emulador del CI se lanza con -no-audio: si allí no hay
-    micrófono la app avisa con un toast y no abre la barra. Eso NO es
-    un fallo del smoke (la app no se rompe), así que sólo se avisa.
+    W104. La barra se reconoce por el botón de cancelar ("cancel voice
+    message"), que sólo existe mientras se graba: buscar el tiempo
+    mm:ss no vale (las burbujas también muestran horas así).
+
+    El emulador del CI se lanza con -no-audio: si allí no hay micrófono
+    la app avisa con un toast y no abre la barra. Eso NO es un fallo del
+    smoke (la app no se rompe), así que sólo se avisa.
     """
     print("== nota de voz ==")
     xml = dump()
@@ -378,21 +382,23 @@ def open_voice_rec() -> bool:
         print("   textos:", " | ".join(texts(xml)))
         return False
     tap(btn)
-    time.sleep(5)
+    time.sleep(6)
     xml = dump()
+    if not find(xml, desc="cancel voice message"):
+        print("!! no apareció la barra de grabación")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
     for n in nodes(xml):
         if re.fullmatch(r"\d{1,2}:\d{2}", (n.get("text") or "").strip()):
             print("barra de grabación:", n.get("text"))
-            return True
-    print("!! no apareció la barra de grabación")
-    print("   textos:", " | ".join(texts(xml)))
-    return False
+            break
+    return True
 
 
 def cancel_voice_rec() -> None:
     """Cancela la grabación (la X) y vuelve al compositor normal."""
     xml = dump()
-    if tap(find(xml, desc="cancel")):
+    if tap(find(xml, desc="cancel voice message")):
         time.sleep(3)
         return
     go_back()
