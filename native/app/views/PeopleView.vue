@@ -6,9 +6,11 @@
     <GridLayout rows="auto,auto,auto,*" class="ppl-page">
       <!-- ---------- cabecera ---------- -->
       <GridLayout row="0" class="side-head" columns="auto,*,auto">
-        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="backToChats" />
+        <FoxIconBtn col="0" icon="back" bare :tint="accent"
+                    accessibilityLabel="back" @tap="backToChats" />
         <Label col="1" class="sh-title" :text="t('Personas')" textWrap="false" />
-        <FoxIconBtn col="2" icon="users" bare :tint="accent" @tap="goNewGroup" />
+        <FoxIconBtn col="2" icon="users" bare :tint="accent"
+                    accessibilityLabel="new group" @tap="goNewGroup" />
       </GridLayout>
 
       <!-- ---------- pestañas ---------- -->

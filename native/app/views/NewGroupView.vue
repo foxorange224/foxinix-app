@@ -6,7 +6,8 @@
     <GridLayout rows="auto,auto,auto,*,auto" class="ng-page">
       <!-- ---------- cabecera ---------- -->
       <GridLayout row="0" class="side-head" columns="auto,*">
-        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="cancel" />
+        <FoxIconBtn col="0" icon="back" bare :tint="accent"
+                    accessibilityLabel="back" @tap="cancel" />
         <Label col="1" class="sh-title" :text="t('Grupo nuevo')" textWrap="false" />
       </GridLayout>
 

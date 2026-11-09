@@ -7,7 +7,8 @@
     <GridLayout rows="auto,*" class="st-page">
       <!-- ---------- cabecera ---------- -->
       <GridLayout row="0" class="side-head" columns="auto,*">
-        <FoxIconBtn col="0" icon="back" bare :tint="accent" @tap="close" />
+        <FoxIconBtn col="0" icon="back" bare :tint="accent"
+                    accessibilityLabel="back" @tap="close" />
         <Label col="1" class="sh-title" :text="t('Ajustes')" textWrap="false" />
       </GridLayout>
 

@@ -13,9 +13,13 @@
         <Label col="1" class="sh-title" :text="listTitle" textWrap="false" />
         <StackLayout v-if="store.ws !== 'on'" col="2" class="ws-dot"
                      verticalAlignment="center" />
-        <FoxIconBtn col="3" icon="plus" bare @tap="goPeople" />
+        <!-- W104: nombre para TalkBack (sin esto, el lector de pantalla
+             no dice nada en estos botones de solo icono). -->
+        <FoxIconBtn col="3" icon="plus" bare accessibilityLabel="people"
+                    @tap="goPeople" />
         <FoxAvatar col="4" class="me-av" :src="meAvatar" :initial="meInitial"
-                   :size="32" :dot="meDot" :ring="panelRing" @tap="goSettings" />
+                   :size="32" :dot="meDot" :ring="panelRing"
+                   accessibilityLabel="settings" @tap="goSettings" />
       </GridLayout>
 
       <!-- ---------- buscador (como el .search-pill de la web) ---------- -->

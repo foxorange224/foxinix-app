@@ -19,7 +19,8 @@
 
       <!-- X de cierre, encima de la imagen -->
       <GridLayout row="0" columns="*,auto" class="mv-top">
-        <FoxIconBtn col="1" icon="x" bare :tint="'#ffffff'" @tap="close" />
+        <FoxIconBtn col="1" icon="x" bare :tint="'#ffffff'"
+                    accessibilityLabel="close" @tap="close" />
       </GridLayout>
 
       <Label v-if="caption" class="mv-cap" :text="caption" textWrap="true" />

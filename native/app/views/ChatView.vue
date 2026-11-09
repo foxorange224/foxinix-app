@@ -7,7 +7,8 @@
     <GridLayout rows="auto,*,auto" class="chat-page">
       <!-- ---------- cabecera ---------- -->
       <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto">
-        <FoxIconBtn col="0" icon="back" bare :tint="muted" @tap="back" />
+        <FoxIconBtn col="0" icon="back" bare :tint="muted"
+                    accessibilityLabel="back" @tap="back" />
         <FoxAvatar col="1" :src="peerAvatar" :initial="peerInitial"
                    :size="38" :dot="peerDot" :ring="chatRing" />
         <StackLayout col="2" class="ch-col">
