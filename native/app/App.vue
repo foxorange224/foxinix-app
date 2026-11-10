@@ -1,20 +1,4 @@
 <template>
-  <!-- W103: la raíz es un GridLayout para poder poner los avisos (toasts)
-     ENCIMA de las vistas: en NS no hay un portal ni un z-index como en
-     la web. -->
-  <!-- W103: la raíz lleva las dos clases: el tema (tokens --bg, --panel…)
-       y el tamaño de letra. El tema va aquí para que TODAS las vistas
-       hereden los tokens (también las que todavía no se rediseñaron),
-       y el tamaño de letra porque font-size es heredado y así el
-       usuario lo nota en toda la app. -->
-  <!-- W103: androidOverflowEdge="none" en la raíz = la raíz se queda
-       DENTRO de la zona segura: los insets del sistema (barra de estado
-       arriba, barra de navegación abajo y teclado) se le suman como
-       padding y el contenido se dibuja entre ellos.
-       OJO: va en la RAÍZ y no en la barra de pestañas, porque la raíz
-       tiene la altura fija (100%) y el padding sólo le encoge el
-       contenido; en la barra de pestañas (altura automática) el padding
-       se le come el hueco de los iconos y las etiquetas. -->
   <GridLayout rows="*,auto" androidOverflowEdge="none" class="app-root"
               :class="'fs-' + (store.font || 'normal') + ' fox-' + (store.theme || 'dark')">
     <Frame row="0">
@@ -49,6 +33,30 @@
 </template>
 
 <script setup lang="ts">
+  /* W103: la raíz es un GridLayout para poder poner los avisos (toasts)
+     ENCIMA de las vistas: en NS no hay un portal ni un z-index como en
+     la web.
+
+     W103: la raíz lleva las dos clases: el tema (tokens --bg, --panel…)
+     y el tamaño de letra. El tema va aquí para que TODAS las vistas
+     hereden los tokens (también las que todavía no se rediseñaron),
+     y el tamaño de letra porque font-size es heredado y así el
+     usuario lo nota en toda la app.
+
+     W103: androidOverflowEdge="none" en la raíz = la raíz se queda
+     DENTRO de la zona segura: los insets del sistema (barra de estado
+     arriba, barra de navegación abajo y teclado) se le suman como
+     padding y el contenido se dibuja entre ellos.
+     OJO: va en la RAÍZ y no en la barra de pestañas, porque la raíz
+     tiene la altura fija (100%) y el padding sólo le encoge el
+     contenido; en la barra de pestañas (altura automática) el padding
+     se le come el hueco de los iconos y las etiquetas.
+
+     W106: el template no puede tener comentarios en el nivel del root:
+     un comentario ahí hace que la raíz compile a un Fragment, y en
+     producción Vue no lo desenvuelve ($el queda siendo el ancla del
+     fragmento, sin vista nativa) y la app se queda en negro. */
+
   import { computed, onMounted } from 'nativescript-vue';
   import { store } from './core/store.js';
   import { bootNative } from './fox';

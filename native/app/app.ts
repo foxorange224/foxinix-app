@@ -29,22 +29,21 @@ app.config.errorHandler = (err: unknown, _instance: unknown, info: string) => {
   logError(`error de Vue (${info || 'render'}): ${detail}`);
 };
 
-/* W106: se anota qué devuelve el montaje de la raíz. Si el elemento raíz
-   no tiene vista nativa, la pantalla queda en negro. */
+/* W106: si la raíz del template fuera un Fragment (por un comentario en
+   el nivel del root), $el es el ancla del fragmento y no tiene vista
+   nativa: la pantalla se queda en negro. Se avisa en el logcat para que
+   se note al instante si vuelve a pasar. */
 const anyApp = app as any;
 const origMount = anyApp.mount.bind(anyApp);
 anyApp.mount = (...args: any[]) => {
-  logError('montando la raíz...');
+  const inst: any = origMount(...args);
   try {
-    const inst: any = origMount(...args);
-    logError(`montaje: instancia=${inst ? 'sí' : 'NO'}` +
-      ` $el=${inst && inst.$el ? (inst.$el.constructor && inst.$el.constructor.name) : 'undefined'}` +
-      ` nativeView=${inst && inst.$el && inst.$el.nativeView ? 'sí' : 'NO'}`);
-    return inst;
-  } catch (e: any) {
-    logError(`EXCEPCIÓN al montar: ${e && e.stack ? e.stack : e}`);
-    throw e;
-  }
+    if (!inst || !inst.$el || !inst.$el.nativeView) {
+      const tipo = inst && inst.$el && inst.$el.constructor ? inst.$el.constructor.name : 'undefined';
+      logError(`la raíz no tiene vista nativa ($el=${tipo}): la pantalla va a quedar en negro`);
+    }
+  } catch (e) {}
+  return inst;
 };
 
 app.start();
