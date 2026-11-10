@@ -146,6 +146,35 @@ def edit_fields(xml: str) -> list[dict]:
     return [n for n in nodes(xml) if n.get("class", "").endswith("EditText")]
 
 
+def dismiss_anhd() -> bool:
+    """El emulador de CI a veces se cuelga y sale el diálogo del sistema
+    ("Pixel Launcher isn't responding") por encima de la app: se toca
+    "Wait" (o "Esperar") para seguir con el barrido."""
+    xml = dump()
+    for lbl in ("Wait", "Esperar"):
+        b = find(xml, cls="Button", text=lbl)
+        if b:
+            print("diálogo del sistema (ANR):", lbl)
+            tap(b)
+            time.sleep(4)
+            return True
+    return False
+
+
+def wait_edit_fields(timeout: int = 45) -> list[dict]:
+    """Espera a que aparezcan los campos de texto de la pantalla."""
+    fin = time.time() + timeout
+    while True:
+        f = edit_fields(dump())
+        if f:
+            return f
+        if dismiss_anhd():
+            continue
+        if time.time() > fin:
+            return []
+        time.sleep(3)
+
+
 def clear_field() -> None:
     """Vacía el campo enfocado (se va al final y borra hacia atrás)."""
     subprocess.run(["adb", "shell", "input", "keyevent", "123"], timeout=30)
@@ -316,9 +345,15 @@ def visit_register(out_dir: str) -> None:
     Android en el registro no vuelve al login: sale de la app).
     """
     print("== registro ==")
-    xml = dump()
-    link = (find(xml, cls="TextView", text="Create account")
-            or find(xml, cls="TextView", text="Crear cuenta"))
+    link = None
+    for _ in range(4):
+        xml = dump()
+        link = (find(xml, cls="TextView", text="Create account")
+                or find(xml, cls="TextView", text="Crear cuenta"))
+        if link:
+            break
+        if not dismiss_anhd():
+            time.sleep(3)
     if not tap(link):
         print("!! no se encontró 'Create account' en el login")
         return
@@ -935,7 +970,7 @@ def main() -> int:
     # letras al escribir y el server responde "usuario o contraseña
     # incorrectos".
     for intento in range(1, 4):
-        fields = edit_texts()
+        fields = wait_edit_fields()
         print("campos encontrados:", len(fields))
         if not fields:
             break
@@ -970,6 +1005,8 @@ def main() -> int:
             print("botón de entrada:", btn.get("text"))
         time.sleep(12)
         xml = dump()
+        if dismiss_anhd():
+            xml = dump()
         if not on_login_screen(xml):
             break
         print("!! el login no entró; se reintenta (intento", intento, ")")
