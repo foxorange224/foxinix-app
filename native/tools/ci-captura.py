@@ -15,6 +15,7 @@ import html
 import json
 import os
 import re
+import signal
 import struct
 import subprocess
 import sys
@@ -25,6 +26,19 @@ import zlib
 
 PKG = "io.foxinix.nativa"
 ACT = "com.tns.NativeScriptActivity"
+
+# El emulador de CI se cuelga de vez en cuando (el launcher muestra un
+# "isn't responding" y adb no responde). El barrido no puede quedar
+# colgado toda la hora: tiene un presupuesto de tiempo.
+SMOKE_BUDGET = 15 * 60      # segundos
+
+
+class TimeBudget(Exception):
+    """Se pasó el presupuesto de tiempo del barrido."""
+
+
+def _alarm(_signum, _frame) -> None:
+    raise TimeBudget("se pasó el tiempo")
 
 # ---------------------------------------------------------------- API
 # El script habla con la API real (la misma que usa la app) para dejar
@@ -42,7 +56,10 @@ IMG_MIN_PX = 100
 
 def sh(*args: str, **kw) -> str:
     try:
-        return subprocess.run(args, capture_output=True, text=True, timeout=kw.get("timeout", 60)).stdout
+        # Timeout corto: si el emulador está colgado, cada comando
+        # tardaba un minuto y el barrido se iba de tiempo.
+        return subprocess.run(args, capture_output=True, text=True,
+                              timeout=kw.get("timeout", 20)).stdout
     except Exception as e:  # noqa: BLE001
         print("cmd falló:", " ".join(args), e)
         return ""
@@ -131,14 +148,14 @@ def tap(node: dict | None) -> bool:
     c = bounds_center(node.get("bounds", ""))
     if not c:
         return False
-    subprocess.run(["adb", "shell", "input", "tap", str(c[0]), str(c[1])], timeout=30)
+    subprocess.run(["adb", "shell", "input", "tap", str(c[0]), str(c[1])], timeout=15)
     return True
 
 
 def type_text(text: str) -> None:
     # `input text` no entiende algunos caracteres: se pasan escapados.
     safe = text.replace("\\", "\\\\").replace(" ", "%s").replace("!", "\\!")
-    subprocess.run(["adb", "shell", "input", "text", safe], timeout=30)
+    subprocess.run(["adb", "shell", "input", "text", safe], timeout=15)
 
 
 def edit_fields(xml: str) -> list[dict]:
@@ -161,25 +178,28 @@ def dismiss_anhd() -> bool:
     return False
 
 
-def wait_edit_fields(timeout: int = 45) -> list[dict]:
-    """Espera a que aparezcan los campos de texto de la pantalla."""
+def wait_edit_fields(timeout: int = 60) -> list[dict]:
+    """Espera a que aparezcan los campos de texto de la pantalla.
+
+    El plazo se comprueba SIEMPRE: si el diálogo del sistema aparece
+    una y otra vez, el bucle tiene que terminar igual.
+    """
     fin = time.time() + timeout
-    while True:
+    while time.time() < fin:
         f = edit_fields(dump())
         if f:
             return f
         if dismiss_anhd():
             continue
-        if time.time() > fin:
-            return []
         time.sleep(3)
+    return []
 
 
 def clear_field() -> None:
     """Vacía el campo enfocado (se va al final y borra hacia atrás)."""
-    subprocess.run(["adb", "shell", "input", "keyevent", "123"], timeout=30)
+    subprocess.run(["adb", "shell", "input", "keyevent", "123"], timeout=15)
     subprocess.run(
-        ["adb", "shell", "input", "keyevent"] + ["67"] * 40, timeout=60)
+        ["adb", "shell", "input", "keyevent"] + ["67"] * 40, timeout=30)
     time.sleep(0.5)
 
 
@@ -231,7 +251,7 @@ def hide_keyboard() -> None:
     equivocado."""
     if not keyboard_shown():
         return
-    subprocess.run(["adb", "shell", "input", "keyevent", "4"], timeout=30)
+    subprocess.run(["adb", "shell", "input", "keyevent", "4"], timeout=15)
     time.sleep(1)
 
 
@@ -262,7 +282,7 @@ def scroll_down() -> None:
 
 def go_back() -> None:
     """Botón atrás de Android: la app lo maneja y cierra la vista."""
-    subprocess.run(["adb", "shell", "input", "keyevent", "4"], timeout=30)
+    subprocess.run(["adb", "shell", "input", "keyevent", "4"], timeout=15)
     time.sleep(4)
 
 
@@ -313,7 +333,7 @@ def is_profile(xml: str) -> bool:
 def shot(out_dir: str, name: str) -> str:
     path = os.path.join(out_dir, name + ".png")
     with open(path, "wb") as f:
-        subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=f, timeout=60)
+        subprocess.run(["adb", "exec-out", "screencap", "-p"], stdout=f, timeout=30)
     print("captura:", path, os.path.getsize(path), "bytes")
     # El XML de la pantalla va al lado de la captura: sirve para mirar
     # posiciones y alturas cuando un PNG no se entiende (lo sube el CI).
@@ -371,7 +391,7 @@ def visit_register(out_dir: str) -> None:
             break
         scroll_down()
     print("!! no se volvió al login desde el registro; se reinicia la app")
-    subprocess.run(["adb", "shell", "am", "force-stop", PKG], timeout=30)
+    subprocess.run(["adb", "shell", "am", "force-stop", PKG], timeout=15)
     subprocess.run(["adb", "shell", "am", "start", "-W", "-n", f"{PKG}/{ACT}"], timeout=90)
     time.sleep(12)
 
@@ -936,7 +956,7 @@ def ensure_test_media(user: str, pwd: str) -> tuple[int, str]:
     return found, title
 
 
-def main() -> int:
+def run() -> int:
     out_dir = sys.argv[1] if len(sys.argv) > 1 else "/tmp/opencode/capturas"
     user = sys.argv[2] if len(sys.argv) > 2 else "nsprobe"
     pwd = sys.argv[3] if len(sys.argv) > 3 else "NSProbe!2026"
@@ -951,7 +971,7 @@ def main() -> int:
         print("!! no se pudo dejar una imagen real; el paso del visor puede fallar")
 
     print("== arrancando la app ==")
-    subprocess.run(["adb", "shell", "am", "force-stop", PKG], timeout=30)
+    subprocess.run(["adb", "shell", "am", "force-stop", PKG], timeout=15)
     subprocess.run(["adb", "shell", "am", "start", "-W", "-n", f"{PKG}/{ACT}"], timeout=90)
     time.sleep(12)
 
@@ -1000,7 +1020,7 @@ def main() -> int:
                     break
         if not tap(btn):
             # si no se encuentra el botón, se manda Enter desde el campo
-            subprocess.run(["adb", "shell", "input", "keyevent", "66"], timeout=30)
+            subprocess.run(["adb", "shell", "input", "keyevent", "66"], timeout=15)
         else:
             print("botón de entrada:", btn.get("text"))
         time.sleep(12)
@@ -1163,6 +1183,23 @@ def main() -> int:
     with open(os.path.join(out_dir, "logcat.txt"), "w", encoding="utf-8") as f:
         f.write(log)
     return 0
+
+
+def main() -> int:
+    """El barrido con un presupuesto de tiempo.
+
+    Si el emulador se cuelga, el script termina solo (y avisa) en vez
+    de dejar el job de CI colgado media hora.
+    """
+    signal.signal(signal.SIGALRM, _alarm)
+    signal.alarm(SMOKE_BUDGET)
+    try:
+        return run()
+    except TimeBudget:
+        print("!! se pasó el tiempo del barrido (", SMOKE_BUDGET, "s)")
+        return 1
+    finally:
+        signal.alarm(0)
 
 
 if __name__ == "__main__":
