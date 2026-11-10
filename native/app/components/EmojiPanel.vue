@@ -13,45 +13,79 @@
       </GridLayout>
     </GridLayout>
 
-    <!-- ---------- buscador + categorías (sólo emojis) ---------- -->
-    <GridLayout v-if="tab === 'emo'" row="1" class="ep-tools" rows="auto,auto">
-      <GridLayout row="0" class="ep-search" columns="auto,*">
+    <!-- ---------- buscador (sólo emojis) ---------- -->
+    <GridLayout v-if="tab === 'emo'" row="1" class="ep-tools">
+      <GridLayout row="0" class="ep-search" columns="auto,*,auto">
         <Image col="0" src="res://ic_fox_search" width="16" height="16"
                :tintColor="muted" verticalAlignment="center" />
         <TextField col="1" class="ep-search-in" :text="q"
                    :hint="t('Buscar emoji')" :placeholderColor="muted"
                    autocorrect="false" autocapitalizationType="none"
                    @textChange="q = $event.value" />
+        <!-- la X para borrar la búsqueda (como en la web) -->
+        <FoxIconBtn v-if="q" col="2" class="ep-clr" icon="x" bare
+                    :size="26" :ic="13" :tint="muted"
+                    :accessibilityLabel="t('Borrar')" @tap="q = ''" />
       </GridLayout>
+    </GridLayout>
 
-      <!-- el rail de categorías (como los "saltos" de la web) -->
-      <ScrollView v-if="!q.trim()" row="1" class="ep-cats" orientation="horizontal">
-        <StackLayout orientation="horizontal">
+    <!-- ---------- cuerpo ---------- -->
+    <!-- En la web el cuerpo del picker es una rejilla de 2 columnas: el
+         rail de categorías a la IZQUIERDA y a su lado UNA sola lista
+         con subtítulos ("Caras y emociones:", …). El rail salta a la
+         sección y se ilumina la que se está viendo. -->
+    <GridLayout v-if="tab === 'emo'" row="2" class="ep-body" columns="auto,*">
+
+      <!-- el rail de categorías -->
+      <ScrollView col="0" class="ep-rail">
+        <StackLayout>
           <Label v-for="c in cats" :key="c.id" class="ep-cat"
-                 :class="{ on: cat === c.id }" :text="c.icon" textWrap="false"
-                 :accessibilityLabel="c.name" @tap="setCat(c.id)" />
+                 :class="{ on: !q.trim() && cat === c.id }" :text="c.icon"
+                 textWrap="false" :accessibilityLabel="c.name"
+                 @tap="jump(c.id)" />
+        </StackLayout>
+      </ScrollView>
+
+      <!-- la lista con subtítulos -->
+      <ScrollView col="1" class="ep-scroll" ref="scroller" @scroll="onScroll">
+        <StackLayout>
+          <template v-if="!q.trim()">
+            <GridLayout v-for="s in sections" :key="s.id" class="ep-section"
+                        rows="auto,auto">
+              <Label row="0" class="ep-sub" :text="t(s.label)" textWrap="false" />
+              <GridLayout row="1" class="ep-grid" :columns="emoCols"
+                          :rows="gridRows(s.items.length, emoN)">
+                <Label v-for="(e, i) in s.items" :key="'e' + s.id + i"
+                       :row="Math.floor(i / emoN)" :col="i % emoN"
+                       class="ep-e" :text="e" textWrap="false"
+                       :accessibilityLabel="e" @tap="pick(e)" />
+              </GridLayout>
+            </GridLayout>
+          </template>
+          <template v-else>
+            <GridLayout class="ep-grid" :columns="emoCols"
+                        :rows="gridRows(flat.length, emoN)">
+              <Label v-for="(e, i) in flat" :key="'f' + i"
+                     :row="Math.floor(i / emoN)" :col="i % emoN"
+                     class="ep-e" :text="e" textWrap="false"
+                     :accessibilityLabel="e" @tap="pick(e)" />
+            </GridLayout>
+          </template>
+
+          <Label v-if="!q.trim() && !sections.length" class="ep-empty"
+                 :text="t('Aún no usas emojis.')" textWrap="true" />
+          <Label v-else-if="q.trim() && !flat.length" class="ep-empty"
+                 :text="t('Sin coincidencias.')" textWrap="true" />
         </StackLayout>
       </ScrollView>
     </GridLayout>
 
-    <!-- ---------- cuerpo ---------- -->
-    <ScrollView row="2" class="ep-body">
+    <!-- los stickers y los GIFs (una lista con secciones, como la web) -->
+    <ScrollView v-else row="2" class="ep-scroll">
       <StackLayout>
 
-        <!-- ============ EMOJIS ============ -->
-        <template v-if="tab === 'emo'">
-          <GridLayout class="ep-grid" :columns="emoCols" :rows="emoRows">
-            <Label v-for="(e, i) in emojis" :key="'e' + i"
-                   :row="Math.floor(i / emoN)" :col="i % emoN"
-                   class="ep-e" :text="e" textWrap="false"
-                   :accessibilityLabel="e" @tap="pick(e)" />
-          </GridLayout>
-          <Label v-if="!emojis.length" class="ep-empty"
-                 :text="t('Sin resultados.')" textWrap="true" />
-        </template>
-
         <!-- ============ STICKERS ============ -->
-        <template v-else-if="tab === 'st'">
+        <template v-if="tab === 'st'">
           <!-- favoritos -->
           <template v-if="stkFavs.length">
             <Label class="ep-sec" :text="t('Favoritos')" textWrap="false" />
@@ -224,25 +258,34 @@
   const q = ref('');
   const cat = ref('recentes');
   const busy = ref(false);
+  /* La lista de emojis (para saltar a una sección del rail). */
+  const scroller = ref<any>(null);
 
   const muted = computed(() => tok(store.theme, 't2'));
   const accent = computed(() => tok(store.theme, 'accent'));
 
   const cats = emojiCats();
 
-  /* Los emojis que se ven: si se busca, el resultado de la búsqueda;
-     si no, los de la categoría elegida (los recientes van aparte). */
-  const emojis = computed(() => {
-    const needle = q.value.trim();
-    if (needle) return emojiSearch(needle);
-    if (cat.value === 'recientes') return emojiRecent();
-    return emojiCat(cat.value);
+  /* Una sola lista con subtítulos por categoría (como la web): los
+     recientes van primero (si hay) y después cada categoría. */
+  const sections = computed(() => {
+    const out: any[] = [];
+    const rec = emojiRecent();
+    if (rec.length) out.push({ id: 'recientes', label: 'Recientes', items: rec });
+    for (const c of cats) {
+      if (c.id === 'recientes') continue;
+      const items = emojiCat(c.id);
+      if (items.length) out.push({ id: c.id, label: c.name, items });
+    }
+    return out;
   });
+
+  /* La búsqueda aplana la lista (como en la web). */
+  const flat = computed(() => (q.value.trim() ? emojiSearch(q.value.trim()) : []));
 
   /* La rejilla de emojis: 8 por fila (como los cuadros de la web). */
   const emoN = 8;
   const emoCols = computed(() => new Array(emoN).fill('*').join(','));
-  const emoRows = computed(() => gridRows(emojis.value.length, emoN));
   /* Los cuadros de stickers/GIFs son más grandes: 5 por fila. */
   const tileN = 5;
   const tileCols = computed(() => new Array(tileN).fill('*').join(','));
@@ -254,6 +297,23 @@
   function gridRows(n: number, perRow: number): string {
     const rows = Math.ceil((n || 0) / perRow);
     return new Array(Math.max(rows, 1)).fill('auto').join(',');
+  }
+
+  /* Las alturas fijas del subtítulo y de cada fila de emojis. Tienen que
+     coincidir con el CSS (.ep-sub y .ep-e): con ellas se calcula a qué
+     punto hay que desplazar la lista cuando se toca una categoría del
+     rail (en la web es el scrollTop del elemento). */
+  const SUB_H = 26;
+  const EMO_H = 40;
+
+  /* La posición (en la lista) del subtítulo de la sección i. */
+  function sectionOffset(i: number): number {
+    let y = 0;
+    const list = sections.value;
+    for (let j = 0; j < i && j < list.length; j++) {
+      y += SUB_H + Math.ceil(list[j].items.length / emoN) * EMO_H;
+    }
+    return y;
   }
 
   const stkFavs = computed(() => store.stkFavs || []);
@@ -272,9 +332,30 @@
     if (id === 'st') ensureUserAssets();
   }
 
-  function setCat(id: string) {
-    cat.value = id;
+  /* Tocar una categoría del rail: salta a su sección (como en la web). */
+  function jump(id: string) {
     q.value = '';
+    cat.value = id;
+    const idx = sections.value.findIndex((s: any) => s.id === id);
+    if (idx < 0) return;
+    try {
+      if (scroller.value) {
+        scroller.value.scrollToVerticalOffset(sectionOffset(idx), true);
+      }
+    } catch (e) { /* el scroll es un extra: si falla, sigue la lista */ }
+  }
+
+  /* Al desplazar la lista se ilumina la categoría que se está viendo. */
+  function onScroll(e: any) {
+    if (q.value.trim()) return;
+    const y = e && e.contentOffset ? e.contentOffset.y : 0;
+    const list = sections.value;
+    if (!list.length) return;
+    let cur = list[0].id;
+    for (let i = 0; i < list.length; i++) {
+      if (sectionOffset(i) <= y + 4) cur = list[i].id;
+    }
+    cat.value = cur;
   }
 
   /* Un emoji del selector: va al borrador (lo pone el compositor). */

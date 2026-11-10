@@ -749,7 +749,17 @@ def capture_emoji_tabs(out_dir: str) -> bool:
     xml = dump()
     shot(out_dir, "16-emojis")
 
+    # El rail de categorías (a la izquierda, como en la web) salta a la
+    # sección: se toca una y se captura para ver a dónde fue.
+    if tap(find(xml, desc="Comida y bebida")):
+        time.sleep(3)
+        shot(out_dir, "16b-emojis-categoria")
+    else:
+        print("!! no se vio el rail de categorías")
+        ok = False
+
     for tab, nombre in (("st", "17-stickers"), ("gif", "18-gifs")):
+        xml = dump()
         if not tap(find(xml, desc="ep-tab: " + tab)):
             print("!! no se pudo tocar la pestaña", tab)
             ok = False

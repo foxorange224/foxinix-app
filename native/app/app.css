@@ -1534,17 +1534,27 @@ ActionBar {
   placeholder-color: #a3a3a3;
 }
 
-.ep-cats {
-  padding: 0 4 4 4;
+.ep-clr {
+  margin-left: 4;
+  vertical-align: center;
+}
+
+/* ---------- el rail de categorías (a la izquierda, como en la web) ---------- */
+
+.ep-rail {
+  width: 42;
+  border-right-width: 1;
+  border-right-color: var(--border);
+  background-color: var(--panel);
 }
 
 .ep-cat {
   font-size: 20;
   width: 38;
-  height: 34;
+  height: 38;
   text-align: center;
   vertical-align: center;
-  border-radius: 6;
+  border-radius: 8;
 }
 
 .ep-cat.on {
@@ -1557,8 +1567,24 @@ ActionBar {
   padding: 0;
 }
 
+.ep-scroll {
+  padding: 0;
+}
+
+/* El subtítulo de cada categoría (la lista es UNA sola, con subtítulos,
+   como en la web). */
+.ep-sub {
+  height: 26;
+  color: var(--t2);
+  font-size: 12;
+  font-weight: 600;
+  padding-left: 8;
+  vertical-align: center;
+}
+
 .ep-grid {
-  padding: 4 6;
+  padding-left: 4;
+  padding-right: 4;
 }
 
 .ep-e {
