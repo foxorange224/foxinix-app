@@ -241,6 +241,40 @@ El núcleo (`landing/static/js/actions.js`) ya tenía casi todo
 (`toggleReaction`, `editMessage`, `forwardMessage`, `togglePin`): lo
 nuevo es la UI nativa.
 
+## Selector de emojis, stickers y GIFs (W106)
+
+La carita del compositor abre el panel de **3 pestañas** de la web:
+
+- **Emojis**: buscador, el **rail de categorías a la izquierda** y **una
+  sola lista con subtítulos** ("Caras y emociones:", "Comida y bebida:", …),
+  igual que la web. Tocar una categoría del rail **salta a su sección**
+  (las alturas del subtítulo y de cada fila son fijas, así que el punto
+  de salto se calcula exacto) y al desplazar la lista se ilumina la
+  categoría que se está viendo.
+- **Stickers**: los 24 del sitio, los **favoritos** (con su estrella) y
+  los que **subió el usuario** (con su X para borrarlos). El sticker
+  viaja como mensaje `kind:'sticker'`.
+- **GIFs**: la biblioteca del sitio, los favoritos y los GIFs del
+  usuario. El GIF de la biblioteca se **baja y se sube** como imagen
+  (`sendGif`); en NS no hay `File`, así que la capa de plataforma
+  (`FileAdapter.toUploadFile()`) lo escribe en un archivo temporal.
+
+Detalles que impone NativeScript:
+
+- **El panel no flota**: en NS no hay `position: fixed` ni `z-index`, así
+  que es una **fila propia** del `GridLayout` de la conversación
+  (`rows="auto,*,auto,auto"`, el panel en la fila 2 y el compositor en la
+  3). El compositor sigue a la vista y los mensajes se achican solos. La
+  hoja de acciones del mensaje (W105) ahora cubre las 4 filas.
+- **Los emojis y los stickers se pintan como texto** (`Label`), no como
+  imágenes Twemoji: en NS no hay SVG y las imágenes del estilo "Noto" se
+  descargarían de a uno. Los GIFs y los archivos del usuario sí son
+  imágenes (con la URL del CDN).
+- **La lógica es compartida**: `landing/static/js/stickers.js` tiene los
+  datos, los favoritos y la biblioteca personal (la web la reexporta
+  desde `views/ui-actions.js`) y `emoji.js` usa el puente de Vue
+  (`./vue.js`), que en NS genera `tools/sync-core.mjs`.
+
 ## Comandos
 
 ```bash
@@ -249,6 +283,8 @@ npm run build:android   # sincroniza + compila el APK
 npm run run:android     # instala y corre en el dispositivo/emulador
 node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw>
                          # test del núcleo nativo contra la API real
+node --import ./tools/ns-register.mjs tools/test-w106-core.mjs
+                         # test del núcleo de emojis/stickers/GIFs (W106)
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -299,6 +335,11 @@ sudo bash tools/fix-ns-cli-gradle.sh
   (responder, copiar, fijar, reenviar, editar, eliminar). Las reacciones
   salen bajo la burbuja, la cita dentro de la burbuja y la barra de
   respuesta arriba del compositor.
+- **Selector de emojis/stickers/GIFs** (W106): la carita del compositor
+  abre el panel de 3 pestañas de la web (Emojis con buscador, rail de
+  categorías y lista con subtítulos; Stickers y GIFs con favoritos y
+  biblioteca del usuario). Es una fila propia del `GridLayout` de la
+  conversación, justo arriba del compositor.
 - **La APK de publicación se abre (v0.2.5)**: la v0.2.4 se quedaba en
   negro al abrirla. La causa era que la raíz del template de `App.vue`
   compilaba a un **Fragment** (por los comentarios en el nivel del root) y
