@@ -44,6 +44,8 @@ WANTED = [
     # W105: acciones del mensaje (responder, reaccionar, copiar, editar,
     # borrar, reenviar, fijar).
     "copy", "pencil", "trash", "pin-off",
+    # W106: selector de emojis/stickers/GIFs (la pestaña de stickers).
+    "sticker",
     "logo-mark", "logo-word",
 ]
 

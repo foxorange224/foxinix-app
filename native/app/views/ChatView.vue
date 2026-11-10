@@ -4,7 +4,7 @@
        compositor redondo (.composer + .send-btn). -->
   <Page :class="'fox-' + theme" actionBarHidden="true">
 
-    <GridLayout rows="auto,*,auto" class="chat-page">
+    <GridLayout rows="auto,*,auto,auto" class="chat-page">
       <!-- ---------- cabecera ---------- -->
       <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto">
         <FoxIconBtn col="0" icon="back" bare :tint="muted"
@@ -151,11 +151,13 @@
            se graba, el composer se sustituye por la barra de grabación
            (punto + tiempo + onda + cancelar + enviar), como en la web.
            W105: arriba del composer va la barra de respuesta (o de
-           edición), como el .reply-bar de la web. -->
-      <GridLayout v-if="rec === 'off'" row="2" class="composer"
-                  rows="auto,auto" columns="auto,*,auto,auto">
+           edición), como el .reply-bar de la web.
+           W106: el botón de la carita abre el selector de
+           emojis/stickers/GIFs (fila 2, justo arriba del compositor). -->
+      <GridLayout v-if="rec === 'off'" row="3" class="composer"
+                  rows="auto,auto" columns="auto,*,auto,auto,auto">
         <!-- W105: a quién se responde (o qué se está editando) -->
-        <GridLayout v-if="replyFor || editFor" row="0" col="0" colSpan="4"
+        <GridLayout v-if="replyFor || editFor" row="0" col="0" colSpan="5"
                     class="reply-bar" columns="auto,*,auto">
           <Image col="0" class="rb-ic" :src="barIcon"
                  :tintColor="accentColor" stretch="aspectFit" />
@@ -172,15 +174,20 @@
                    :hint="t('Mensaje')" autocorrect="true" :editable="!sending"
                    @textChange="draft = $event.value" @submit="send"
                    returnKeyType="send" />
-        <FoxIconBtn v-if="!draft.trim()" row="1" col="2" class="composer-mic"
+        <!-- W106: la carita abre el selector de 3 pestañas -->
+        <FoxIconBtn row="1" col="2" class="composer-emo" icon="smile" bare
+                    :active="pickerOpen"
+                    :tint="pickerOpen ? accentColor : muted"
+                    accessibilityLabel="emojis" @tap="togglePicker" />
+        <FoxIconBtn v-if="!draft.trim()" row="1" col="3" class="composer-mic"
                     icon="mic" bare :tint="muted"
                     accessibilityLabel="voice message" @tap="startRec" />
-        <FoxIconBtn row="1" col="3" class="send-btn" icon="send"
+        <FoxIconBtn row="1" col="4" class="send-btn" icon="send"
                     :class="{ muted: !canSend }" :tint="sendTint"
                     accessibilityLabel="send" @tap="send" />
       </GridLayout>
 
-      <GridLayout v-else row="2" class="composer rec-bar"
+      <GridLayout v-else row="3" class="composer rec-bar"
                   columns="auto,auto,90,auto,auto">
         <Label col="0" class="rec-dot" text="" textWrap="false"
                verticalAlignment="center" />
@@ -199,11 +206,17 @@
                     @tap="stopRec(true)" />
       </GridLayout>
 
+      <!-- ---------- W106: selector de emojis/stickers/GIFs ----------
+           Va en su propia fila (la 2), JUSTO arriba del compositor: en
+           NS no hay position:fixed ni z-index, así que el panel no
+           flota; ocupa su fila y el compositor sigue a la vista. -->
+      <EmojiPanel v-if="pickerOpen" row="2" @pick="insertEmoji" @close="closePicker" />
+
       <!-- ---------- W105: hoja de acciones del mensaje ----------
            Es la ÚLTIMA hija del GridLayout de la página: en NS no hay
            z-index, así que lo que va después se dibuja encima. Cubre
-           las tres filas (cabecera, mensajes y compositor). -->
-      <MsgSheet v-if="sheetFor" row="0" rowSpan="3"
+           todas las filas (cabecera, mensajes, selector y compositor). -->
+      <MsgSheet v-if="sheetFor" row="0" rowSpan="4"
                 :msg="sheetFor" :mine="isMine(sheetFor)"
                 :admin="isAdmin" :pinned="!!sheetFor.pinned"
                 @close="closeSheet" @reply="doReply" @react="doReact"
@@ -235,12 +248,15 @@
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
   import MsgSheet from '../components/MsgSheet.vue';
+  import EmojiPanel from '../components/EmojiPanel.vue';
 
   const draft = ref('');
   const sending = ref(false);
   const sendingFile = ref(false);
   const loading = ref(true);
   const scroller = ref<any>(null);
+  /* W106: el selector de emojis/stickers/GIFs (3 pestañas, como la web). */
+  const pickerOpen = ref(false);
 
   /* ---------- W104: notas de voz ---------- */
 
@@ -886,6 +902,23 @@
     } finally {
       sending.value = false;
     }
+  }
+
+  /* ---------- W106: el selector de emojis/stickers/GIFs ---------- */
+
+  function togglePicker() {
+    pickerOpen.value = !pickerOpen.value;
+  }
+
+  function closePicker() {
+    pickerOpen.value = false;
+  }
+
+  /* Un emoji del selector va al final del borrador (no se manda solo:
+     el usuario sigue escribiendo y lo envía cuando quiere). */
+  function insertEmoji(e: string) {
+    if (!e) return;
+    draft.value = draft.value + e;
   }
 
   /* Adjuntar un archivo: el selector nativo del sistema. El núcleo
