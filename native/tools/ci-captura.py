@@ -753,7 +753,15 @@ def capture_emoji_tabs(out_dir: str) -> bool:
     # sección: se toca una y se captura para ver a dónde fue.
     if tap(find(xml, desc="Comida y bebida")):
         time.sleep(3)
+        xml = dump()
         shot(out_dir, "16b-emojis-categoria")
+        # El subtítulo de la sección tocada tiene que verse en la lista
+        # (traducido al idioma de la app: "Food & drink" o el original).
+        if not (find(xml, contains="Food & drink")
+                or find(xml, contains="Comida y bebida")):
+            print("!! la lista no saltó a la sección de comida")
+            print("   textos:", " | ".join(texts(xml)))
+            ok = False
     else:
         print("!! no se vio el rail de categorías")
         ok = False

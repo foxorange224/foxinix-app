@@ -266,9 +266,15 @@
 
   const cats = emojiCats();
 
+  /* Los recientes se leen del almacenamiento, así que no son reactivos:
+     este contador los vuelve a pedir al elegir un emoji (para que la
+     sección "Recientes" aparezca sin cerrar el panel). */
+  const recTick = ref(0);
+
   /* Una sola lista con subtítulos por categoría (como la web): los
      recientes van primero (si hay) y después cada categoría. */
   const sections = computed(() => {
+    recTick.value;   // depende del contador (ver arriba)
     const out: any[] = [];
     const rec = emojiRecent();
     if (rec.length) out.push({ id: 'recientes', label: 'Recientes', items: rec });
@@ -332,23 +338,36 @@
     if (id === 'st') ensureUserAssets();
   }
 
+  /* El ScrollView nativo: en NS-Vue el ref de un elemento es el
+     envoltorio (NSVElement), así que los métodos del ScrollView
+     (scrollToVerticalOffset) están en su `nativeView`. */
+  function nativeScroller(): any {
+    const s: any = scroller.value;
+    if (!s) return null;
+    return s.nativeView || s;
+  }
+
   /* Tocar una categoría del rail: salta a su sección (como en la web). */
   function jump(id: string) {
     q.value = '';
     cat.value = id;
     const idx = sections.value.findIndex((s: any) => s.id === id);
-    if (idx < 0) return;
     try {
-      if (scroller.value) {
-        scroller.value.scrollToVerticalOffset(sectionOffset(idx), true);
-      }
+      const sv = nativeScroller();
+      if (!sv || !sv.scrollToVerticalOffset) return;
+      /* Si la categoría no tiene sección (p.ej. "Recientes" sin
+         recientes), se vuelve arriba del todo. */
+      sv.scrollToVerticalOffset(idx < 0 ? 0 : sectionOffset(idx), true);
     } catch (e) { /* el scroll es un extra: si falla, sigue la lista */ }
   }
 
-  /* Al desplazar la lista se ilumina la categoría que se está viendo. */
+  /* Al desplazar la lista se ilumina la categoría que se está viendo.
+     OJO: en NS 9 el evento de scroll trae `scrollY` (en dp), no
+     `contentOffset` (eso es de la web). */
   function onScroll(e: any) {
     if (q.value.trim()) return;
-    const y = e && e.contentOffset ? e.contentOffset.y : 0;
+    const y = e ? (typeof e.scrollY === 'number' ? e.scrollY
+                   : (e.contentOffset ? e.contentOffset.y : 0)) : 0;
     const list = sections.value;
     if (!list.length) return;
     let cur = list[0].id;
@@ -361,6 +380,7 @@
   /* Un emoji del selector: va al borrador (lo pone el compositor). */
   function pick(e: string) {
     emojiPush(e);
+    recTick.value++;
     emit('pick', e);
   }
 

@@ -692,6 +692,9 @@
       return;
     }
     rec.value = 'on';
+    /* W106: al grabar se cierra el selector de emojis (el compositor se
+       sustituye por la barra de grabación). */
+    pickerOpen.value = false;
     recSecs.value = 0;
     recWave.value = [];
     recPeaks = [];
@@ -873,9 +876,23 @@
     return fmtTime(new Date(m.created_at * 1000));
   }
 
+  /* Baja la lista de mensajes al final (al abrir el chat, al mandar un
+     mensaje y cuando llegan por el WebSocket).
+
+     OJO con NativeScript:
+     - `scrollToBottom()` NO existe en NS (es de la web): se baja con un
+       desplazamiento enorme, que la vista nativa recorta al final del
+       contenido (en Android el `clamp` lo deja justo en el último píxel
+       y en iOS también se recorta al tamaño del contenido);
+     - el `ref` de un elemento en NS-Vue es el envoltorio (NSVElement),
+       así que los métodos del ScrollView están en su `nativeView`. */
   function scrollToEnd() {
     try {
-      if (scroller.value) scroller.value.scrollToBottom();
+      const s: any = scroller.value;
+      const sv = s ? (s.nativeView || s) : null;
+      if (sv && sv.scrollToVerticalOffset) {
+        sv.scrollToVerticalOffset(1e6, false);
+      }
     } catch (e) { /* el ScrollView puede no estar listo */ }
   }
 
