@@ -111,24 +111,11 @@ jobs:
           emulator-options: >-
             -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
             -camera-back none -camera-front none
+          # OJO: este action ejecuta CADA línea del script en una shell
+          # aparte, así que todo tiene que ir en una sola línea (si no,
+          # las variables no se ven entre líneas).
           script: |
-            echo "===directorio==="; pwd; ls -l "$GITHUB_WORKSPACE/apk/" || true
-            APK="$(find "$GITHUB_WORKSPACE/native/platforms/android/app/build/outputs/apk/release" -name '*.apk' 2>/dev/null | head -1)"
-            if [ -z "$APK" ]; then APK="$GITHUB_WORKSPACE/apk/foxinix-release.apk"; fi
-            echo "APK=$APK"
-            adb install -r "$APK"
-            mkdir -p capturas
-            # Se limpia el búfer: si no, el ruido del emulador se come las
-            # líneas del arranque de la app.
-            adb logcat -c
-            adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true
-            sleep 25
-            adb exec-out screencap -p > capturas/pantalla.png
-            adb logcat -d > capturas/logcat.txt
-            echo "=== lo que ve el usuario ==="
-            adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" || true
-            echo "=== errores de JavaScript ==="
-            grep -nE "JS      :|TNS\.|com\.tns|AndroidRuntime|FATAL|Foxinix" capturas/logcat.txt || true
+            APK="$(find "$GITHUB_WORKSPACE/native/platforms/android/app/build/outputs/apk/release" -name '*.apk' 2>/dev/null | head -1)"; [ -n "$APK" ] || APK="$GITHUB_WORKSPACE/apk/foxinix-release.apk"; echo "APK=$APK"; ls -l "$APK"; adb install -r "$APK" || echo "FALLO LA INSTALACIÓN"; mkdir -p capturas; adb logcat -c; adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true; sleep 25; adb exec-out screencap -p > capturas/pantalla.png; adb logcat -d > capturas/logcat.txt; adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" || true; echo "=== errores de JavaScript ==="; grep -nE "JS      :|TNS\.|com\.tns|AndroidRuntime|FATAL|Foxinix" capturas/logcat.txt || true
 
       - uses: actions/upload-artifact@v4
         if: always()
