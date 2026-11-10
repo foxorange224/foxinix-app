@@ -83,6 +83,16 @@ jobs:
             --key-store-alias "$ANDROID_KEY_ALIAS" \
             --key-store-alias-password "$ANDROID_KEY_STORE_PASSWORD"
           ls -lh platforms/android/app/build/outputs/apk/release/
+          mkdir -p "$GITHUB_WORKSPACE/apk"
+          cp platforms/android/app/build/outputs/apk/release/app-release.apk \
+            "$GITHUB_WORKSPACE/apk/foxinix-release.apk"
+          ls -lh "$GITHUB_WORKSPACE/apk/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foxinix-prod-apk
+          path: apk/*
+          if-no-files-found: error
 
       - name: Habilitar KVM
         run: |
@@ -102,7 +112,10 @@ jobs:
             -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
             -camera-back none -camera-front none
           script: |
-            APK="$(find native/platforms/android/app/build/outputs/apk/release -name '*.apk' | head -1)"
+            echo "===directorio==="; pwd; ls -l "$GITHUB_WORKSPACE/apk/" || true
+            APK="$(find "$GITHUB_WORKSPACE/native/platforms/android/app/build/outputs/apk/release" -name '*.apk' 2>/dev/null | head -1)"
+            if [ -z "$APK" ]; then APK="$GITHUB_WORKSPACE/apk/foxinix-release.apk"; fi
+            echo "APK=$APK"
             adb install -r "$APK"
             mkdir -p capturas
             # Se limpia el búfer: si no, el ruido del emulador se come las
