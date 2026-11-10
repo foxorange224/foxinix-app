@@ -340,6 +340,13 @@ sudo bash tools/fix-ns-cli-gradle.sh
   categorías y lista con subtítulos; Stickers y GIFs con favoritos y
   biblioteca del usuario). Es una fila propia del `GridLayout` de la
   conversación, justo arriba del compositor.
+- **Los scrolls de NativeScript (v0.2.6)**: en NS-Vue el `ref` de un
+  elemento nativo es el **envoltorio** (`NSVElement`), no la vista nativa:
+  los métodos del `ScrollView` (`scrollToVerticalOffset`) están en su
+  `nativeView`. Y `scrollToBottom()` es un método de la **web**: en NS no
+  existe (se baja al final con un desplazamiento enorme, que la vista
+  nativa recorta al final del contenido). Además, el evento de scroll de
+  NS 9 trae `scrollY` (en dp), no `contentOffset`.
 - **La APK de publicación se abre (v0.2.5)**: la v0.2.4 se quedaba en
   negro al abrirla. La causa era que la raíz del template de `App.vue`
   compilaba a un **Fragment** (por los comentarios en el nivel del root) y

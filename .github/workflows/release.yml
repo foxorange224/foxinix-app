@@ -307,6 +307,33 @@ jobs:
             Los APK de Android (arm64, armv7 y x86_64) llevan la interfaz
             web de https://foxinix.qzz.io/ y están firmados.
 
+            ## Novedades v0.2.6
+            - **App nativa (Android): la carita del compositor abre el
+              selector de emojis, stickers y GIFs** (W106), con las **3
+              pestañas de la web**: **Emojis** (buscador, rail de categorías
+              a la izquierda y una sola lista con subtítulos; tocar una
+              categoría salta a su sección), **Stickers** (los 24 del
+              sitio, los favoritos y los que subiste, con su estrella y su
+              X) y **GIFs** (la biblioteca del sitio, los favoritos y los
+              tuyos). Un emoji se inserta en el borrador, un sticker se
+              manda como sticker y un GIF de la biblioteca se sube como
+              imagen.
+            - **Dos scrolls que no ocurrían y ahora sí:** el rail de
+              categorías salta de verdad a su sección y la lista de
+              mensajes baja al final al abrir el chat o al mandar algo
+              (en NativeScript el `ref` de un elemento es el envoltorio,
+              no la vista nativa, y `scrollToBottom()` es de la web: no
+              existe).
+            - **Web:** sin cambios de interfaz; la lógica de stickers y
+              GIFs se movió a un módulo compartido con la app nativa
+              (`static/js/stickers.js`).
+            - **Escritorio:** sin cambios de interfaz.
+
+            > La app nativa sigue siendo una **prerelease**: es una APK para
+            > Android con el paquete `io.foxinix.nativa`, firmada con la
+            > misma clave de publicación que el resto de las APK de Foxinix
+            > (se actualiza encima de la v0.2.5 sin perder datos).
+
             ## Novedades v0.2.5
             - **Arreglo importante (app nativa):** la APK `Foxinix-0.2.5-nativo-android.apk`
               **ya no se queda en negro al abrirla**. En la v0.2.4 la raíz del
