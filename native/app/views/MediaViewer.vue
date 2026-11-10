@@ -31,11 +31,14 @@
 <script setup lang="ts">
   import { computed } from 'nativescript-vue';
   import { t } from '../core/i18n.js';
+  import { store } from '../core/store.js';
   import { mediaCaption, mediaUrl, back } from '../nav';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
 
   const url = computed(() => mediaUrl.value || '');
   const caption = computed(() => mediaCaption.value || '');
+  /* W103: el tema (para que la página herede los tokens). */
+  const theme = computed(() => store.theme);
 
   function close() {
     back();

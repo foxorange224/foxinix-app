@@ -205,6 +205,42 @@ ChatView.vue ──imageUrl(m, true)──▶ miniatura (?thumb=1) en la burbuja
 nav.openMedia(url) ──▶ MediaViewer.vue ──imageUrl(m, false)──▶ original
 ```
 
+## Acciones del mensaje (W105)
+
+En la web el menú del mensaje se ancla a la burbuja (clic derecho) o sale
+de la barrita flotante (⋯). En el móvil lo natural es **mantener pulsado**
+el mensaje: sale una **hoja pegada abajo**, como en WhatsApp o Telegram.
+
+- **La hoja** (`app/components/MsgSheet.vue`): las 12 reacciones rápidas de
+  la web (`emoji.js`: 👍 ❤️ 😂 😮 😢 🙏 🔥 👏 🥰 😅 😉 🤝) y las acciones:
+  responder, copiar texto, fijar/desfijar, reenviar, editar y eliminar
+  (editar y borrar sólo de los mensajes propios; borrar el de otro, si soy
+  owner o admin del grupo).
+- **En NS no hay `position: fixed` ni `z-index`**: la hoja es la **última
+  hija** del GridLayout de la conversación (`row="0" rowSpan="3"`), que es
+  lo que la dibuja encima de todo, y el velo es un **elemento hermano**
+  (no un padre) para que el toque dentro de la hoja no la cierre.
+- **Las reacciones** se ven **debajo de la burbuja** (una píldora por emoji
+  con el conteo, como el `.b-reacts` de la web) y la **cita** del mensaje
+  al que se responde se dibuja **dentro** de la burbuja (el `.b-reply`).
+- **La barra de respuesta** (el `.reply-bar` de la web) va arriba del
+  compositor: al responder, el mensaje nuevo lleva la cita; al editar se
+  manda `editMessage()` en vez de uno nuevo.
+- **Reenviar**: pantalla propia (`app/views/ForwardView.vue`) con buscador
+  y lista de chats, como el `ForwardModal` de la web.
+- **Eliminar**: el núcleo no lo trae (`askDeleteMessage` usa el cuadro de
+  confirmación de la web), así que el borrado real vive en
+  `app/msgactions.ts` (API + limpieza del store) y la confirmación es el
+  diálogo del sistema (`Dialogs.confirm`).
+- **Copiar**: NS 9 no tiene portapapeles en el core, así que `app/clipboard.ts`
+  lo hace con el código de cada sistema (`ClipboardManager` en Android,
+  `UIPasteboard` en iOS) y lo engancha al adaptador de plataforma
+  (`DomAdapter.setClipboard()`), que es lo que usa el núcleo.
+
+El núcleo (`landing/static/js/actions.js`) ya tenía casi todo
+(`toggleReaction`, `editMessage`, `forwardMessage`, `togglePin`): lo
+nuevo es la UI nativa.
+
 ## Comandos
 
 ```bash
@@ -258,6 +294,11 @@ sudo bash tools/fix-ns-cli-gradle.sh
   tiempo, onda en vivo) y el reproductor dentro de la burbuja (play/pausa
   y onda de picos). El archivo se sube con el mismo `sendMedia()` del
   núcleo y el server lo sirve firmado desde el CDN.
+- **Acciones del mensaje** (W105): mantener pulsado un mensaje abre una
+  hoja pegada abajo con las 12 reacciones rápidas y las acciones
+  (responder, copiar, fijar, reenviar, editar, eliminar). Las reacciones
+  salen bajo la burbuja, la cita dentro de la burbuja y la barra de
+  respuesta arriba del compositor.
 
  pendiente:
 - Push remoto (FCM/APNs) para los avisos cuando la app está cerrada de
