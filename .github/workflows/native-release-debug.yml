@@ -1,0 +1,70 @@
+name: Diagnóstico de la APK de release
+
+# Instala la APK PUBLICADA de la app nativa (la de la release) en el
+# emulador, la abre y saca el logcat + una captura. Sirve para ver por
+# qué una APK que en depuración funciona se queda en negro al publicarse.
+#
+# No compila nada: usa tal cual el archivo que está en la release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiqueta de la release (v0.2.4)"
+        required: true
+        default: "v0.2.4"
+
+permissions:
+  contents: read
+
+jobs:
+  emulator:
+    name: Release en emulador
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bajar la APK de la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p apk
+          gh release download "$TAG" --repo "${{ github.repository }}" \
+            --pattern "Foxinix-*-nativo-android.apk" --dir apk
+          ls -lh apk
+
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: >-
+            -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+            -camera-back none -camera-front none
+          script: |
+            adb install -r apk/Foxinix-*-nativo-android.apk
+            mkdir -p capturas
+            adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true
+            sleep 25
+            adb exec-out screencap -p > capturas/pantalla.png
+            adb logcat -d -t 4000 > capturas/logcat.txt
+            echo "=== lo que ve el usuario ==="
+            adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxinix-release-logcat
+          path: capturas/*
+          if-no-files-found: warn
