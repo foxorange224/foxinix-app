@@ -141,6 +141,51 @@ def type_text(text: str) -> None:
     subprocess.run(["adb", "shell", "input", "text", safe], timeout=30)
 
 
+def edit_fields(xml: str) -> list[dict]:
+    """Los campos de texto de la pantalla."""
+    return [n for n in nodes(xml) if n.get("class", "").endswith("EditText")]
+
+
+def clear_field() -> None:
+    """Vacía el campo enfocado (se va al final y borra hacia atrás)."""
+    subprocess.run(["adb", "shell", "input", "keyevent", "123"], timeout=30)
+    subprocess.run(
+        ["adb", "shell", "input", "keyevent"] + ["67"] * 40, timeout=60)
+    time.sleep(0.5)
+
+
+def fill_field(index: int, text: str, masked: bool = False) -> str:
+    """Escribe un texto en un campo y devuelve lo que quedó escrito.
+
+    `adb shell input text` a veces pierde o reordena letras (en un run
+    el "nsprobe" terminó como "nrspobe" y el login falló), así que se
+    comprueba lo escrito y se reintenta hasta tres veces. El campo de
+    contraseña sale enmascarado: de él sólo se mira el largo.
+    """
+    got = ""
+    for _ in range(3):
+        fields = edit_fields(dump())
+        if index >= len(fields):
+            return ""
+        tap(fields[index])
+        clear_field()
+        type_text(text)
+        time.sleep(1)
+        hide_keyboard()
+        fields = edit_fields(dump())
+        if index >= len(fields):
+            return ""
+        got = (fields[index].get("text") or "").strip()
+        if masked:
+            ok = bool(got) and abs(len(got) - len(text)) <= 1
+        else:
+            ok = got == text
+        if ok:
+            return got
+        print("   el campo quedó:", repr(got), "-> se reintenta")
+    return got
+
+
 def keyboard_shown() -> bool:
     """¿Está abierto el teclado en pantalla?"""
     out = sh("adb", "shell", "dumpsys", "input_method")
@@ -884,23 +929,24 @@ def main() -> int:
     visit_register(out_dir)
 
     def edit_texts() -> list[dict]:
-        return [n for n in nodes(dump()) if n.get("class", "").endswith("EditText")]
+        return edit_fields(dump())
 
-    fields = edit_texts()
-    print("campos encontrados:", len(fields))
-    if fields:
+    # El login se reintenta: a veces el emulador pierde o reordena las
+    # letras al escribir y el server responde "usuario o contraseña
+    # incorrectos".
+    for intento in range(1, 4):
+        fields = edit_texts()
+        print("campos encontrados:", len(fields))
+        if not fields:
+            break
+
         # --- usuario ---
-        tap(fields[0])
-        type_text(user)
-        time.sleep(1)
-        hide_keyboard()
+        fill_field(0, user)
 
         # --- contraseña (el teclado tapa el campo si no se cierra) ---
         fields = edit_texts()
         if len(fields) > 1:
-            tap(fields[1])
-            type_text(pwd)
-            time.sleep(1)
+            fill_field(1, pwd, masked=True)
         hide_keyboard()
 
         xml = dump()
@@ -923,6 +969,10 @@ def main() -> int:
         else:
             print("botón de entrada:", btn.get("text"))
         time.sleep(12)
+        xml = dump()
+        if not on_login_screen(xml):
+            break
+        print("!! el login no entró; se reintenta (intento", intento, ")")
     xml = dump()
     shot(out_dir, "2-tras-login")
 
