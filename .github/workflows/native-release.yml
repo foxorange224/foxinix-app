@@ -15,13 +15,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        # Versión a publicar, sin la v (por ejemplo 0.2.3). Sirve para
+        # Versión a publicar, sin la v (por ejemplo 0.2.4). Sirve para
         # adjuntar el APK a una release YA existente (la etiqueta se
         # toma de acá; sin el input se usaría github.ref_name, que en
         # un dispatch desde main es "main" y crearía una release basura).
-        description: "Versión a publicar, sin la v (por ejemplo 0.2.3)"
+        description: "Versión a publicar, sin la v (por ejemplo 0.2.4)"
         required: true
-        default: "0.2.3"
+        default: "0.2.4"
 
 permissions:
   contents: write
@@ -124,4 +124,9 @@ jobs:
           # En un dispatch la etiqueta sale del input (v + versión); en
           # un push de tag, de la propia etiqueta.
           tag_name: ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
+          # Si esta workflow es la primera en llegar, crea la release: se
+          # deja como prerelease (la app nativa todavía lo es) y con el
+          # mismo nombre que le pone el workflow del escritorio.
+          name: Foxinix ${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}
+          prerelease: true
           files: dist/Foxinix-*nativo-android.apk

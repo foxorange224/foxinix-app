@@ -259,9 +259,30 @@ jobs:
           merge-multiple: true
 
       - name: Generar sumas SHA-256
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           cd dist
+          # La APK nativa la compila y adjunta el workflow de la app
+          # nativa (native-release.yml). Se espera un poco a que esté en
+          # la release para que las sumas la incluyan también.
+          rm -rf /tmp/apk-nativa
+          for i in $(seq 1 20); do
+            if gh release download "${{ github.ref_name }}" \
+                 --repo "${{ github.repository }}" \
+                 --pattern "Foxinix-*-nativo-android.apk" \
+                 --dir /tmp/apk-nativa 2>/dev/null; then
+              break
+            fi
+            sleep 15
+          done
           sha256sum Foxinix-* > SHA256SUMS
+          if compgen -G "/tmp/apk-nativa/Foxinix-*-nativo-android.apk" > /dev/null; then
+            sha256sum /tmp/apk-nativa/Foxinix-*-nativo-android.apk \
+              | sed 's#/tmp/apk-nativa/##' >> SHA256SUMS
+            sort -o SHA256SUMS SHA256SUMS
+          fi
           cat SHA256SUMS
 
       - name: Crear release
@@ -285,6 +306,40 @@ jobs:
 
             Los APK de Android (arm64, armv7 y x86_64) llevan la interfaz
             web de https://foxinix.qzz.io/ y están firmados.
+
+            ## Novedades v0.2.4
+            - **App nativa (Android):** `Foxinix-0.2.4-nativo-android.apk` ya
+              trae **notas de voz** (barra de grabación con punto, tiempo y
+              onda en vivo; reproductor con play/pausa dentro de la burbuja) y
+              **acciones del mensaje**: mantener pulsado un mensaje abre una
+              hoja pegada abajo con las 12 reacciones rápidas de la web y las
+              acciones de **responder, copiar texto, fijar, reenviar, editar y
+              eliminar**. Las reacciones salen bajo la burbuja, la cita del
+              mensaje respondido dentro de la burbuja y la barra de respuesta
+              arriba del compositor, igual que en la web.
+            - **App nativa, se ve como la web:** todas las pantallas (login,
+              registro, lista de chats, conversación, Personas, perfil, grupo
+              nuevo y Ajustes) se rediseñaron con el diseño real de la web
+              (colores, cabeceras de 56 px, burbujas con radio 8, compositor y
+              barra de pestañas) y los botones de sólo icono tienen nombre
+              para TalkBack.
+            - **App nativa, la foto dentro de la burbuja:** la imagen se ve
+              **dentro de la burbuja** (con su pie de foto y la proporción
+              real que manda el servidor) y al tocarla se abre un **visor a
+              pantalla completa** con el original.
+            - **App nativa, los avisos llegan de verdad:** los mensajes
+              nuevos salen como **notificaciones del sistema** y, con la app
+              en segundo plano, un **servicio en primer plano** propio
+              mantiene viva la WebSocket (sin Firebase).
+            - **Web:** sin cambios de interfaz (sólo las cadenas nuevas de los
+              avisos de la app nativa).
+
+            > La app nativa sigue siendo una **prerelease**: es una APK para
+            > Android con el paquete `io.foxinix.nativa`, firmada con la
+            > misma clave de publicación que el resto de las APK de Foxinix
+            > (se actualiza encima de la v0.2.3 sin perder datos). Convive
+            > con la app normal porque tiene otro paquete
+            > (`io.foxinix.nativa` frente a `io.foxinix.desktop`).
 
             ## Novedades v0.2.3
             - **App nativa nueva (Android):** `Foxinix-0.2.3-nativo-android.apk`
@@ -317,11 +372,12 @@ jobs:
             - **Servidor:** la lista de chats desempata por id del último
               mensaje (orden estable).
 
-            > La app nativa es una **prerelease**: es un APK de depuración
-            > (114 MB, firmado con la clave de debug) y convive con la app
-            > normal porque tiene otro paquete (`io.foxinix.app` frente a
-            > `io.foxinix.desktop`). Se puede instalar sin problemas las
-            > dos a la vez.
+            > La app nativa es una **prerelease**: es una APK para Android
+            > (109 MB) con el paquete `io.foxinix.nativa`, firmada con la
+            > misma clave de publicación que el resto de las APK, así que
+            > convive con la app normal porque tiene otro paquete
+            > (`io.foxinix.nativa` frente a `io.foxinix.desktop`). Se puede
+            > instalar sin problemas las dos a la vez.
 
             ## Novedades v0.2.2
             - **Dominio unificado:** la app carga ahora
@@ -363,9 +419,10 @@ jobs:
               Aplicaciones > Foxinix > Permisos > Notificaciones.
             - Para actualizar en Android hace falta conservar la misma clave
               de firma. Las claves no se publican.
-            - La APK nativa (NativeScript) va firmada con la clave de
-              depuración: no sirve para publicar en Play, pero se instala
-              sin problema para probarla.
+            - La APK nativa (NativeScript) va firmada con la misma clave de
+              publicación de Foxinix (la de las APK de Android): no está en
+              Google Play, pero se instala sin problema y se actualiza
+              encima de la versión anterior sin perder datos.
           files: dist/*
           fail_on_unmatched_files: true
           generate_release_notes: false
