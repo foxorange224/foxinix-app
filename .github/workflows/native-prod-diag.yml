@@ -88,6 +88,23 @@ jobs:
             "$GITHUB_WORKSPACE/apk/foxinix-release.apk"
           ls -lh "$GITHUB_WORKSPACE/apk/"
 
+      - name: Compilar la APK de depuración con el JS de producción
+        # Sirve para saber si lo que rompe la app es el MODO de webpack
+        # (producción) o el tipo de build de Gradle (release).
+        working-directory: native
+        env:
+          NS_SKIP_ENV_CHECK: "1"
+        run: |
+          set -uo pipefail
+          ns build android --apk --debug --env.production || echo "FALLÓ LA BUILD DEBUG"
+          find platforms/android/app/build/outputs/apk -name '*.apk' -newer package.json 2>/dev/null | head -3
+          APK="$(find platforms/android/app/build/outputs/apk/debug -name '*.apk' 2>/dev/null | head -1)"
+          if [ -n "$APK" ]; then
+            cp "$APK" "$GITHUB_WORKSPACE/apk/foxinix-debug-produccion.apk"
+            echo "APK debug copiada"
+          fi
+          ls -lh "$GITHUB_WORKSPACE/apk/"
+
       - uses: actions/upload-artifact@v4
         with:
           name: foxinix-prod-apk
@@ -115,7 +132,7 @@ jobs:
           # aparte, así que todo tiene que ir en una sola línea (si no,
           # las variables no se ven entre líneas).
           script: |
-            APK="$(find "$GITHUB_WORKSPACE/native/platforms/android/app/build/outputs/apk/release" -name '*.apk' 2>/dev/null | head -1)"; [ -n "$APK" ] || APK="$GITHUB_WORKSPACE/apk/foxinix-release.apk"; echo "APK=$APK"; ls -l "$APK"; adb install -r "$APK" || echo "FALLO LA INSTALACIÓN"; mkdir -p capturas; adb logcat -c; adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true; sleep 25; adb exec-out screencap -p > capturas/pantalla.png; adb logcat -d > capturas/logcat.txt; adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" || true; echo "=== errores de JavaScript ==="; grep -nE "JS      :|TNS\.|com\.tns|AndroidRuntime|FATAL|Foxinix" capturas/logcat.txt || true
+            APK1="$GITHUB_WORKSPACE/apk/foxinix-release.apk"; APK2="$GITHUB_WORKSPACE/apk/foxinix-debug-produccion.apk"; mkdir -p capturas; echo "=== 1) APK DE RELEASE ==="; adb install -r "$APK1" || echo "FALLO INSTALACIÓN 1"; adb logcat -c; adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true; sleep 25; adb exec-out screencap -p > capturas/release.png; adb logcat -d > capturas/release-logcat.txt; adb shell dumpsys window | grep -E "mCurrentFocus" || true; echo "=== 2) APK DEBUG CON JS DE PRODUCCIÓN ==="; adb uninstall io.foxinix.nativa || true; adb install -r "$APK2" || echo "FALLO INSTALACIÓN 2"; adb logcat -c; adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true; sleep 25; adb exec-out screencap -p > capturas/debugprod.png; adb logcat -d > capturas/debugprod-logcat.txt; adb shell dumpsys window | grep -E "mCurrentFocus" || true; echo "=== ERRORES DE LA RELEASE ==="; grep -nE "Foxinix|TNS\.Native|AndroidRuntime|FATAL" capturas/release-logcat.txt || true; echo "=== ERRORES DE LA DEBUG-PROD ==="; grep -nE "Foxinix|TNS\.Native|AndroidRuntime|FATAL" capturas/debugprod-logcat.txt || true
 
       - uses: actions/upload-artifact@v4
         if: always()
