@@ -38,6 +38,11 @@ const ENTRIES = [
   'mediadl.js',
   'actions.js',
   'realtime.js',
+  /* W106: los emojis (categorías, búsqueda y recientes) y la lógica de
+     stickers/GIFs (favoritos y biblioteca personal). La app nativa los
+     usa en el selector de 3 pestañas. */
+  'emoji.js',
+  'stickers.js',
 ];
 
 /* Módulos de platform/ que la app nativa necesita (implementación NS). */
