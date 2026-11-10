@@ -667,6 +667,43 @@ def close_reply_bar() -> None:
         time.sleep(2)
 
 
+def copy_message() -> bool:
+    """Toca "Copiar texto": debe salir el aviso de mensaje copiado (W105).
+
+    El aviso puede salir en español o en inglés (según el idioma de la
+    app), así que se buscan las dos formas.
+    """
+    xml = dump()
+    if not tap(find(xml, desc="copy message text")):
+        print("!! no se vio la acción Copiar texto")
+        return False
+    time.sleep(2)
+    xml = dump()
+    if not (find(xml, contains="Message copied")
+            or find(xml, contains="Mensaje copiado")):
+        print("!! no salió el aviso de mensaje copiado")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("mensaje copiado")
+    return True
+
+
+def open_forward() -> bool:
+    """Toca "Reenviar…": debe abrirse la pantalla de destinos (W105)."""
+    xml = dump()
+    if not tap(find(xml, desc="forward message")):
+        print("!! no se vio la acción Reenviar")
+        return False
+    time.sleep(4)
+    xml = dump()
+    if not find(xml, desc="forward to: "):
+        print("!! no se abrió la pantalla de reenviar")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("pantalla de reenviar abierta")
+    return True
+
+
 # ---------------------------------------------------------------- API
 # Auto-reparación del paso del visor: las imágenes de prueba que había
 # en la cuenta medían 1x1 px (el server guarda las dimensiones reales),
@@ -1143,6 +1180,19 @@ def run() -> int:
                 shot(out_dir, "14-respuesta")
                 close_reply_bar()
             close_msg_actions()
+
+            # La acción "Copiar texto": sale el aviso de copiado.
+            if open_msg_actions():
+                copy_message()
+                close_msg_actions()
+
+            # La acción "Reenviar…": se abre la pantalla de destinos.
+            if open_msg_actions():
+                if open_forward():
+                    shot(out_dir, "15-reenviar")
+                    back_out(dump())   # de vuelta a la conversación
+                else:
+                    close_msg_actions()
 
         # W104: el micrófono del compositor debe abrir la barra de
         # grabación (si el emulador no tiene micrófono, sólo avisa).
