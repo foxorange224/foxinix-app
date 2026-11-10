@@ -55,10 +55,14 @@ jobs:
           script: |
             adb install -r apk/Foxinix-*-nativo-android.apk
             mkdir -p capturas
+            # Se limpia el búfer para que el logcat tenga sólo lo que
+            # pasa desde el arranque de la app (si no, el ruido del
+            # emulador se come las líneas del arranque).
+            adb logcat -c
             adb shell am start -W -n io.foxinix.nativa/com.tns.NativeScriptActivity || true
             sleep 25
             adb exec-out screencap -p > capturas/pantalla.png
-            adb logcat -d -t 4000 > capturas/logcat.txt
+            adb logcat -d > capturas/logcat.txt
             echo "=== lo que ve el usuario ==="
             adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" || true
 
