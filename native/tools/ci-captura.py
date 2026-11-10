@@ -704,6 +704,71 @@ def open_forward() -> bool:
     return True
 
 
+# ---------------------------------------------------------------- W106
+# El selector de emojis/stickers/GIFs de la app nativa.
+
+# Los rótulos de las secciones cambian con el idioma (el emulador del CI
+# puede arrancar en inglés): se buscan las dos formas.
+SECCIONES = {
+    "st": ["Mis stickers", "My stickers", "Todos los stickers", "All stickers"],
+    "gif": ["Mis GIFs", "My GIFs", "Biblioteca", "Library"],
+}
+
+
+def open_emoji_panel() -> bool:
+    """Toca la carita del compositor: debe abrirse el selector (W106).
+
+    El panel es una fila del GridLayout de la conversación (en NS no hay
+    position:fixed), así que aparece JUSTO ARRIBA del compositor y los
+    mensajes se achican. Se comprueba que estén las 3 pestañas.
+    """
+    print("== selector de emojis ==")
+    xml = dump()
+    btn = find(xml, desc="emojis")
+    if not btn:
+        print("!! no se vio el botón de la carita")
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    tap(btn)
+    time.sleep(4)
+    xml = dump()
+    faltan = [t for t in ("emo", "st", "gif") if not find(xml, desc="ep-tab: " + t)]
+    if faltan:
+        print("!! no se vieron las pestañas:", ", ".join(faltan))
+        print("   textos:", " | ".join(texts(xml)))
+        return False
+    print("pestañas del selector:", ", ".join(texts(xml)))
+    return True
+
+
+def capture_emoji_tabs(out_dir: str) -> bool:
+    """Abre el selector y captura las 3 pestañas (W106)."""
+    if not open_emoji_panel():
+        return False
+    ok = True
+    xml = dump()
+    shot(out_dir, "16-emojis")
+
+    for tab, nombre in (("st", "17-stickers"), ("gif", "18-gifs")):
+        if not tap(find(xml, desc="ep-tab: " + tab)):
+            print("!! no se pudo tocar la pestaña", tab)
+            ok = False
+            continue
+        time.sleep(4)
+        xml = dump()
+        shot(out_dir, nombre)
+        if not any(find(xml, contains=s) for s in SECCIONES[tab]):
+            print("!! en la pestaña", tab, "no se vio ninguna sección")
+            print("   textos:", " | ".join(texts(xml)))
+            ok = False
+
+    # Se cierra el panel (la carita otra vez).
+    xml = dump()
+    if tap(find(xml, desc="emojis")):
+        time.sleep(2)
+    return ok
+
+
 # ---------------------------------------------------------------- API
 # Auto-reparación del paso del visor: las imágenes de prueba que había
 # en la cuenta medían 1x1 px (el server guarda las dimensiones reales),
@@ -1203,6 +1268,10 @@ def run() -> int:
         if open_media():
             shot(out_dir, "7-visor")
             back_out(dump())  # visor → conversación
+
+        # W106: el selector de emojis/stickers/GIFs (3 pestañas).
+        capture_emoji_tabs(out_dir)
+
         back_out(dump())      # conversación → lista de chats
     else:
         print("no se encontró ninguna fila de chat para abrir")
