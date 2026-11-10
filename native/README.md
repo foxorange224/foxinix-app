@@ -299,6 +299,21 @@ sudo bash tools/fix-ns-cli-gradle.sh
   (responder, copiar, fijar, reenviar, editar, eliminar). Las reacciones
   salen bajo la burbuja, la cita dentro de la burbuja y la barra de
   respuesta arriba del compositor.
+- **La APK de publicación se abre (v0.2.5)**: la v0.2.4 se quedaba en
+  negro al abrirla. La causa era que la raíz del template de `App.vue`
+  compilaba a un **Fragment** (por los comentarios en el nivel del root) y
+  Vue sólo desenvuelve el Fragment raíz en depuración: en la build de
+  publicación `$el` quedaba sin vista nativa y `entry.create()` devolvía
+  `undefined`. Ahora la raíz es el `GridLayout` directamente y
+  `vue-loader` compila con `comments:false`.
+- **Los errores se ven en el teléfono**: `app.ts` los escribe con
+  `android.util.Log` (que sí llega al logcat en las builds de publicación,
+  donde el `console` de NativeScript depende del tracing y va apagado) y
+  avisa si la raíz no tiene vista nativa. El webpack ya no borra
+  `console.error`/`console.warn` en producción.
+- **Smoke de release** (`native-release-smoke.yml`): compila la APK en
+  modo publicación y la abre en el emulador; falla si la app queda en
+  negro o si la pantalla no se puede leer.
 
  pendiente:
 - Push remoto (FCM/APNs) para los avisos cuando la app está cerrada de

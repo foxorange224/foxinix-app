@@ -307,6 +307,24 @@ jobs:
             Los APK de Android (arm64, armv7 y x86_64) llevan la interfaz
             web de https://foxinix.qzz.io/ y están firmados.
 
+            ## Novedades v0.2.5
+            - **Arreglo importante (app nativa):** la APK `Foxinix-0.2.5-nativo-android.apk`
+              **ya no se queda en negro al abrirla**. En la v0.2.4 la raíz del
+              template de la app era un fragmento de Vue (por un comentario en el
+              nivel del root) y Vue sólo lo desenvuelve en depuración: en la
+              build de publicación el elemento raíz quedaba sin vista nativa y
+              la pantalla salía en negro. Ahora la raíz es un elemento de
+              verdad en todas las builds.
+            - **Diagnóstico, no se vuelve a colar:** la app escribe sus errores
+              en el logcat del teléfono también en las builds de publicación
+              (antes no aparecía ni una línea), y hay una comprobación
+              automática que compila la APK de publicación y la abre en el
+              emulador: si la app queda en negro, la comprobación falla.
+            - **Escritorio y web:** sin cambios de interfaz.
+
+            > Si tenías instalada la v0.2.4, **actualiza a esta**: la v0.2.4
+            > abría en negro.
+
             ## Novedades v0.2.4
             - **App nativa (Android):** `Foxinix-0.2.4-nativo-android.apk` ya
               trae **notas de voz** (barra de grabación con punto, tiempo y

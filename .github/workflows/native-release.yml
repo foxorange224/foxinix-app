@@ -21,7 +21,7 @@ on:
         # un dispatch desde main es "main" y crearía una release basura).
         description: "Versión a publicar, sin la v (por ejemplo 0.2.4)"
         required: true
-        default: "0.2.4"
+        default: "0.2.5"
 
 permissions:
   contents: write

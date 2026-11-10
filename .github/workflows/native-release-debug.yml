@@ -12,7 +12,7 @@ on:
       tag:
         description: "Etiqueta de la release (v0.2.4)"
         required: true
-        default: "v0.2.4"
+        default: "v0.2.5"
 
 permissions:
   contents: read
