@@ -275,6 +275,67 @@ Detalles que impone NativeScript:
   desde `views/ui-actions.js`) y `emoji.js` usa el puente de Vue
   (`./vue.js`), que en NS genera `tools/sync-core.mjs`.
 
+## Perfil propio (W107)
+
+Tres pantallas nativas que portan los modales de la web (`MeProfileModal`,
+`MeProfileEditModal` y `UsernameModal`), con el mismo estilo y la misma
+API:
+
+- **`MyProfileView` — "Tu perfil"** (el modal `.meprof`): portada
+  (`FoxBanner`), avatar de 88 montado encima, la burbuja citada del
+  estado **al lado** del avatar (toca y abre el menú), nombre,
+  `@usuario`, **ID copiable** (portapapeles + aviso), bio, "Miembro
+  desde" y el botón **Editar perfil**. Tocar la portada o la foto abre
+  el visor de imágenes (`nav.openMedia`), como "Ver portada"/"Ver foto"
+  de la web.
+- **`MyProfileEditView` — "Editar perfil"** (el modal `.mp-edit`):
+  portada de 96 redondeada con la **posición vertical** (barra 0–100 %),
+  foto montada encima con su botón de elegir (imagen) y su X de quitar
+  (con `Dialogs.confirm`, igual que el borrado de mensajes de W105),
+  "Cambiar portada"/"Quitar portada", campos **Nombre** / **Usuario**
+  (el cambio va a una pantalla aparte) / **Estado** con los 4 chips de
+  preset y **Bio** con contador `n/300`; pie Cancelar/Guardar con las
+  MISMAS validaciones que la web (50 / 300 / 80 caracteres, imagen hasta
+  3 MB) y `PUT /auth/profile` subiendo `avatar_media_id` /
+  `banner_media_id` con `uploadMedia()`.
+- **`UsernameView` — "Cambiar usuario"** (el modal `.uname-modal`, W60):
+  aviso de 12 h con el bloqueo real (`username_changed_at` + reloj que
+  refresca cada 30 s), regex `^[a-z0-9][a-z0-9_.]{2,19}$`, contraseña
+  actual y `PUT /auth/username`.
+
+Entradas (como `.mobile-me` de la web): el **avatar de la cabecera** de
+la lista de Chats y de Personas abre "Tu perfil" (antes abría Ajustes;
+Ajustes sigue en su pestaña de abajo) y `ProfileView` redirige allí
+cuando el perfil es el propio (`relation === 'me'`).
+
+Detalles que impone NativeScript:
+
+- **Los modales son páginas**: en NS no hay capas superpuestas, así que
+  cada modal es una vista de la pila (`nav.ts`: `myprofile`,
+  `myprofileedit`, `uname`) y "Atrás"/Cancelar recorren la pila igual
+  que los botones de la web. El **menú de estado** es la última fila del
+  `GridLayout` (regla NS9: sin `position:fixed` ni z-index).
+- **`FoxBanner` dibuja `object-position` a mano**: con la posición de
+  por defecto (50 %) usa `aspectFill`, **idéntico a antes y sin
+  descargar nada** (cero regresión en `9-perfil`); sólo cuando la
+  posición se mueve mide la imagen (`ImageSource.fromUrl/fromFileSync`),
+  escala para cubrir el hueco y la desplaza con `translateY` (el
+  contenedor la recorta). La portada del editor es redondeada con
+  `setClipToOutline`, con guarda `outline.canClip()` (si el fondo no
+  puede recortar, se queda cuadrada y nunca en blanco).
+- **Selector de imagen propio**: `pickFile(accept)` filtra MIME en
+  Android (`setType('image/*')` — en iOS el plugin no filtra y la vista
+  descarta lo que no sea imagen) y `pickImage()` copia el `content://` a
+  un archivo temporal con extensión, que `ImageSource` y el
+  `FileAdapter` leen sin problemas.
+
+**Queda pendiente de cara a la paridad total** (documentado para el
+siguiente hito que lo toque): el editor de foto con recorte/giro (W27 de
+la web, `avatar-editor.js`), el arrastre de portada (la web permite
+arrastrar además de la barra), el **markdown de la bio** (`BioText`)
+y la vista de portada con `object-position` en `ProfileView` (la ficha
+de otros sigue con el `aspectFill` de siempre).
+
 ## Comandos
 
 ```bash
@@ -285,6 +346,9 @@ node --import ./tools/ns-register.mjs tools/test-core.mjs <user> <pw>
                          # test del núcleo nativo contra la API real
 node --import ./tools/ns-register.mjs tools/test-w106-core.mjs
                          # test del núcleo de emojis/stickers/GIFs (W106)
+node tools/test-w107-i18n.mjs
+                         # test del port de perfil propio (W107): claves
+                         # i18n, navegación y estilos
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -340,6 +404,12 @@ sudo bash tools/fix-ns-cli-gradle.sh
   categorías y lista con subtítulos; Stickers y GIFs con favoritos y
   biblioteca del usuario). Es una fila propia del `GridLayout` de la
   conversación, justo arriba del compositor.
+- **Perfil propio** (W107): "Tu perfil" (portada, avatar solapado, estado
+  citado con su menú, ID copiable, bio y "Miembro desde"), "Editar
+  perfil" (foto y portada con posición, nombre, estado con presets, bio
+  con contador y las mismas validaciones que la web) y "Cambiar usuario"
+  (espera de 12 h + contraseña). El avatar de la cabecera de Chats y de
+  Personas es la entrada, como el `.mobile-me` de la web.
 - **Los scrolls de NativeScript (v0.2.6)**: en NS-Vue el `ref` de un
   elemento nativo es el **envoltorio** (`NSVElement`), no la vista nativa:
   los métodos del `ScrollView` (`scrollToVerticalOffset`) están en su

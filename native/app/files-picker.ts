@@ -5,6 +5,7 @@
    archivo es el que se usa si la app se compila para otra plataforma
    (o en las pruebas de Node): no hay selector. */
 
-export async function pickPlatformFile(): Promise<string> {
+export async function pickPlatformFile(accept?: string): Promise<string> {
+  void accept;
   return '';
 }

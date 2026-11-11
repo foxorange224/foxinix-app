@@ -9,7 +9,9 @@
 
 import { ref } from 'nativescript-vue';
 
-export type NativeView = 'chats' | 'people' | 'newgroup' | 'profile' | 'settings' | 'media' | 'forward';
+export type NativeView =
+  | 'chats' | 'people' | 'newgroup' | 'profile' | 'settings' | 'media'
+  | 'forward' | 'myprofile' | 'myprofileedit' | 'uname';
 
 export const view = ref<NativeView>('chats');
 /* Datos de la vista actual (id del usuario del perfil). */
@@ -32,6 +34,22 @@ export function goView(v: NativeView): void {
 export function goProfile(userId: number): void {
   profileUserId.value = userId;
   goView('profile');
+}
+
+/* W107: "Tu perfil" (el modal .meprof de la web) y su edición. La
+   pila hace que "Atrás" en la edición vuelva a "Tu perfil", igual que
+   el botón Cancelar de la web. */
+export function goMyProfile(): void {
+  goView('myprofile');
+}
+
+export function goMyProfileEdit(): void {
+  goView('myprofileedit');
+}
+
+/* W107: cambio de @usuario (modal aparte, W60 de la web). */
+export function goUsername(): void {
+  goView('uname');
 }
 
 /* W102: abre una imagen a pantalla completa (desde la burbuja del chat). */

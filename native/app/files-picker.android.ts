@@ -5,6 +5,9 @@
    (el sistema da acceso sólo al archivo elegido), que es justo lo que
    el plugin ui-document-picker no puede hacer en Android 13+.
 
+   `accept` es un MIME opcional (p. ej. "image/*" para las fotos del
+   perfil, W107); por defecto se abre el selector de todo.
+
    Devuelve la URI del archivo elegido (content://...) o '' si el
    usuario cancela. */
 
@@ -15,7 +18,7 @@ declare const android: any;
 /* Código de la petición al selector (el que vuelve en el resultado). */
 const FILE_CODE = 4711;
 
-export async function pickPlatformFile(): Promise<string> {
+export async function pickPlatformFile(accept?: string): Promise<string> {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (value: string) => {
@@ -39,7 +42,7 @@ export async function pickPlatformFile(): Promise<string> {
     try {
       const intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
       intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
-      intent.setType('*/*');
+      intent.setType(accept || '*/*');
       /* Acceso de lectura sólo al archivo elegido (sin permisos). */
       intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
       const activity = Application.android.startActivity || Application.android.foregroundActivity;

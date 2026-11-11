@@ -5,12 +5,17 @@
   <Page :class="'fox-' + theme" actionBarHidden="true">
     <GridLayout rows="auto,auto,auto,*" class="ppl-page">
       <!-- ---------- cabecera ---------- -->
-      <GridLayout row="0" class="side-head" columns="auto,*,auto">
+      <GridLayout row="0" class="side-head" columns="auto,*,auto,auto">
         <FoxIconBtn col="0" icon="back" bare :tint="accent"
                     accessibilityLabel="back" @tap="backToChats" />
         <Label col="1" class="sh-title" :text="t('Personas')" textWrap="false" />
         <FoxIconBtn col="2" icon="users" bare :tint="accent"
                     accessibilityLabel="new group" @tap="goNewGroup" />
+        <!-- W107: mi avatar abre "Tu perfil" (como el .mobile-me de la
+             web en la cabecera de Personas). -->
+        <FoxAvatar col="3" :src="meAvatar" :initial="meInitial" :size="32"
+                   :dot="meDot" :ring="panelRing"
+                   accessibilityLabel="profile" @tap="goMyProfile" />
       </GridLayout>
 
       <!-- ---------- pestañas ---------- -->
@@ -129,7 +134,7 @@
     rejectFriendRequest, searchUsers, sendFriendRequest,
   } from '../core/actions.js';
   import { t } from '../core/i18n.js';
-  import { backToChats, goProfile, goView } from '../nav';
+  import { backToChats, goMyProfile, goProfile, goView } from '../nav';
   import { tok, dotState } from '../fmt';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
@@ -143,6 +148,18 @@
   const accent = computed(() => tok(store.theme, 'accent'));
   const muted = computed(() => tok(store.theme, 't2'));
   const panelRing = computed(() => tok(store.theme, 'panel'));
+
+  /* Mi avatar en la cabecera (W107): abre "Tu perfil". */
+  const meAvatar = computed(() => {
+    const x: any = (store as any).user;
+    return x && x.avatar_url ? mediaUrl(x.avatar_url) : '';
+  });
+  const meInitial = computed(() => {
+    const x: any = (store as any).user;
+    const n = x && (x.display_name || x.username);
+    return n ? String(n).charAt(0).toUpperCase() : '?';
+  });
+  const meDot = computed(() => dotState((store as any).user, store.ws === 'on'));
 
   const people = computed(() => store.people || { friends: [], sent: [], received: [] });
   const loaded = computed(() => !!store.people);

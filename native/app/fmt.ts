@@ -81,7 +81,8 @@ export function fmtLastSeen(ts: number): string {
    web: en línea #23a55a, Ausente #f0b232, No molestar #f23f43,
    Invisible/desconectado #80848e. */
 
-const STATUS_PRESETS = [
+/* Los MISMOS que STATUS_PRESETS de views/helpers.js (W107). */
+export const STATUS_PRESETS = [
   { val: 'online', label: 'En línea' },
   { val: 'busy', label: 'Ausente' },
   { val: 'dnd', label: 'No molestar' },
@@ -93,6 +94,31 @@ export function presetLabel(val: string): string {
     if (STATUS_PRESETS[i].val === val) return t(STATUS_PRESETS[i].label);
   }
   return '';
+}
+
+/* Color del puntito de estado (los colores Discord de la web:
+   --st-online #23a55a, --st-busy #f0b232, --st-dnd #f23f43,
+   --st-off #80848e). */
+export function stDotColor(state: string): string {
+  if (state === 'busy') return '#f0b232';
+  if (state === 'dnd') return '#f23f43';
+  if (state === 'off' || state === 'invisible') return '#80848e';
+  return '#23a55a';
+}
+
+/* "Miembro desde" (joinedLine de la web): 12/3/2024. */
+export function joinedLine(u: any): string {
+  if (!u || !u.created_at) return '—';
+  const d = new Date(u.created_at * 1000);
+  return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+}
+
+/* Posición vertical de la portada (0 arriba … 100 abajo), como
+   bannerPositionOf() de la web. */
+export function bannerPositionOf(u: any): number {
+  const n = Number(u && u.banner_position);
+  if (!Number.isFinite(n)) return 50;
+  return Math.max(0, Math.min(100, n));
 }
 
 export type DotState = 'on' | 'busy' | 'dnd' | 'off' | '';

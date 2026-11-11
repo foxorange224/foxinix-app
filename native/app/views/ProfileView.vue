@@ -63,7 +63,7 @@
     blockUser, createDm, loadProfile, mediaUrl, sendFriendRequest, unblockUser,
   } from '../core/actions.js';
   import { t } from '../core/i18n.js';
-  import { back, backToChats } from '../nav';
+  import { back, backToChats, goMyProfile } from '../nav';
   import { tok, dotState } from '../fmt';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
@@ -183,6 +183,15 @@
     err.value = '';
     try {
       const r = await loadProfile(props.userId);
+      /* W107: mi propia ficha no es "Perfil" (con los botones de otra
+         persona), es "Tu perfil" — como en la web, que abre el modal
+         .meprof cuando relation === 'me'. Se vuelve atrás primero para
+         no dejar "perfil" en la pila (y así no entrar en un bucle). */
+      if (r.relation === 'me') {
+        back();
+        goMyProfile();
+        return;
+      }
       user.value = r.user;
       relation.value = r.relation;
     } catch (e: any) {

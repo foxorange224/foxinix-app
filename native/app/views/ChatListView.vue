@@ -17,9 +17,11 @@
              no dice nada en estos botones de solo icono). -->
         <FoxIconBtn col="3" icon="plus" bare accessibilityLabel="people"
                     @tap="goPeople" />
+        <!-- W107: mi avatar abre "Tu perfil" (como el .mobile-me de la
+             web); Ajustes vive en su pestaña de abajo. -->
         <FoxAvatar col="4" class="me-av" :src="meAvatar" :initial="meInitial"
                    :size="32" :dot="meDot" :ring="panelRing"
-                   accessibilityLabel="settings" @tap="goSettings" />
+                   accessibilityLabel="profile" @tap="goMyProfile" />
       </GridLayout>
 
       <!-- ---------- buscador (como el .search-pill de la web) ---------- -->
@@ -93,7 +95,7 @@
   import { t } from '../core/i18n.js';
   import { fmtListTime, dotState, tok } from '../fmt';
   import { nativeLogout } from '../fox';
-  import { goView } from '../nav';
+  import { goMyProfile, goView } from '../nav';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
 
@@ -136,7 +138,8 @@
   /* Aro del puntito: el color de la superficie donde vive (el panel). */
   const panelRing = computed(() => tok(store.theme, 'panel'));
 
-  /* Mi avatar en la barra (la web lo abre en el perfil). */
+  /* Mi avatar en la barra abre "Tu perfil" (W107), igual que el
+     .mobile-me de la web. */
   const meAvatar = computed(() => {
     const u: any = store.user;
     return u && u.avatar_url ? mediaUrl(u.avatar_url) : '';
@@ -229,10 +232,6 @@
   /* Panel de personas: amigos, solicitudes y búsqueda. */
   function goPeople() {
     goView('people');
-  }
-
-  function goSettings() {
-    goView('settings');
   }
 
   onMounted(async () => {

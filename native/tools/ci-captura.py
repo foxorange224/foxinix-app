@@ -347,6 +347,11 @@ def shot(out_dir: str, name: str) -> str:
 # entrada puede estar en cualquiera de los dos idiomas.
 LOGIN_LABELS = ("Sign in", "Ingresar", "Log in", "Entrar", "Login")
 
+# Presets de estado (W107): el texto de la burbuja citada del perfil es
+# el preset en el idioma de la app; se usa para tocarla en el barrido.
+STATUS_WORDS = ("Online", "En línea", "Idle", "Ausente",
+                "Do not disturb", "No molestar", "Invisible")
+
 
 def on_login_screen(xml: str) -> bool:
     """¿Seguimos en la pantalla de entrada? (el botón de entrar está)"""
@@ -739,6 +744,69 @@ def open_emoji_panel() -> bool:
         return False
     print("pestañas del selector:", ", ".join(texts(xml)))
     return True
+
+
+def capture_my_profile(out_dir: str) -> None:
+    """W107: perfil propio desde el avatar de la cabecera.
+
+    Recorre: Tu perfil (19) → menú de estado (22) → Editar perfil (20)
+    → Cambiar usuario (21) y vuelve atrás paso a paso (la pila es la de
+    nav.ts). Los textos se buscan en español Y en inglés: el idioma de
+    la app depende del dispositivo.
+    """
+    print("== tu perfil ==")
+    xml = dump()
+    if not tap(find(xml, desc="profile")):
+        print("!! el avatar de la cabecera no abrió Tu perfil")
+        print("   textos:", " | ".join(texts(xml)))
+        return
+    time.sleep(5)
+    shot(out_dir, "19-tu-perfil")
+
+    # --- menú de estado (la burbuja citada abre la hoja inferior) ---
+    xml = dump()
+    word = next((w for w in STATUS_WORDS if find(xml, text=w)), None)
+    if word and tap(find(xml, text=word)):
+        time.sleep(3)
+        shot(out_dir, "22-estado")
+        # La hoja se cierra con SU X (back_out tiraría de la cabecera).
+        tap(find(dump(), desc="close"))
+        time.sleep(2)
+    else:
+        print("!! no se vio la burbuja de estado (¿estado personalizado?)")
+        print("   textos:", " | ".join(texts(xml)))
+
+    # --- Editar perfil ---
+    xml = dump()
+    btn = (find(xml, contains="Editar perfil")
+           or find(xml, contains="Edit profile"))
+    if not tap(btn):
+        print("!! no se vio el botón Editar perfil")
+        print("   textos:", " | ".join(texts(xml)))
+        back_out(dump())
+        return
+    time.sleep(5)
+    shot(out_dir, "20-editar-perfil")
+
+    # --- Cambiar usuario (@usuario) ---
+    xml = dump()
+    uname = (find(xml, contains="Cambiar usuario")
+             or find(xml, contains="Change username"))
+    if tap(uname):
+        time.sleep(4)
+        shot(out_dir, "21-cambiar-usuario")
+        xml = dump()
+        if not (find(xml, contains="Contraseña actual")
+                or find(xml, contains="Current password")):
+            print("!! la pantalla de @usuario no muestra la contraseña")
+            print("   textos:", " | ".join(texts(xml)))
+        back_out(dump())   # @usuario → Editar perfil
+    else:
+        print("!! no se vio el botón Cambiar usuario")
+        print("   textos:", " | ".join(texts(xml)))
+
+    back_out(dump())       # Editar perfil → Tu perfil
+    back_out(dump())       # Tu perfil → lista de chats
 
 
 def capture_emoji_tabs(out_dir: str) -> bool:
@@ -1304,6 +1372,9 @@ def run() -> int:
         back_out(dump())
     else:
         print("!! no se pudo abrir Ajustes")
+
+    # --- W107: perfil propio (el avatar de la cabecera) ---
+    capture_my_profile(out_dir)
 
     print("== logcat ==")
     # Sólo el log de la app: el resto es ruido del emulador.

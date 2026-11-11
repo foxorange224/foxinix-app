@@ -1650,3 +1650,395 @@ ActionBar {
   text-align: center;
   padding: 16;
 }
+
+/* ============================================================
+   W107: perfil propio ("Tu perfil", "Editar perfil", @usuario)
+
+   Port de .meprof / .mp-edit / .uname-modal de la web. Los modales de
+   la web son páginas nativas: la hoja de estado va como ÚLTIMA fila del
+   GridLayout (regla NS9: sin position:fixed ni z-index).
+   ============================================================ */
+
+.mp-page {
+  background-color: var(--bg);
+}
+
+.mp-body {
+  padding: 4 16 16 16;
+}
+
+/* El avatar de TU ficha se monta sobre la portada (−48 px, como
+   .pf-avwrap de la web; el de la ficha de otros es .pf-av). */
+.mp-av {
+  margin-top: -48;
+}
+
+/* Puntito de estado (colores Discord); el tamaño y el color van en la
+   vista (mismos valores que la web). */
+.sdot {
+  border-radius: 7;
+}
+
+/* ---------- FoxBanner (portada con posición vertical) ---------- */
+
+.fb {
+  background-color: var(--panel2);
+}
+
+.fb-rounded {
+  border-radius: 12;
+}
+
+.fb-art {
+  horizontal-align: center;
+  vertical-align: center;
+}
+
+/* ---------- estado citado (burbuja junto al avatar) ---------- */
+
+.pf-quote {
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 12;
+  padding: 9 12 8 12;
+  margin: 12 0 0 10;
+}
+
+.pf-quote-text {
+  color: var(--t1);
+  font-size: 13;
+  line-height: 18;
+  margin-left: 8;
+}
+
+.pf-status-btn {
+  background-color: transparent;
+}
+
+/* ---------- ID copiable ---------- */
+
+.pf-pubid {
+  background-color: transparent;
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  padding: 3 8;
+  margin-top: 4;
+}
+
+.pf-pubid-l {
+  color: var(--t2);
+  font-size: 12;
+  font-weight: 600;
+  margin-right: 6;
+}
+
+.pf-pubid-v {
+  color: var(--t2);
+  font-size: 12;
+}
+
+/* ---------- filas de datos (Miembro desde) ---------- */
+
+.pf-rows {
+  margin-top: 10;
+  padding: 0 16;
+}
+
+.pp-row {
+  border-top-width: 1;
+  border-top-color: var(--border);
+  padding: 8 0;
+}
+
+.pp-row-k {
+  color: var(--t2);
+  font-size: 14;
+  margin-right: 10;
+}
+
+.pp-row-v {
+  color: var(--t1);
+  font-size: 14;
+  text-align: right;
+}
+
+/* ---------- botón con icono (Editar perfil) ---------- */
+
+.btn-ic {
+  margin: 14 16 8 16;
+}
+
+.btn-ic-t {
+  margin-left: 8;
+}
+
+/* ---------- hoja inferior de estado ---------- */
+
+.pf-status-menu {
+  background-color: var(--panel);
+  border-top-width: 1;
+  border-top-color: var(--border);
+  padding: 10 16 14 16;
+}
+
+.pf-menu-title Label {
+  color: var(--t0);
+  font-size: 14;
+  font-weight: 700;
+}
+
+.pf-menu-label {
+  color: var(--t2);
+  font-size: 12;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5;
+  margin: 8 0 4 0;
+}
+
+.pf-status-input {
+  font-size: 14;
+  margin-bottom: 4;
+}
+
+.pf-menu-meta {
+  color: var(--t2);
+  font-size: 11;
+  margin-bottom: 6;
+}
+
+.pf-link {
+  color: var(--accent);
+  font-size: 11;
+  text-align: right;
+}
+
+.pf-menu-presets {
+  border-top-width: 1;
+  border-top-color: var(--border);
+}
+
+.pf-preset {
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+  padding: 8 6;
+}
+
+.pf-preset-t {
+  color: var(--t1);
+  font-size: 14;
+  margin-left: 8;
+  margin-right: 8;
+}
+
+.pf-preset.on .pf-preset-t {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.pf-menu-error {
+  color: var(--err);
+  font-size: 13;
+  margin-top: 8;
+}
+
+.pf-menu-save {
+  margin-top: 8;
+}
+
+.pf-menu-hint {
+  color: var(--t2);
+  font-size: 11;
+  line-height: 15;
+  margin-top: 8;
+}
+
+/* ---------- editor de perfil: portada + foto montada ---------- */
+
+.pf-edit-banner {
+  margin: 6 0 4 0;
+}
+
+.pf-edit-banner-img {
+  margin-bottom: -54;
+  border-width: 1;
+  border-color: var(--border);
+  background-color: var(--panel2);
+}
+
+.avatar-pick {
+  margin-bottom: 10;
+}
+
+/* Botón de elegir foto (abajo a la derecha del avatar). */
+.av-btn {
+  width: 36;
+  height: 36;
+  border-radius: 18;
+  background-color: var(--accent);
+  border-width: 3;
+  border-color: var(--panel);
+  margin: 2;
+}
+
+/* Botón de quitar foto (arriba a la izquierda). */
+.av-clear {
+  width: 30;
+  height: 30;
+  border-radius: 15;
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  margin: 2;
+}
+
+.pf-edit-banner-actions {
+  margin-top: 8;
+}
+
+/* Botón chico (Cambiar portada / Quitar portada / Cambiar usuario). */
+.btn-sm {
+  padding: 8 12;
+  margin: 4 6 4 0;
+}
+
+.btn-sm-t {
+  font-size: 13;
+}
+
+/* Posición vertical de la portada (barra). */
+.pf-pos-row {
+  margin-top: 4;
+  color: var(--t2);
+  font-size: 12;
+}
+
+.pf-pos-l {
+  color: var(--t2);
+  font-size: 12;
+  margin-right: 8;
+  white-space: nowrap;
+}
+
+.pf-pos-val {
+  color: var(--t2);
+  font-size: 12;
+  text-align: right;
+  margin-left: 8;
+}
+
+/* ---------- campos del editor ---------- */
+
+.uname-field {
+  margin-bottom: 14;
+}
+
+.uname-current {
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  padding: 7 10;
+}
+
+.uname-at {
+  color: var(--t2);
+  font-size: 14;
+  font-weight: 600;
+  margin-right: 2;
+}
+
+.uname-now {
+  color: var(--t0);
+  font-size: 14;
+}
+
+.uname-current .btn-sm {
+  margin: 0 0 0 8;
+}
+
+/* Chips de estado (En línea / Ausente / …). */
+.mp-presets {
+  margin-bottom: 4;
+}
+
+.ap-chip {
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 16;
+  padding: 5 12;
+  margin: 0 6 6 0;
+}
+
+.ap-chip-t {
+  color: var(--t2);
+  font-size: 13;
+  margin-left: 6;
+}
+
+.ap-chip.on {
+  border-color: var(--accent);
+}
+
+.ap-chip.on .ap-chip-t {
+  color: var(--t1);
+  font-weight: 600;
+}
+
+.mp-preset-hint {
+  margin-bottom: 12;
+}
+
+.pf-bio-count {
+  color: var(--t2);
+  font-size: 11;
+  text-align: right;
+  margin-top: 3;
+}
+
+.bio-input {
+  margin-bottom: 4;
+}
+
+/* ---------- cambio de @usuario (UsernameView) ---------- */
+
+.uname-intro {
+  color: var(--t2);
+  font-size: 13;
+  line-height: 18;
+  margin-bottom: 10;
+}
+
+.uname-current-lg {
+  margin-bottom: 10;
+}
+
+.uname-current-lg .uname-now {
+  font-size: 16;
+  font-weight: 700;
+}
+
+.uname-wait {
+  color: var(--st-busy);
+  font-size: 13;
+  margin: 6 0 10 0;
+}
+
+.uname-warn {
+  background-color: var(--err-bg);
+  border-left-width: 3;
+  border-left-color: var(--err);
+  border-radius: 8;
+  padding: 8 10;
+  margin-bottom: 10;
+}
+
+.uname-warn-t {
+  color: var(--t1);
+  font-size: 13;
+  line-height: 18;
+  margin-left: 8;
+}

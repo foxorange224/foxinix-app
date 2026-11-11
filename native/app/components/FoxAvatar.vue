@@ -56,6 +56,7 @@
 
 <script setup lang="ts">
   import { computed } from 'nativescript-vue';
+  import { stDotColor } from '../fmt';
 
   const props = withDefaults(
     defineProps<{
@@ -87,12 +88,6 @@
       : props.size >= 46 ? 18
       : props.size >= 34 ? 15 : 13));
 
-  const dotColor = computed(() => {
-    switch (props.dot) {
-      case 'busy': return '#f0b232';
-      case 'dnd': return '#f23f43';
-      case 'off': return '#80848e';
-      default: return '#23a55a';
-    }
-  });
+  /* Los MISMOS colores que la web (fmt.stDotColor). */
+  const dotColor = computed(() => stDotColor(props.dot));
 </script>

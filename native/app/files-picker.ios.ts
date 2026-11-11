@@ -7,7 +7,11 @@
 
 import { openFilePicker } from '@nativescript-community/ui-document-picker';
 
-export async function pickPlatformFile(): Promise<string> {
+export async function pickPlatformFile(accept?: string): Promise<string> {
+  /* El plugin de iOS no filtra por MIME (mimeTypes es sólo Android, y
+     este archivo no lo lee): se abre el selector completo y la vista
+     descarta lo que no sea imagen ("Elige una imagen"). */
+  void accept;
   const res = await openFilePicker({ multipleSelection: false });
   const files = (res && res.files) || [];
   return files.length ? String(files[0]) : '';

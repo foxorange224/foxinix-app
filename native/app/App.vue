@@ -12,6 +12,12 @@
       <!-- W105: la pantalla de reenviar también va antes que el chat
            (el chat sigue abierto debajo). -->
       <ForwardView v-else-if="view === 'forward'" />
+      <!-- W107: "Tu perfil" y su edición van ANTES que el chat (como
+           el visor y el reenviar): se abren desde la cabecera de la
+           lista o de Personas y el chat sigue debajo. -->
+      <MyProfileView v-else-if="view === 'myprofile'" />
+      <MyProfileEditView v-else-if="view === 'myprofileedit'" />
+      <UsernameView v-else-if="view === 'uname'" />
       <!-- con un chat abierto va la conversación; si no, la lista o
            el panel de personas -->
       <ChatView v-else-if="activeChatId" />
@@ -68,6 +74,9 @@
   import ChatView from './views/ChatView.vue';
   import MediaViewer from './views/MediaViewer.vue';
   import ForwardView from './views/ForwardView.vue';
+  import MyProfileView from './views/MyProfileView.vue';
+  import MyProfileEditView from './views/MyProfileEditView.vue';
+  import UsernameView from './views/UsernameView.vue';
   import PeopleView from './views/PeopleView.vue';
   import NewGroupView from './views/NewGroupView.vue';
   import ProfileView from './views/ProfileView.vue';
