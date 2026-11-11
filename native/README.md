@@ -328,6 +328,18 @@ Detalles que impone NativeScript:
   descarta lo que no sea imagen) y `pickImage()` copia el `content://` a
   un archivo temporal con extensión, que `ImageSource` y el
   `FileAdapter` leen sin problemas.
+- **El −48 px del avatar va en la FILA, no en el avatar**: en Android
+  `clipToBounds` es `true` por defecto en todo `Layout` y NS no permite
+  apagarlo, así que un hijo con margen negativo se recortaba contra el
+  borde de su propia fila y la mitad superior del avatar desaparecía
+  (era el avatar cortado de `19-tu-perfil` y, desde W103, también el de
+  `9-perfil`). `.pf-idrow` sube 48 px, `.pf-av`/`.mp-av` quedan en 0 y
+  la burbuja `.pf-quote` compensa con `margin-top: 60` → la posición
+  final es la misma de siempre, sólo que sin recorte.
+- **"Miembro desde" sólo si hay `created_at`** (`v-if`, igual que en
+  `MeProfileModal`): el login no trae ese campo y la web tampoco lo
+  refresca, así que en ambos lados la fila simplemente no aparece en
+  lugar de quedar "Miembro desde —".
 
 **Queda pendiente de cara a la paridad total** (documentado para el
 siguiente hito que lo toque): el editor de foto con recorte/giro (W27 de

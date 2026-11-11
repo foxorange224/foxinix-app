@@ -59,7 +59,10 @@
 
           <!-- miembro desde -->
           <StackLayout class="pf-rows">
-            <GridLayout class="pp-row" columns="auto,*">
+            <!-- Como en la web (v-if="store.user.created_at"): el login
+                 no trae created_at, así que la fila NO se pinta en vez
+                 de quedar "Miembro desde —". -->
+            <GridLayout v-if="u && u.created_at" class="pp-row" columns="auto,*">
               <Label col="0" class="pp-row-k" :text="t('Miembro desde')"
                      textWrap="false" verticalAlignment="center" />
               <Label col="1" class="pp-row-v" :text="joined" textWrap="false"

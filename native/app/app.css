@@ -1068,13 +1068,22 @@ ActionBar {
   margin-bottom: -22;
 }
 
-/* El avatar se monta sobre la portada, como en la web. */
+/* El avatar se monta sobre la portada, como en la web (−48 px).
+
+   El margen negativo va en la FILA y no en el avatar: en Android
+   `clipToBounds` es `true` por defecto en todo Layout y NS no permite
+   apagarlo, así que un hijo con margen negativo se recortaba contra el
+   borde de SU fila y la mitad superior del avatar desaparecía (también
+   salía cortado en `9-perfil`). Moviendo la fila entera hacia arriba
+   sólo se solapa con la portada (que está en el mismo StackLayout y no
+   recorta a sus hermanos). */
 .pf-idrow {
   padding: 0 16;
+  margin-top: -48;
 }
 
 .pf-av {
-  margin-top: -30;
+  margin-top: 0;
 }
 
 .pf-idbelow {
@@ -1667,10 +1676,10 @@ ActionBar {
   padding: 4 16 16 16;
 }
 
-/* El avatar de TU ficha se monta sobre la portada (−48 px, como
-   .pf-avwrap de la web; el de la ficha de otros es .pf-av). */
+/* El avatar de TU ficha: el −48 px ya lo pone la fila (.pf-idrow);
+   aquí no puede ir margen negativo (clipToBounds lo recortaría). */
 .mp-av {
-  margin-top: -48;
+  margin-top: 0;
 }
 
 /* Puntito de estado (colores Discord); el tamaño y el color van en la
@@ -1702,7 +1711,10 @@ ActionBar {
   border-color: var(--border);
   border-radius: 12;
   padding: 9 12 8 12;
-  margin: 12 0 0 10;
+  /* La fila entera subió 48 px (para que el avatar no se recorte), así
+     que la burbuja compensa: queda a 12 px de la portada, igual que
+     .pf-quote de la web. */
+  margin: 60 0 0 10;
 }
 
 .pf-quote-text {
