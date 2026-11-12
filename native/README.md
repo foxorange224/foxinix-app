@@ -348,6 +348,83 @@ arrastrar además de la barra), el **markdown de la bio** (`BioText`)
 y la vista de portada con `object-position` en `ProfileView` (la ficha
 de otros sigue con el `aspectFill` de siempre).
 
+## Info del chat (W108)
+
+El botón de la cabecera de la conversación (`chat info`) abre el panel
+`ChatInfoView`, que porta el `ChatInfoPanel` de la web como overlay a
+pantalla completa dentro de `ChatView` (la web lo pinta como aside
+derecho; en móvil la web lo muestra encima, igual):
+
+- **Directo**: portada (`FoxBanner` con el borde inferior de la web;
+  el editor de perfil usa `pf-edit-banner-img` y NO lo lleva), avatar
+  de 72 montado encima (−36 px en el contenedor, regla NS9), burbuja
+  citada del estado, nombre y `@usuario` debajo del avatar, **ID
+  copiable**, bio y "Miembro desde".
+- **Grupo**: foto con su botón de **cambiar foto** (sólo owner/admin,
+  el server también lo valida), cabecera con título, "n miembros · n
+  en línea", la **lista de miembros en dos bloques** (en línea primero,
+  etiqueta sólo cuando conviven) con su ⋮ por miembro (**Hacer/Quitar
+  admin**, **Transferir propiedad**, **Eliminar del grupo** — los
+  mismos textos byte a byte que `memberMenu` de la web) y la fila del
+  **enlace de invitación** con su interruptor (W68: copiar + abrir).
+- **Menús**: el ⋮ de la cabecera abre `chatInfoMenu` (DM: Ver perfil /
+  Fijar / Silenciar) o `chatMenu` (grupo: Abrir / Ver info / Cambiar
+  foto / Salir + la cola Fijar/Mute/Archivar), **sin "Renombrar
+  grupo"** (es W114). Van en **`ActSheet`**, una hoja inferior
+  genérica con la MISMA estructura que `MsgSheet`: el velo es hermano
+  de la hoja y ambos la ÚLTIMA hija del `GridLayout` que los monta
+  (regla NS9: sin `position:fixed` ni z-index). Los rótulos se
+  traducen en el render con `t(it.label)`, igual que `CtxMenu`.
+- **Modales W29l**: los dos accesos de abajo abren **Mensajes
+  fijados** (`PinsView`; tocar un fijado cierra el panel y salta al
+  mensaje, `goPin`) y **Archivos y medios** (`GalleryView`;
+  cuadrícula con `gal-spoil` de primer toque y `goGal`). Centrados con
+  el truco de las 3 filas/3 columnas: el velo cubre todo el
+  `GridLayout` y el modal va en la celda del medio; el alto del cuerpo
+  se **calcula** (filas de 58 px + 20 de margen, tope 460 o 64 % de
+  pantalla), porque en NS una fila `*` dentro de una fila `auto` no se
+  resuelve de forma fiable.
+- **Navegación por capas**: `back()` cierra pines → galería → info y
+  sólo después el chat; `fox.ts` hace lo mismo. `App.vue` monta
+  `ProfileView` ANTES que `ChatView` para que "Ver perfil" desde la
+  info se vea con el chat abierto (como en la web, que no lo cierra).
+
+Detalles que impone NativeScript:
+
+- **`line-height` es EXTRA en Android** (`setLineSpacing`), no total
+  como en CSS: se sigue la convención del código (px totales, como
+  `pf-quote-text` lh18 de W107) y queda anotado en pendientes.
+- **Los giros del sprite van en la raíz del botón**: `.pp-more` y
+  `.mi-more` (el ⋮ de la web rota el SVG 90° y se ve horizontal) y
+  `.pp-chev` (−90°). En NS el disco es redondo, sólo se mueve el
+  icono.
+- **Los modales y la hoja son los ÚLTIMOS hijos** con `rowSpan` (NS9):
+  se pintan encima por orden, sin `z-index`.
+- **Errores de las confirmaciones como aviso**: el port usa
+  `humanError(err || { detail: fallback })` como toast (el texto
+  exacto del `ConfirmBox` de la web: `(e && t(e.detail)) || t('No se
+  pudo completar la acción')`); la web los pinta **dentro del cuadro**
+  (delta de plataforma, ver pendientes).
+- **Celdas de galería sin redondeo**: la web recorta las miniaturas
+  con `border-radius: 8` y el nativo no recorta hijos al radio, así
+  que `.pp-galimg` queda cuadrada de 96 px (ver pendientes).
+
+**Queda pendiente de cara a la paridad total** (documentado para el
+siguiente hito que lo toque): `RenameGroupModal`/`GroupProfileModal`
+al tocar el título o la foto (W114), el editor de foto del grupo con
+recorte/giro (W27b, `avatar-editor.js`), `BioText` con su "Ver más",
+los cubitos del ID como texto, los puntos de "escribiendo…" **sin
+animación** (la web los anima), el spoiler **sin blur** (la web
+difumina), el `ctx-head` de la hoja (los menús van sin cabecera), el
+**flash al saltar** a un mensaje, las **miniaturas de galería sin
+redondeo**, la **carga de mensajes antiguos al llegar arriba**
+(`onScroll` al top → `loadOlder`, que en la web ya está),
+`line-height` como extra en Android, `gi-link-i` **sin la
+monoespaciada** de la web, el ícono **Transferir = `key`** (la web usa
+`i-shield`, que no está en el sprite nativo), las filas **sin
+`scale(:active)`** y el error de las confirmaciones **como aviso** (la
+web, en línea en el cuadro).
+
 ## Comandos
 
 ```bash
@@ -361,6 +438,10 @@ node --import ./tools/ns-register.mjs tools/test-w106-core.mjs
 node tools/test-w107-i18n.mjs
                          # test del port de perfil propio (W107): claves
                          # i18n, navegación y estilos
+node tools/test-w108-i18n.mjs
+                         # test del port de info del chat (W108): claves
+                         # i18n, menús/asks byte a byte con la web, labels,
+                         # clases del bloque CSS y señales de navegación
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -422,6 +503,12 @@ sudo bash tools/fix-ns-cli-gradle.sh
   con contador y las mismas validaciones que la web) y "Cambiar usuario"
   (espera de 12 h + contraseña). El avatar de la cabecera de Chats y de
   Personas es la entrada, como el `.mobile-me` de la web.
+- **Info del chat** (W108): el botón de la cabecera de la conversación
+  abre el panel con portada/cita/bio (directo) o foto, miembros en dos
+  bloques y enlace de invitación (grupo), los menús de la web en la
+  hoja `ActSheet` y los modales de **Mensajes fijados** (con salto al
+  mensaje) y **Archivos y medios** (con spoiler). `back()` cierra por
+  capas: pines → galería → info.
 - **Los scrolls de NativeScript (v0.2.6)**: en NS-Vue el `ref` de un
   elemento nativo es el **envoltorio** (`NSVElement`), no la vista nativa:
   los métodos del `ScrollView` (`scrollToVerticalOffset`) están en su
