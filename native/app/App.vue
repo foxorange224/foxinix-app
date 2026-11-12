@@ -18,10 +18,13 @@
       <MyProfileView v-else-if="view === 'myprofile'" />
       <MyProfileEditView v-else-if="view === 'myprofileedit'" />
       <UsernameView v-else-if="view === 'uname'" />
+      <!-- W108: el perfil de OTRO usuario también va antes que el chat
+           (misma razón): desde el panel de info se abre el perfil con
+           el chat todavía abierto debajo. -->
+      <ProfileView v-else-if="view === 'profile'" :user-id="profileUserId" />
       <!-- con un chat abierto va la conversación; si no, la lista o
            el panel de personas -->
       <ChatView v-else-if="activeChatId" />
-      <ProfileView v-else-if="view === 'profile'" :user-id="profileUserId" />
       <SettingsView v-else-if="view === 'settings'" />
       <NewGroupView v-else-if="view === 'newgroup'" />
       <PeopleView v-else-if="view === 'people'" />

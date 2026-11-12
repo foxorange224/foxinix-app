@@ -855,6 +855,83 @@ def capture_emoji_tabs(out_dir: str) -> bool:
     return ok
 
 
+def capture_chat_info(out_dir: str) -> None:
+    """W108: el panel "Info del chat" y sus modales (W29l).
+
+    Recorre: info (23) → modal de fijados (24) → salto a un fijado
+    (24b) → galería (25) y cierra por capas (modales → panel), igual
+    que el botón "atrás". Sin fijados se cierra el modal y se sigue
+    (no es fallo: el chat de prueba puede no tener ninguno). Los textos
+    se buscan en español Y en inglés: el idioma de la app depende del
+    dispositivo.
+    """
+    print("== info del chat ==")
+    xml = dump()
+    if not tap(find(xml, desc="chat info")):
+        print("!! no se vio el botón de info del chat")
+        print("   textos:", " | ".join(texts(xml)))
+        return
+    time.sleep(4)
+    xml = dump()
+    shot(out_dir, "23-info")
+    if not any(find(xml, contains=s) for s in
+               ("Info del usuario", "Info del grupo", "User info",
+                "Group info")):
+        print("!! el panel no muestra su título")
+        print("   textos:", " | ".join(texts(xml)))
+
+    # --- mensajes fijados ---
+    if tap(find(xml, desc="pins access")):
+        time.sleep(4)
+        xml = dump()
+        shot(out_dir, "24-fijados")
+        if not any(find(xml, contains=s) for s in
+                   ("Mensajes fijados", "Pinned messages")):
+            print("!! el modal de fijados no muestra su título")
+            print("   textos:", " | ".join(texts(xml)))
+        if find(xml, desc="pin row"):
+            # Tocar un fijado cierra el panel y salta al mensaje.
+            tap(find(xml, desc="pin row"))
+            time.sleep(4)
+            shot(out_dir, "24b-salto")
+            # El salto cierra la info: se reabre si hizo falta, para
+            # que el paso siguiente (galería) encuentre los accesos.
+            xml = dump()
+            if not find(xml, desc="close info"):
+                tap(find(xml, desc="chat info"))
+                time.sleep(4)
+        else:
+            # Sin fijados (o sin permiso): cerrar el modal y seguir.
+            print("   sin fijados: se cierra el modal y se continúa")
+            tap(find(dump(), desc="close pins"))
+            time.sleep(2)
+    else:
+        print("!! no se vio el acceso a Mensajes fijados")
+        print("   textos:", " | ".join(texts(xml)))
+
+    # --- archivos y medios ---
+    xml = dump()
+    if tap(find(xml, desc="gallery access")):
+        time.sleep(4)
+        xml = dump()
+        shot(out_dir, "25-archivos")
+        if not any(find(xml, contains=s) for s in
+                   ("Archivos y medios", "Files and media")):
+            print("!! el modal de archivos no muestra su título")
+            print("   textos:", " | ".join(texts(xml)))
+        tap(find(dump(), desc="close gallery"))
+        time.sleep(2)
+    else:
+        print("!! no se vio el acceso a Archivos y medios")
+        print("   textos:", " | ".join(texts(xml)))
+
+    # --- cerrar el panel (por capas, como el botón "atrás") ---
+    xml = dump()
+    if find(xml, desc="close info"):
+        tap(find(xml, desc="close info"))
+        time.sleep(2)
+
+
 # ---------------------------------------------------------------- API
 # Auto-reparación del paso del visor: las imágenes de prueba que había
 # en la cuenta medían 1x1 px (el server guarda las dimensiones reales),
@@ -1357,6 +1434,9 @@ def run() -> int:
 
         # W106: el selector de emojis/stickers/GIFs (3 pestañas).
         capture_emoji_tabs(out_dir)
+
+        # W108: el panel de info del chat y sus modales.
+        capture_chat_info(out_dir)
 
         back_out(dump())      # conversación → lista de chats
     else:

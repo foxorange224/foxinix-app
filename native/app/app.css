@@ -2054,3 +2054,415 @@ ActionBar {
   line-height: 18;
   margin-left: 8;
 }
+
+/* ================================================================
+   W108: panel "Info del chat" (ChatInfoPanel de la web), modales
+   de "Mensajes fijados" y "Archivos y medios" (W29l) y la hoja
+   de menús (ActSheet).
+
+   Valores de landing/static/css/app.css (.pp-*, .mi-*, .gi-*,
+   .modal*, .gal-*, .pf-*) con los overrides del panel derecho
+   (.profile-panel): avatar 72, nombre 18, idbelow 4. Los efectivos
+   de la web se replican con el padding del CONTENEDOR (pf-body
+   lleva 14): ci-idbelow 4/2/0/4 → 4/16/0/18, ci-idrow 0/2 → 0/16.
+
+   Reglas NS9: sin position:fixed ni z-index — los modales y la
+   hoja van como últimos hijos con rowSpan (se pintan encima por
+   orden). Los negativos van en el CONTENEDOR (ci-idrow −36).
+   ================================================================ */
+
+/* ---------- contenedor del panel ---------- */
+
+.pp-panel {
+  background-color: var(--panel);
+}
+
+.pp-head {
+  height: 56;
+  padding: 0 8 0 14;
+  background-color: var(--header);
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.pp-title {
+  color: var(--t1);
+  font-size: 15;
+  font-weight: 700;
+}
+
+/* el ⋮ de la web rota el sprite 90° (se ve horizontal, ⋯): en el
+   nativo gira la raíz del botón (la clase cae en el root del
+   FoxIconBtn; el disco es redondo, sólo se mueve el icono) */
+.pp-more {
+  transform: rotate(90deg);
+}
+
+/* ---------- directo: portada + ficha ---------- */
+
+/* borde inferior de la portada (.pf-banner de la web); el editor
+   de perfil usa pf-edit-banner-img y NO lo lleva */
+.pf-banner {
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.pf-body {
+  padding: 0 14 8 14;
+  text-align: left;
+}
+
+/* avatar montado sobre la portada (−36 = .profile-panel
+   .pf-avwrap): el margen negativo va en el CONTENEDOR (NS9) */
+.ci-idrow {
+  margin-top: -36;
+  padding: 0 2;
+}
+
+/* cita de estado: arranca 12 px bajo la portada (−36 + 48),
+   como .pf-status-wrap del móvil en el panel */
+.ci-quote {
+  margin: 48 0 0 10;
+  min-height: 46;
+  padding: 9 12 8 12;
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 12;
+}
+
+.ci-quote-t {
+  color: var(--t1);
+  font-size: 13;
+  line-height: 18;
+  overflow-wrap: anywhere;
+}
+
+/* nombre y @usuario debajo del avatar: padding-top 4 y nombre 18
+   (overrides .profile-panel de .pf-idbelow/.pp-name) */
+.ci-idbelow {
+  padding: 4 2 0 4;
+}
+
+.ci-idbelow .pp-name {
+  margin-top: 0;
+  color: var(--t1);
+  font-size: 18;
+  font-weight: 700;
+  line-height: 21;
+  overflow-wrap: anywhere;
+}
+
+.ci-idbelow .pp-user {
+  margin-top: 3;
+  color: var(--t2);
+  font-size: 14;
+}
+
+.pp-bio {
+  margin-top: 12;
+  color: var(--t1);
+  font-size: 14;
+  line-height: 22;
+}
+
+/* filas de datos ("Miembro desde"): margin-top 10 = .pf-rows (en
+   la web va después de .pp-rows y gana él); el padding lo pone
+   pf-body (14) */
+.pp-rows {
+  margin-top: 10;
+  text-align: left;
+}
+
+/* ---------- grupo: foto + cabecera + miembros ---------- */
+
+.pp-body.pp-left {
+  padding: 10 14 8 14;
+  text-align: left;
+}
+
+.grp-av {
+  margin: 8 0 12 0;
+}
+
+/* botón de "cambiar foto" montado en la esquina inferior derecha
+   (la celda de la plantilla queda a +6/+4 del avatar, como
+   right:-6 / bottom:-4 de la web) */
+.grp-av-btn {
+  width: 30;
+  height: 30;
+  background-color: var(--accent);
+  border-width: 3;
+  border-color: var(--panel);
+  border-radius: 15;
+}
+
+.mi-head {
+  padding: 2 2 6 2;
+  color: var(--t2);
+  font-size: 13;
+}
+
+.mi-head-t {
+  color: var(--t1);
+  font-size: 14;
+  font-weight: 700;
+}
+
+.mi-head-s {
+  color: var(--t2);
+  font-size: 13;
+}
+
+.mi-head-on {
+  color: var(--online);
+  font-size: 13;
+}
+
+.mi-sec {
+  padding: 10 6 4 6;
+  color: var(--t2);
+  font-size: 12;
+  font-weight: 600;
+}
+
+.mi-row {
+  min-height: 46;
+  padding: 7 4;
+  border-top-width: 1;
+  border-top-color: var(--border);
+  border-radius: 8;
+}
+
+/* press táctil = el :active de la web en pantallas sin hover */
+.mi-row:pressed {
+  background-color: var(--panel2);
+}
+
+.mi-col {
+  margin-left: 10;
+}
+
+.mi-name {
+  color: var(--t1);
+  font-size: 14;
+  font-weight: 600;
+}
+
+.mi-me {
+  margin-left: 6;
+  color: var(--accent);
+  font-size: 11;
+  font-weight: 500;
+}
+
+.mi-role {
+  margin-left: 6;
+  color: var(--accent);
+  font-size: 11;
+  font-weight: 600;
+}
+
+.mi-sub {
+  color: var(--t2);
+  font-size: 12;
+}
+
+/* el ⋮ del miembro gira 90° igual que .mi-more .ic de la web */
+.mi-more {
+  transform: rotate(90deg);
+}
+
+/* puntos de "escribiendo…" (la web los anima; acá están quietos,
+   ver pendientes de native/README.md) */
+.ci-typing {
+  margin-right: 6;
+}
+
+.ci-dot {
+  width: 4;
+  height: 4;
+  margin-right: 2;
+  background-color: var(--accent);
+  border-radius: 2;
+}
+
+/* ---------- enlace de invitación (W68) ---------- */
+
+.gi-body {
+  padding: 2 6 10 6;
+}
+
+.gi-tgl-row {
+  padding: 6 0;
+}
+
+/* en esta fila la web achica el subtexto a 0.75rem */
+.gi-tgl-row .st-s {
+  font-size: 12;
+}
+
+.gi-link {
+  margin-top: 6;
+}
+
+.gi-link-i {
+  margin-right: 6;
+  padding: 7 10;
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  color: var(--t2);
+  font-size: 13;
+}
+
+/* ---------- accesos: fijados y archivos ---------- */
+
+.pp-acts {
+  padding: 10 12 14 12;
+  border-top-width: 1;
+  border-top-color: var(--border);
+}
+
+.pp-pinhead {
+  padding: 8 10;
+  background-color: var(--panel2);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+}
+
+.pp-pinhead:pressed {
+  background-color: var(--sel);
+}
+
+.pp-pinhead-t {
+  margin-left: 8;
+  color: var(--t1);
+  font-size: 14;
+  font-weight: 600;
+}
+
+/* el conteo "(3)": texto plano t2/500 sin píldora (W36h); el
+   margen reemplaza el espacio que el HTML deja entre <b> y <i> */
+.pp-ncount {
+  margin-left: 4;
+  color: var(--t2);
+  font-size: 13;
+  font-weight: 500;
+}
+
+.pp-chev {
+  margin-left: 8;
+  transform: rotate(-90deg);
+}
+
+/* ---------- estados de carga ---------- */
+
+.pp-loading {
+  padding: 40 16;
+  color: var(--t2);
+  font-size: 14;
+  text-align: center;
+}
+
+/* ---------- modales de fijados y archivos (W29l) ---------- */
+
+.modal-veil {
+  background-color: rgba(0, 0, 0, .55);
+}
+
+.modal {
+  background-color: var(--panel);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 16;
+}
+
+/* .pp-modal: el ancho (min(460, pantalla − 32)) lo calcula la
+   vista en JS, como min(460px, 100%) de la web */
+
+.pp-modal-head {
+  padding: 8 8 8 16;
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+
+.pp-modal-t {
+  color: var(--t1);
+  font-size: 16;
+  font-weight: 600;
+}
+
+/* el "(3)" del título: t2/500 con el espacio del texto (≈4) y
+   margin-left 4 de <i> de la cabecera de la web (8 en total) */
+.pp-modal-i {
+  margin-left: 8;
+  color: var(--t2);
+  font-size: 16;
+  font-weight: 500;
+}
+
+.pp-mbody {
+  padding: 6 8 8 8;
+}
+
+.pp-mbody .pp-loading {
+  padding: 24 8;
+}
+
+.pp-pinrow {
+  margin-top: 4;
+  padding: 6 8;
+  background-color: var(--panel2);
+  border-radius: 8;
+}
+
+.pp-mbody .pp-pinrow {
+  margin-top: 6;
+}
+
+/* <b> del fijado: quién lo mandó (accent) */
+.pp-pinrow-t {
+  color: var(--accent);
+  font-size: 13;
+  font-weight: 600;
+}
+
+/* <span> del fijado: el texto (una sola línea, con puntos) */
+.pp-pinrow-s {
+  color: var(--t1);
+  font-size: 13;
+}
+
+.pp-galgrid {
+  margin-top: 6;
+}
+
+.pp-mbody .pp-galgrid {
+  margin-top: 4;
+}
+
+/* celda de 96 dentro de la ranura de 104 (96 + 8 de hueco de la
+   cuadrícula): la caja pinta el área de la miniatura mientras
+   carga. SIN redondeo — la web recorta con border-radius 8 y el
+   nativo no recorta hijos al radio (ver pendientes) */
+.pp-galimg {
+  width: 96;
+  height: 96;
+  background-color: var(--panel2);
+}
+
+.gal-spoil {
+  background-color: rgba(0, 0, 0, .72);
+}
+
+/* ---------- hoja de menús (ActSheet) ---------- */
+
+.sheet-title {
+  padding: 12 16 8 16;
+  color: var(--t0);
+  font-size: 14;
+  font-weight: 700;
+}

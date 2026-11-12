@@ -6,39 +6,52 @@
 
     <GridLayout rows="auto,*,auto,auto" class="chat-page">
       <!-- ---------- cabecera ---------- -->
-      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto">
+      <!-- W108: columnas +1 para el botón de info (la web lo lleva al
+           extremo derecho de .chat-head). El avatar y el nombre abren
+           el perfil en los directos (el de grupo es W114). -->
+      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto,auto">
         <FoxIconBtn col="0" icon="back" bare :tint="muted"
                     accessibilityLabel="back" @tap="back" />
         <FoxAvatar col="1" :src="peerAvatar" :initial="peerInitial"
-                   :size="38" :dot="peerDot" :ring="chatRing" />
-        <StackLayout col="2" class="ch-col">
+                   :size="38" :dot="peerDot" :ring="chatRing"
+                   @tap="headTap" />
+        <StackLayout col="2" class="ch-col" @tap="headTap">
           <Label class="ch-name" :text="title" textWrap="false" />
           <Label class="ch-status" :text="statusLine" textWrap="false" />
         </StackLayout>
         <Label v-if="store.ws !== 'on'" col="3" class="ws-pill"
                :text="wsLabel" textWrap="false" />
+        <FoxIconBtn col="4" icon="info" :active="store.infoOpen"
+                    :tint="muted" accessibilityLabel="chat info"
+                    @tap="toggleInfo" />
       </GridLayout>
 
       <!-- ---------- mensajes ---------- -->
-      <ScrollView row="1" ref="scroller">
+      <!-- W108: @scroll mantiene "stick" al día (pegado al final o
+           leyendo historial), como onScroll de la web. -->
+      <ScrollView row="1" ref="scroller" @scroll="onScroll">
         <StackLayout class="msgs">
           <Label v-if="loading" class="msgs-load" :text="t('Cargando mensajes…')"
                  textWrap="true" />
 
           <template v-for="r in rows" :key="r.ref.id">
-            <!-- separador de día -->
-            <Label v-if="r.day" class="day-pill" :text="r.day" textWrap="false" />
+            <!-- separador de día (W108: los tres tipos de fila dejan su
+                 elemento en rowEls para poder saltar hasta ellos) -->
+            <Label v-if="r.day" class="day-pill" :text="r.day" textWrap="false"
+                   :ref="(el) => setRowEl(r.ref.id, el)" />
 
             <!-- mensaje de sistema: centrado, sin columna -->
             <Label v-if="r.ref.kind === 'system'" class="sys-msg"
-                   :text="r.ref.body" textWrap="true" />
+                   :text="r.ref.body" textWrap="true"
+                   :ref="(el) => setRowEl(r.ref.id, el)" />
 
             <!-- fila normal: [avatar ajeno] [burbuja] [avatar propio]
                  Las columnas de avatar miden 36px (28 de cara + 8 de
                  hueco), como en la web. -->
             <GridLayout v-else class="msg"
                         :class="{ tight: r.tight, mine: r.mine }"
-                        columns="auto,*,auto">
+                        columns="auto,*,auto"
+                        :ref="(el) => setRowEl(r.ref.id, el)">
               <!-- Columna de avatar del remitente: la web reserva los
                    mismos 36px aunque la cara no se vea, para que todas
                    las burbujas del remitente arranquen en la misma
@@ -212,6 +225,12 @@
            flota; ocupa su fila y el compositor sigue a la vista. -->
       <EmojiPanel v-if="pickerOpen" row="2" @pick="insertEmoji" @close="closePicker" />
 
+      <!-- ---------- W108: panel de info del chat ----------
+           Cubre todas las filas y va DESPUÉS del selector de emojis y
+           ANTES de la hoja de acciones: en NS no hay z-index, manda el
+           orden (si estuviera después taparía la hoja del mensaje). -->
+      <ChatInfoView v-if="store.infoOpen && chat" row="0" rowSpan="4" />
+
       <!-- ---------- W105: hoja de acciones del mensaje ----------
            Es la ÚLTIMA hija del GridLayout de la página: en NS no hay
            z-index, así que lo que va después se dibuja encima. Cubre
@@ -227,24 +246,25 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted, watch } from 'nativescript-vue';
+  import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'nativescript-vue';
   import { Dialogs, Screen } from '@nativescript/core';
   import { store, toast } from '../core/store.js';
   import {
     openChat, sendText, closeChat, sendMedia, mediaUrl,
-    toggleReaction, togglePin, editMessage,
+    loadMembers, loadOlder, toggleReaction, togglePin, editMessage,
   } from '../core/actions.js';
   import { t } from '../core/i18n.js';
   import { dayKey, dayLabel, fmtTime, connLine, dotState, tok } from '../fmt';
   import { pickFile } from '../files';
   import { imageBox, imageUrl, isImageMsg } from '../img';
-  import { openMedia, openForward } from '../nav';
+  import { openMedia, openForward, goProfile } from '../nav';
   import { deleteMessage } from '../msgactions';
   import { DomAdapter } from '../core/platform/index.js';
   import {
     canRecord, cancelRecording, currentVoiceTime, micLevel, onVoiceState,
     startRecording, stopRecording, stopVoice, toggleVoice as toggleVoicePlay,
   } from '../voice';
+  import ChatInfoView from './ChatInfoView.vue';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
   import MsgSheet from '../components/MsgSheet.vue';
@@ -734,6 +754,7 @@
       if (file) await cancelRecording();
       return;
     }
+    stick.value = true;   // W108: mandar la nota de voz = estar al final
     /* La onda del mensaje: ≤96 picos (0..100), como la web. */
     let outPeaks: number[] | null = null;
     if (peaks.length) {
@@ -887,6 +908,9 @@
      - el `ref` de un elemento en NS-Vue es el envoltorio (NSVElement),
        así que los métodos del ScrollView están en su `nativeView`. */
   function scrollToEnd() {
+    /* W108: sólo baja si no hay un salto pendiente y la lista está
+       pegada al final (stick), igual que scrollBottom de la web. */
+    if (store.jumpMsg || !stick.value) return;
     try {
       const s: any = scroller.value;
       const sv = s ? (s.nativeView || s) : null;
@@ -911,6 +935,7 @@
         replyFor.value = null;
       }
       draft.value = '';
+      stick.value = true;   // W108: mandar un mensaje = estar al final
       await new Promise((r) => setTimeout(r, 120));
       scrollToEnd();
     } catch (e: any) {
@@ -947,6 +972,7 @@
     try {
       const f = await pickFile();
       if (!f) return;
+      stick.value = true;   // W108: mandar un adjunto = estar al final
       const kind = (f.type || '').indexOf('image/') === 0 ? 'image' : 'file';
       await sendMedia(store.activeChatId, f as any, kind);
     } catch (e: any) {
@@ -956,15 +982,129 @@
     }
   }
 
+  /* ---------- W108: stick, salto a mensajes y panel de info ---------- */
+
+  /* La lista está "pegada" al final: SÓLO entonces los mensajes nuevos
+     la llevan al final (stick de la web; si el usuario lee historial no
+     se lo arrastra). */
+  const stick = ref(true);
+
+  /* Elemento de cada fila (day-pill, sys-msg o msg — el último que se
+     monta manda), para poder saltar hasta el mensaje. Los refs de NS
+     apuntan al envoltorio; al desmontar la fila Vue llama con null y se
+     borra la entrada. */
+  const rowEls = new Map<number, any>();
+  function setRowEl(id: number, el: any) {
+    if (el) rowEls.set(id, el);
+    else rowEls.delete(id);
+  }
+
+  /* Abrir/cerrar el panel de info (toggleInfo de chat-shell.js: al
+     abrir se piden los miembros del chat). */
+  function toggleInfo() {
+    store.infoOpen = !store.infoOpen;
+    if (store.infoOpen && store.activeChatId) loadMembers(store.activeChatId);
+  }
+
+  /* Tocar el avatar o el nombre de la cabecera abre el perfil del
+     contacto; en grupos sería el modal de perfil de grupo (W114). */
+  function headTap() {
+    const c: any = chat.value;
+    if (c && c.type === 'dm' && c.title && c.title.id) goProfile(c.title.id);
+  }
+
+  /* @scroll: mismo criterio que onScroll de la web — a menos de 80 px
+     del final se sigue el final; más arriba, no. */
+  function onScroll(ev: any) {
+    try {
+      const s: any = scroller.value;
+      const sv = s ? (s.nativeView || s) : null;
+      if (!sv) return;
+      const y = ev && ev.scrollY != null ? ev.scrollY : (sv.scrollY || 0);
+      stick.value = y >= (sv.scrollableHeight || 0) - 80;
+    } catch (e) { /* sin medida fiable: se queda como estaba */ }
+  }
+
+  /* Centrar un mensaje en la vista — el scrollIntoView({block:'center'})
+     de la web: getLocationRelativeTo mide la fila contra el ScrollView
+     (posición en pantalla) y, sumada al offset actual, da el
+     desplazamiento que la deja en el medio; se recorta a los límites
+     del scroll. Devuelve false si la fila todavía no está montada. */
+  function scrollToMsg(id: number): boolean {
+    const el: any = rowEls.get(id);
+    const s: any = scroller.value;
+    const sv = s ? (s.nativeView || s) : null;
+    if (!el || !sv) return false;
+    try {
+      const nv = el.nativeView || el;
+      const loc = nv.getLocationRelativeTo(sv);
+      const size = nv.getActualSize ? nv.getActualSize() : { height: 0 };
+      const vp = sv.getActualSize ? sv.getActualSize().height : 0;
+      let off = (sv.scrollY || 0) + (loc ? loc.y : 0)
+        + size.height / 2 - vp / 2;
+      const max = Math.max(0, sv.scrollableHeight || 0);
+      if (off < 0) off = 0;
+      if (off > max) off = max;
+      sv.scrollToVerticalOffset(off, false);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* Salto a un mensaje (fijado, galería o ?m= de la URL): mismo
+     recorrido que tryJump de la web — si el mensaje no está, se piden
+     páginas viejas (≤15) hasta encontrarlo; al llegar, la info cede el
+     lugar y la lista queda "sin stick" (los mensajes nuevos no la
+     arrastran durante el salto). */
+  let lastJump = 0;
+  async function tryJump(id: number) {
+    if (!id) { lastJump = 0; return; }
+    const cid = store.activeChatId;
+    if (!cid || id === lastJump) return;
+    if (!store.loaded[cid]) return;   // aún sin mensajes: lo retoma el watcher de loaded
+    lastJump = id;
+    const find = () => {
+      const arr = store.msgs[cid] || [];
+      for (let i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
+      return null;
+    };
+    let m = find();
+    let tries = 0;
+    while (!m && store.hasMore[cid] && tries < 15) {
+      tries++;
+      await loadOlder(cid);
+      m = find();
+    }
+    if (!m) {
+      store.jumpMsg = 0;   // no está en el historial: se suelta el salto
+      return;
+    }
+    store.infoOpen = false;   // el panel de info cede el lugar (como la web)
+    await nextTick();
+    scrollToMsg(m.id);
+    stick.value = false;
+    store.jumpMsg = 0;         // salto consumido (reactiva los watchers)
+  }
+
   function back() {
+    /* W108: la "atrás" cierra por capas — modal de fijados, modal de
+       archivos, panel de info y sólo después el chat (como Esc en la
+       web). */
+    if (store.pinsModal) { store.pinsModal = false; return; }
+    if (store.galModal) { store.galModal = false; return; }
+    if (store.infoOpen) { store.infoOpen = false; return; }
     closeChat();
   }
 
   onMounted(async () => {
-    await openChat(store.activeChatId);
+    /* W108: con un salto pendiente (?m= de la URL o enlace a un
+       mensaje) el chat se abre SIN borrarlo y tryJump hace el scroll;
+       si no, se baja al final como siempre. */
+    const jm = store.jumpMsg;
+    await openChat(store.activeChatId, !!jm);
     loading.value = false;
     await new Promise((r) => setTimeout(r, 150));
-    scrollToEnd();
+    if (jm) await tryJump(jm);
+    else scrollToEnd();
     /* W104: el reproductor avisa de su estado (play/pausa) y un tick
        suave mantiene al día la posición. */
     onVoiceState((s) => { voiceState.value = s; });
@@ -991,11 +1131,31 @@
     stopVoice();
   });
 
-  /* Al llegar mensajes nuevos (por WebSocket) se baja al final. */
+  /* Al llegar mensajes nuevos (por WebSocket) se baja al final — salvo
+     que haya un salto en curso o el usuario esté leyendo historial
+     (W108). */
   watch(() => messages.value.length, async (n) => {
     if (!n) return;
+    if (store.jumpMsg || !stick.value) return;
     await new Promise((r) => setTimeout(r, 80));
     scrollToEnd();
+  });
+
+  /* W108: salto a un mensaje (fijado, galería o ?m= de la URL). El
+     segundo watcher lo retoma cuando el chat termina de cargar, como
+     en la web. */
+  watch(() => store.jumpMsg, (v: number) => { tryJump(v); });
+  watch(() => store.loaded[store.activeChatId], (v: any) => {
+    if (v && store.jumpMsg) tryJump(store.jumpMsg);
+  });
+
+  /* W108: al cerrar el panel de info se apagan sus modales (ChatInfoView
+     lo hace también al desmontar; acá queda el corte garantizado). */
+  watch(() => store.infoOpen, (open: any) => {
+    if (!open) {
+      store.pinsModal = false;
+      store.galModal = false;
+    }
   });
 
   /* Al cambiar de chat se limpia la respuesta/edición (y el borrador:
@@ -1005,5 +1165,11 @@
     replyFor.value = null;
     editFor.value = null;
     draft.value = '';
+    /* W108: la info y sus modales son del chat anterior; la lista
+       vuelve a estar pegada al final. */
+    store.infoOpen = false;
+    store.pinsModal = false;
+    store.galModal = false;
+    stick.value = true;
   });
 </script>

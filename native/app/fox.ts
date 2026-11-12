@@ -79,6 +79,11 @@ function setupBackButton(): void {
       }
       if (view.value === 'chats' && store.activeChatId) {
         args.cancel = true;
+        /* W108: misma cascada que Esc en la web: primero los modales
+           de la info, después el panel y sólo al final el chat. */
+        if (store.pinsModal) { store.pinsModal = false; return; }
+        if (store.galModal) { store.galModal = false; return; }
+        if (store.infoOpen) { store.infoOpen = false; return; }
         try { closeChat(); } catch (e) { /* si falla, se sale */ }
       }
     });

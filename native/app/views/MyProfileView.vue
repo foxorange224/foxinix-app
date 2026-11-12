@@ -19,7 +19,7 @@
       <ScrollView row="1">
         <StackLayout>
           <!-- portada (tappable: la abre el visor, como en la web) -->
-          <FoxBanner :src="banner" :height="132" @tap="viewBanner" />
+          <FoxBanner class="pf-banner" :src="banner" :height="132" @tap="viewBanner" />
 
           <!-- avatar + estado citado, en la misma fila -->
           <GridLayout columns="auto,*" class="pf-idrow">
