@@ -409,17 +409,66 @@ Detalles que impone NativeScript:
   con `border-radius: 8` y el nativo no recorta hijos al radio, así
   que `.pp-galimg` queda cuadrada de 96 px (ver pendientes).
 
+## Buscar en el chat, nuevo chat y solicitud enviada (W109)
+
+Tres overlays centrados (velo hermano + modal en la celda del medio de un
+`GridLayout` 3×3, regla NS9: sin `position:fixed` ni z-index) que se
+pintan encima por orden:
+
+- **`SearchChatModal`** (`views/SearchChatModal.vue`): se monta dentro de
+  `ChatView` tras `ChatInfoView` y busca mensajes **dentro del chat
+  abierto** (`GET /chats/:id/search?q=…`) con debounce 300 ms y foco al
+  abrir. Al tocar un resultado **el modal no se cierra** (como la web):
+  `ChatView.onSearchJump` trae la ventana con `?before_seq=(seq+1)&limit=50`,
+  la fusiona con `mergeMessages`, centra la fila con `scrollToMsg(id, true)`
+  y la ilumina con la clase `flash` (`transition: background-color .4s` +
+  token `--accent-wash`). `back()` cierra la búsqueda antes que los modales
+  de la info; `onUnmounted` apaga `searchOpen`.
+- **`NewChatModal`** (`views/NewChatModal.vue`): montado globalmente en
+  `App.vue` (row 0, rowSpan 2, antes de `NativeToasts`). Soporta los tres
+  modos de la web: **DM** (crear chat o, sin amistad, enviar solicitud y
+  mostrar `RequestSentModal`), **grupo** (pestañas Chat/Grupo, nombre,
+  chips de miembros, "Crear grupo") y **agregar miembro** (modo `add`,
+  abierto desde la cabecera de un grupo). La búsqueda tiene `clr-x` para
+  vaciarla.
+- **`RequestSentModal`** (`views/RequestSentModal.vue`): montado
+  globalmente en `App.vue`. Muestra "Solicitud enviada." y el botón
+  "Solicitudes", que pone `requestsJump++`; `App.vue` lo atiende llevando
+  a Personas → pestaña Solicitudes y cerrando el chat.
+
+Entradas y navegación:
+- `ChatListView`: el **＋** de la cabecera ahora abre Nuevo chat en modo DM
+  (`accessibilityLabel="new chat"` → `store.newChatMode='dm'`,
+  `store.newChatOpen=true`).
+- `PeopleView`: `tab` es `computed(() => store.peopleTab)`; las pestañas
+  escriben `store.peopleTab` y hay un CTA **"Buscar personas"** en la
+  pestaña Solicitudes cuando no hay ninguna pendiente.
+- `fox.ts`: `requestSent` y `newChatOpen` ceden **antes** de `canGoBack()`
+  en el botón atrás de Android; `searchOpen` cede antes de `pinsModal` en
+  la rama de chat (cierre por capas: búsqueda → pines → galería → info →
+  chat).
+- `app.css`: bloque W109 (`.newchat`, `.m-tabs`/`.m-tab`/`.m-title-input`,
+  `.m-search`/`.m-search-input`, `.results`, `.sp-*`/`.spr-*`,
+  `.res-empty.dim`, `.req-sent-*`, `.msg.flash .bubble`) y el token
+  `--accent-wash` en los tres temas.
+
+Detalles que impone NativeScript:
+- Los refs de los `TextField` se enfocan vía `nativeView.focus()` en
+  `nextTick` (no hay `document.querySelector` en NS).
+- Los resultados de búsqueda son `GridLayout` (no `button`), porque un
+  `Button` de NS no acepta hijos con `col=`.
+- `overflow-y` no es una propiedad que NS entienda: se usa `overflow`.
+
 **Queda pendiente de cara a la paridad total** (documentado para el
 siguiente hito que lo toque): `RenameGroupModal`/`GroupProfileModal`
 al tocar el título o la foto (W114), el editor de foto del grupo con
 recorte/giro (W27b, `avatar-editor.js`), `BioText` con su "Ver más",
 los cubitos del ID como texto, los puntos de "escribiendo…" **sin
 animación** (la web los anima), el spoiler **sin blur** (la web
-difumina), el `ctx-head` de la hoja (los menús van sin cabecera), el
-**flash al saltar** a un mensaje, las **miniaturas de galería sin
-redondeo**, la **carga de mensajes antiguos al llegar arriba**
-(`onScroll` al top → `loadOlder`, que en la web ya está),
-`line-height` como extra en Android, `gi-link-i` **sin la
+difumina), el `ctx-head` de la hoja (los menús van sin cabecera), las
+**miniaturas de galería sin redondeo**, la **carga de mensajes antiguos
+al llegar arriba** (`onScroll` al top → `loadOlder`, que en la web ya
+está), `line-height` como extra en Android, `gi-link-i` **sin la
 monoespaciada** de la web, el ícono **Transferir = `key`** (la web usa
 `i-shield`, que no está en el sprite nativo), las filas **sin
 `scale(:active)`** y el error de las confirmaciones **como aviso** (la
@@ -442,6 +491,11 @@ node tools/test-w108-i18n.mjs
                          # test del port de info del chat (W108): claves
                          # i18n, menús/asks byte a byte con la web, labels,
                          # clases del bloque CSS y señales de navegación
+node tools/test-w109-i18n.mjs
+                         # test del port de buscar en el chat, nuevo chat y
+                         # solicitud enviada (W109): claves i18n, paridad
+                         # byte a byte con la web, clases del bloque CSS,
+                         # sin position:fixed/z-index y señales de navegación
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -509,6 +563,21 @@ sudo bash tools/fix-ns-cli-gradle.sh
   hoja `ActSheet` y los modales de **Mensajes fijados** (con salto al
   mensaje) y **Archivos y medios** (con spoiler). `back()` cierra por
   capas: pines → galería → info.
+- **Buscar en el chat, nuevo chat y solicitud enviada** (W109): la
+  cabecera de la conversación gana **buscar** (`SearchChatModal`,
+  `/chats/:id/search` con debounce 300 ms, foco al abrir y salto al
+  resultado con `?before_seq` + `mergeMessages` + flash en la fila —el
+  modal no se cierra al saltar—) y **agregar miembro** (sólo grupo,
+  `NewChatModal` en modo `add`). `NewChatModal` cubre los tres modos de
+  la web (DM / grupo / agregar miembro): pestañas Chat/Grupo, nombre,
+  chips de miembros y la regla del producto (sin amistad → envía
+  solicitud y muestra `RequestSentModal` con "Solicitud enviada.");
+  "Solicitudes" lleva a Personas → Solicitudes y cierra el chat. `back()`
+  cierra por capas: búsqueda → pines → galería → info → chat;
+  `requestSent`/`newChatOpen` ceden antes de `canGoBack()` en el botón
+  atrás de Android. `ChatListView` ＋ abre Nuevo chat (DM, label "new
+  chat"); `PeopleView` tab es `computed` sobre `store.peopleTab` con CTA
+  "Buscar personas" en la pestaña Solicitudes.
 - **Los scrolls de NativeScript (v0.2.6)**: en NS-Vue el `ref` de un
   elemento nativo es el **envoltorio** (`NSVElement`), no la vista nativa:
   los métodos del `ScrollView` (`scrollToVerticalOffset`) están en su
