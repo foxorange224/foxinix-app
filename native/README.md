@@ -474,6 +474,30 @@ monoespaciada** de la web, el ícono **Transferir = `key`** (la web usa
 `scale(:active)`** y el error de las confirmaciones **como aviso** (la
 web, en línea en el cuadro).
 
+## Menú «más acciones» (chat-more ⋮) en la cabecera del chat (W110)
+
+El ⋮ de la cabecera de la conversación abre una hoja inferior `ActSheet`
+(última hija con `rowSpan`, regla NS9: sin `position:fixed` ni z-index)
+con los mismos dos ítems que `chatMore` de la web —**Fijar/Desfijar
+chat** y **Silenciar/Activar notificaciones**— para DM y grupo. Los labels
+van en español (crudos) y `ActSheet` los traduce al render con `t()`,
+igual que la web.
+
+- `uistate.js`: guarda `chatMenuOpen` (estado puramente nativo, sin tocar
+  el núcleo compartido generado por `sync-core.mjs`), para que `fox.ts` y
+  `ChatView` lo lean sin desincronizar `app/core/`.
+- `ChatView`: cabecera con el botón `dots` «más acciones» (antes del
+  info); `ActSheet` montada como **últimísima hija** (`rowSpan="4"`) para
+  que quede encima de todo; `toggleChatMenu()` cede ante el panel de info;
+  `back()` cierra el menú por capas primero (menú → búsqueda → pines →
+  galería → info → chat).
+- `fox.ts`: el botón atrás de Android cierra `ui.chatMenuOpen` antes que
+  `pinsModal` en la rama de chat.
+- `ci-captura.py`: captura `33-menu-chat-more`.
+- `tools/test-w110-i18n.mjs`: 9 PASS / 0 FAIL (claves i18n, paridad byte
+  a byte con `chatMore` de la web, clases de `ActSheet`, sin
+  `position:fixed`/`z-index`, señales de navegación).
+
 ## Comandos
 
 ```bash
@@ -496,6 +520,10 @@ node tools/test-w109-i18n.mjs
                          # solicitud enviada (W109): claves i18n, paridad
                          # byte a byte con la web, clases del bloque CSS,
                          # sin position:fixed/z-index y señales de navegación
+node tools/test-w110-i18n.mjs
+                         # test del port del menú chat-more ⋮ (W110): claves
+                         # i18n, paridad byte a byte con chatMore de la web,
+                         # clases de ActSheet y señales de navegación
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -578,6 +606,12 @@ sudo bash tools/fix-ns-cli-gradle.sh
   atrás de Android. `ChatListView` ＋ abre Nuevo chat (DM, label "new
   chat"); `PeopleView` tab es `computed` sobre `store.peopleTab` con CTA
   "Buscar personas" en la pestaña Solicitudes.
+- **Menú «más acciones» (chat-more ⋮)** (W110): el ⋮ de la cabecera de
+  la conversación abre una hoja `ActSheet` (última hija con `rowSpan`)
+  con los dos ítems de `chatMore` de la web —**Fijar/Desfijar chat** y
+  **Silenciar/Activar notificaciones**— para DM y grupo; `uistate.js`
+  guarda `chatMenuOpen` y `back()` / el botón atrás de Android lo cierran
+  por capas primero (menú → búsqueda → pines → galería → info → chat).
 - **Los scrolls de NativeScript (v0.2.6)**: en NS-Vue el `ref` de un
   elemento nativo es el **envoltorio** (`NSVElement`), no la vista nativa:
   los métodos del `ScrollView` (`scrollToVerticalOffset`) están en su
