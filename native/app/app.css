@@ -2637,3 +2637,75 @@ ActionBar {
   background-color: var(--accent-wash);
   transition: background-color .4s;
 }
+
+/* ================================================================
+   W114: renombrar grupo (RenameGroupModal).
+
+   Valores de landing/static/css/app.css (.cf-*, .group-rename-*,
+   .st-*, .m-foot overrides). Reglas NS9: sin position:fixed ni
+   z-index — el modal va como último hijo con rowSpan (se pinta encima
+   por orden).
+   ================================================================ */
+
+.rename-head {
+  padding: 10 16 8 16;
+  color: var(--t0);
+  font-size: 16;
+  font-weight: 700;
+}
+.cf-body {
+  padding: 0 16 14 16;
+  text-align: center;
+}
+.cf-text {
+  margin: 0 0 12;
+  color: var(--t1);
+  font-size: 13;
+  line-height: 1.5;
+}
+.group-rename-field {
+  /* filas: label + input */
+}
+.field-label {
+  color: var(--t2);
+  font-size: 13;
+  font-weight: 600;
+  margin-bottom: 6;
+  text-align: left;
+}
+.group-rename-input {
+  background-color: var(--bg);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 8;
+  color: var(--t1);
+  font-size: 15;
+  height: 40;
+  padding: 0 12;
+}
+.form-err {
+  margin-top: 8;
+  padding: 8 10;
+  background-color: var(--err-bg);
+  border-left-width: 3;
+  border-left-color: var(--err);
+  border-radius: 8;
+}
+.st-err {
+  color: var(--t1);
+  font-size: 12;
+  line-height: 1.4;
+}
+.st-err-t {
+  color: var(--t1);
+  font-size: 12;
+  margin-left: 6;
+}
+/* botones del pie: Cancelar (izq) + Guardar (der) */
+.m-foot.st-btns .btn-ghost {
+  color: var(--t1);
+}
+.m-foot.st-btns .btn {
+  width: 120;
+  height: 40;
+}

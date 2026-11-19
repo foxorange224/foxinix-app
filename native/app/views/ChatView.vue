@@ -421,9 +421,23 @@
     if (!c) return [];
     const pinned = !!c.pinned;
     const muted = !!c.muted;
-    /* chat-more de la web: fijar/desfijar y silenciar/activar notificaciones
-       (archivar / salir del grupo viven en el panel de info, W108). */
-    return [
+    const isOwnerOrAdmin = c.type === 'group'
+      && (c.my_role === 'owner' || c.my_role === 'admin');
+    /* chat-more de la web: renombrar grupo (solo owner/admin), fijar/
+       desfijar y silenciar/activar notificaciones. */
+    const items: any[] = [];
+    if (isOwnerOrAdmin) {
+      items.push({
+        label: 'Renombrar grupo',
+        icon: 'pencil',
+        fn: () => {
+          store.renameGroupId = store.activeChatId;
+          store.renameGroupTitle = title.value;
+          ui.chatMenuOpen = false;
+        },
+      });
+    }
+    items.push(
       {
         label: pinned ? 'Desfijar chat' : 'Fijar chat',
         icon: pinned ? 'pin_off' : 'pin',
@@ -434,7 +448,8 @@
         icon: muted ? 'bell' : 'bell-off',
         fn: () => setMuted(store.activeChatId, !muted),
       },
-    ];
+    );
+    return items;
   });
 
   /* Tope de la burbuja: 88% del ancho útil, como en la web. */
@@ -1147,11 +1162,17 @@
   }
 
   function back() {
-    /* W110: el menú chat-more ⋮ es la última hija (encima de todo), así
-       que cede primero. W109: la búsqueda del chat cede antes que los
-       modales de la info. W108: la "atrás" cierra por capas — menú,
+    /* W114: el modal de renombrar grupo cede primero. W110: el menú
+       chat-more ⋮ es la última hija (encima de todo), así cede después.
+       W109: la búsqueda del chat cede antes que los modales de la info.
+       W108: la "atrás" cierra por capas — renombrar grupo, menú,
        búsqueda, modal de fijados, modal de archivos, panel de info y
        sólo después el chat. */
+    if (store.renameGroupId) {
+      store.renameGroupId = 0;
+      store.renameGroupTitle = '';
+      return;
+    }
     if (ui.chatMenuOpen) { ui.chatMenuOpen = false; return; }
     if (store.searchOpen) { store.searchOpen = false; return; }
     if (store.pinsModal) { store.pinsModal = false; return; }

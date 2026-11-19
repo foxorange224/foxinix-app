@@ -73,7 +73,14 @@ function setupBackButton(): void {
       ? (Application as any).AndroidApplication.activityBackPressedEvent
       : 'activityBackPressed';
     Application.android.on(evt, (args: any) => {
-      /* W109: los modales globales (solicitud enviada / nuevo chat)
+      /* W114: el modal de renombrar grupo cede antes que cualquier cosa. */
+      if (store.renameGroupId) {
+        args.cancel = true;
+        store.renameGroupId = 0;
+        store.renameGroupTitle = '';
+        return;
+      }
+      /* W110: los modales globales (solicitud enviada / nuevo chat)
          ceden antes que cualquier otra cosa. */
       if (store.requestSent) {
         args.cancel = true;

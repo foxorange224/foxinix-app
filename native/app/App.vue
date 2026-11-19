@@ -42,6 +42,8 @@
                   @close="store.newChatOpen = false" />
     <RequestSentModal v-if="store.requestSent" row="0" rowSpan="2"
                       @close="store.requestSent = null" />
+    <RenameGroupModal v-if="store.renameGroupId" row="0" rowSpan="2"
+                      @close="store.renameGroupId = 0; store.renameGroupTitle = ''" />
     <FoxTabBar v-if="showTabs" row="1" :tab="currentTab" @tab="onTab" />
     <NativeToasts row="0" rowSpan="2" :offset="showTabs ? 76 : 22" />
   </GridLayout>
@@ -95,6 +97,7 @@
   import FoxTabBar from './components/FoxTabBar.vue';
   import NewChatModal from './views/NewChatModal.vue';
   import RequestSentModal from './views/RequestSentModal.vue';
+  import RenameGroupModal from './views/RenameGroupModal.vue';
 
   /* La ruta vive en el store compartido: el núcleo decide, la vista
      nativa obedece. */

@@ -1060,6 +1060,38 @@ def capture_chat_menu(out_dir: str, image_title: str) -> None:
     back_out(dump())  # conversación -> lista de chats
 
 
+def capture_rename_group(out_dir: str, image_title: str) -> None:
+    """W114: renombrar grupo (34-renombrar-grupo).
+
+    Abre el chat con la imagen real (debe ser grupo), abre el menú
+    chat-more ⋮, toca "Renombrar grupo" y captura el modal. Se cancela
+    sin guardar para no mutar el nombre del grupo en el server. """
+    print("== renombrar grupo ==")
+    xml = dump()
+    row = find_chat_row(xml, image_title) if image_title else None
+    if row is None:
+        print("!! no se encuentra el chat", repr(image_title)); return
+    if not tap(row): return
+    time.sleep(8)
+
+    xml = dump()
+    if not tap(find(xml, desc="más acciones")):
+        print("!! no está el botón de más acciones"); return
+    time.sleep(4)
+
+    xml = dump()
+    if not tap(find(xml, text="Renombrar grupo")):
+        print("!! no está 'Renombrar grupo'"); return
+    time.sleep(4)
+    shot(out_dir, "34-renombrar-grupo")
+
+    # cancelar sin guardar (no mutar el nombre del grupo)
+    xml = dump()
+    if tap(find(xml, text="Cancelar")):
+        time.sleep(3)
+    back_out(dump())  # conversación -> lista de chats
+
+
 def api(method: str, path: str, token: str = "", body: bytes | None = None,
         headers: dict | None = None, timeout: int = 60) -> tuple[int, bytes]:
     """Petición HTTP a la API. Devuelve (código, cuerpo)."""
@@ -1565,6 +1597,8 @@ def run() -> int:
         capture_add_member(out_dir, image_title)
         # W110: menú chat-more ⋮ (fijar, silenciar).
         capture_chat_menu(out_dir, image_title)
+        # W114: renombrar grupo.
+        capture_rename_group(out_dir, image_title)
         capture_new_chat(out_dir)
     else:
         print("no se encontró ninguna fila de chat para abrir")
