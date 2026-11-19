@@ -498,6 +498,30 @@ igual que la web.
   a byte con `chatMore` de la web, clases de `ActSheet`, sin
   `position:fixed`/`z-index`, señales de navegación).
 
+## Renombrar grupo desde el menú chat-more ⋮ (W114)
+
+El ⋮ de la cabecera de un grupo (solo owner/admin) gana **Renombrar
+grupo**, que abre `RenameGroupModal` (overlay global en `App.vue`,
+row0 rowSpan2). El modal calca `RenameGroupModal.js` de la web: input
+con el nombre actual, `PATCH /chats/:id {title}`, `loadChats()`, toast
+"Nombre del grupo actualizado" / error, y usa `store.renameGroupId` /
+`store.renameGroupTitle` del núcleo (estado compartido, no de `uistate`).
+`back()` y el botón atrás de Android cierran el modal primero
+(renombrar → menú → búsqueda → pines → galería → info → chat).
+
+- `RenameGroupModal.vue`: modal centrado (velo hermano + celda del
+  medio, regla NS9), foco al input al abrir, botón Guardar desactivado
+  hasta que haya nombre válido.
+- `ChatView`: «Renombrar grupo» en `chatMenuItems` (solo grupo y
+  owner/admin) + `back()` cierra `renameGroupId` primero.
+- `fox.ts`: botón atrás de Android cierra `renameGroupId` antes de
+  `requestSent`/`newChatOpen`/`canGoBack()`.
+- `ci-captura.py`: captura `34-renombrar-grupo` (abre el modal y
+  cancela sin guardar → no muta el nombre del grupo en el server).
+- `tools/test-w114-i18n.mjs`: 10 PASS / 0 FAIL (claves i18n, paridad
+  byte a byte con `RenameGroupModal` de la web, clases CSS, sin
+  `position:fixed`/`z-index`, señales de navegación).
+
 ## Comandos
 
 ```bash
@@ -524,6 +548,10 @@ node tools/test-w110-i18n.mjs
                          # test del port del menú chat-more ⋮ (W110): claves
                          # i18n, paridad byte a byte con chatMore de la web,
                          # clases de ActSheet y señales de navegación
+node tools/test-w114-i18n.mjs
+                         # test del port de renombrar grupo (W114): claves
+                         # i18n, paridad byte a byte con RenameGroupModal de
+                         # la web, clases CSS y señales de navegación
 ```
 
 ### El CLI de NativeScript y Gradle
@@ -612,6 +640,11 @@ sudo bash tools/fix-ns-cli-gradle.sh
   **Silenciar/Activar notificaciones**— para DM y grupo; `uistate.js`
   guarda `chatMenuOpen` y `back()` / el botón atrás de Android lo cierran
   por capas primero (menú → búsqueda → pines → galería → info → chat).
+- **Renombrar grupo** (W114): el ⋮ de la cabecera de un grupo (solo
+  owner/admin) gana **Renombrar grupo**, que abre `RenameGroupModal`
+  (overlay global en `App.vue`): input con el nombre actual,
+  `PATCH /chats/:id {title}`, `loadChats()`, toast ok/err; `back()` y el
+  botón atrás de Android cierran el modal primero.
 - **Los scrolls de NativeScript (v0.2.6)**: en NS-Vue el `ref` de un
   elemento nativo es el **envoltorio** (`NSVElement`), no la vista nativa:
   los métodos del `ScrollView` (`scrollToVerticalOffset`) están en su
