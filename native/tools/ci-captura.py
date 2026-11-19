@@ -1033,6 +1033,33 @@ def capture_new_chat(out_dir: str) -> None:
         time.sleep(3)
 
 
+def capture_chat_menu(out_dir: str, image_title: str) -> None:
+    """W110: menú chat-more ⋮ (33-menu-chat-more).
+
+    Abre el chat con la imagen real, abre el menú "más acciones" de la
+    cabecera y captura el menú abierto (fijar/desfijar, silenciar/
+    activar notificaciones). Se cierra con "Cancelar". """
+    print("== menú chat-more ==")
+    xml = dump()
+    row = find_chat_row(xml, image_title) if image_title else None
+    if row is None:
+        print("!! no se encuentra el chat", repr(image_title)); return
+    if not tap(row): return
+    time.sleep(8)
+
+    xml = dump()
+    if not tap(find(xml, desc="más acciones")):
+        print("!! no está el botón de más acciones"); return
+    time.sleep(4)
+    shot(out_dir, "33-menu-chat-more")
+
+    # cerrar el menú (Cancelar)
+    xml = dump()
+    if tap(find(xml, text="Cancelar")):
+        time.sleep(3)
+    back_out(dump())  # conversación -> lista de chats
+
+
 def api(method: str, path: str, token: str = "", body: bytes | None = None,
         headers: dict | None = None, timeout: int = 60) -> tuple[int, bytes]:
     """Petición HTTP a la API. Devuelve (código, cuerpo)."""
@@ -1536,6 +1563,8 @@ def run() -> int:
         # W109: buscar en el chat, agregar miembro y chat nuevo.
         capture_search_chat(out_dir, image_title)
         capture_add_member(out_dir, image_title)
+        # W110: menú chat-more ⋮ (fijar, silenciar).
+        capture_chat_menu(out_dir, image_title)
         capture_new_chat(out_dir)
     else:
         print("no se encontró ninguna fila de chat para abrir")

@@ -14,6 +14,7 @@ import { askNotificationPermission, setupNotifications } from './notifier';
 import { setupBackgroundService } from './service';
 import { installClipboard } from './clipboard';
 import { back, canGoBack, view } from './nav';
+import { ui } from './uistate';
 
 /* El objeto `android` solo existe en el runtime de Android. */
 declare const android: any;
@@ -91,8 +92,10 @@ function setupBackButton(): void {
       }
       if (view.value === 'chats' && store.activeChatId) {
         args.cancel = true;
-        /* W109: misma cascada que Esc en la web: búsqueda del chat,
-           modales de la info, panel y sólo al final el chat. */
+        /* W110: el menú chat-more ⋮ cede primero; W109: misma cascada
+           que Esc en la web: búsqueda del chat, modales de la info,
+           panel y sólo al final el chat. */
+        if (ui.chatMenuOpen) { ui.chatMenuOpen = false; return; }
         if (store.searchOpen) { store.searchOpen = false; return; }
         if (store.pinsModal) { store.pinsModal = false; return; }
         if (store.galModal) { store.galModal = false; return; }

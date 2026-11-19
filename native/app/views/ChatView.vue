@@ -10,7 +10,7 @@
            extremo derecho de .chat-head). W109: +search y +add-member
            (sólo grupo) antes del info. El avatar y el nombre abren
            el perfil en los directos (el de grupo es W114). -->
-      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto,auto,auto,auto">
+      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto,auto,auto,auto,auto">
         <FoxIconBtn col="0" icon="back" bare :tint="muted"
                     accessibilityLabel="back" @tap="back" />
         <FoxAvatar col="1" :src="peerAvatar" :initial="peerInitial"
@@ -29,7 +29,11 @@
         <FoxIconBtn v-if="chatType.value === 'group'" col="5" icon="userplus"
                     bare :tint="muted" accessibilityLabel="agregar miembro"
                     @tap="openAddMember" />
-        <FoxIconBtn col="6" icon="info" :active="store.infoOpen"
+        <!-- W110: más acciones del chat (fijar, silenciar, archivar, salir) -->
+        <FoxIconBtn col="6" icon="dots" bare :tint="muted"
+                    accessibilityLabel="más acciones" @tap="toggleChatMenu" />
+        <!-- W108: info del chat (último) -->
+        <FoxIconBtn col="7" icon="info" :active="store.infoOpen"
                     :tint="muted" accessibilityLabel="chat info"
                     @tap="toggleInfo" />
       </GridLayout>
@@ -257,6 +261,12 @@
                 @close="closeSheet" @reply="doReply" @react="doReact"
                 @copy="doCopy" @pin="doPin" @forward="doForward"
                 @edit="doEdit" @delete="doDelete" />
+
+      <!-- ---------- W110: menú chat-more ⋮ ----------
+           Últimísima hija para que quede encima de todo (incluso de
+           la hoja de mensajes y del panel de info). -->
+      <ActSheet v-if="ui.chatMenuOpen" row="0" rowSpan="4"
+                :items="chatMenuItems" @close="ui.chatMenuOpen = false" />
     </GridLayout>
   </Page>
 </template>
@@ -266,10 +276,11 @@
   import { Dialogs, Screen } from '@nativescript/core';
   import { api } from '../core/api.js';
   import { store, toast } from '../core/store.js';
+  import { ui } from '../uistate.js';
   import {
     openChat, sendText, closeChat, sendMedia, mediaUrl,
     loadMembers, loadOlder, toggleReaction, togglePin, editMessage,
-    mergeMessages,
+    mergeMessages, setPinned, setMuted,
   } from '../core/actions.js';
   import { t } from '../core/i18n.js';
   import { dayKey, dayLabel, fmtTime, connLine, dotState, tok } from '../fmt';
@@ -287,6 +298,7 @@
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
   import MsgSheet from '../components/MsgSheet.vue';
+  import ActSheet from '../components/ActSheet.vue';
   import EmojiPanel from '../components/EmojiPanel.vue';
 
   const draft = ref('');
@@ -401,6 +413,29 @@
   });
 
   const canSend = computed(() => !!draft.value.trim() && !sending.value);
+
+  /* Ítems del menú chat-more ⋮ (W110). Los labels van en español
+     (crudos) y ActSheet los traduce al render, igual que la web. */
+  const chatMenuItems = computed(() => {
+    const c: any = chat.value;
+    if (!c) return [];
+    const pinned = !!c.pinned;
+    const muted = !!c.muted;
+    /* chat-more de la web: fijar/desfijar y silenciar/activar notificaciones
+       (archivar / salir del grupo viven en el panel de info, W108). */
+    return [
+      {
+        label: pinned ? 'Desfijar chat' : 'Fijar chat',
+        icon: pinned ? 'pin_off' : 'pin',
+        fn: () => setPinned(store.activeChatId, !pinned),
+      },
+      {
+        label: muted ? 'Activar notificaciones' : 'Silenciar notificaciones',
+        icon: muted ? 'bell' : 'bell-off',
+        fn: () => setMuted(store.activeChatId, !muted),
+      },
+    ];
+  });
 
   /* Tope de la burbuja: 88% del ancho útil, como en la web. */
   const maxBubble = computed(() =>
@@ -1112,9 +1147,12 @@
   }
 
   function back() {
-    /* W109: la búsqueda del chat cede antes que los modales de la info.
-       W108: la "atrás" cierra por capas — búsqueda, modal de fijados,
-       modal de archivos, panel de info y sólo después el chat. */
+    /* W110: el menú chat-more ⋮ es la última hija (encima de todo), así
+       que cede primero. W109: la búsqueda del chat cede antes que los
+       modales de la info. W108: la "atrás" cierra por capas — menú,
+       búsqueda, modal de fijados, modal de archivos, panel de info y
+       sólo después el chat. */
+    if (ui.chatMenuOpen) { ui.chatMenuOpen = false; return; }
     if (store.searchOpen) { store.searchOpen = false; return; }
     if (store.pinsModal) { store.pinsModal = false; return; }
     if (store.galModal) { store.galModal = false; return; }
@@ -1126,6 +1164,12 @@
   function toggleSearch() {
     store.searchOpen = !store.searchOpen;
     if (store.searchOpen) store.infoOpen = false;
+  }
+
+  /* Abrir/cerrar el menú chat-more ⋮ (W110). Cede ante el panel de info. */
+  function toggleChatMenu() {
+    store.infoOpen = false;
+    ui.chatMenuOpen = !ui.chatMenuOpen;
   }
 
   /* Abrir el modal de "agregar miembro" al grupo activo. */
