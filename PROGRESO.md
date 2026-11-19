@@ -13,7 +13,15 @@ Rama: `main` (limpia, todo commiteado y pusheado)
 | W114 | Renombrar grupo desde chat-more ⋮ | d76c756 + 8717397 (docs) | 10 PASS / 0 FAIL | verde (captura 34) |
 
 Web (landing):
-- Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)` | — | —
+- Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)`
+- Favicon corregido: icon.svg tenía viewBox con coordenadas negativas y
+  400x400 fijos → se veía pixeleado en la pestaña del navegador. Nuevo
+  SVG con viewBox="0 0 100 100", logo centrado, sin dimensiones fijas.
+  Aplicado a landing/assets/icon.svg y landing/static/icon.svg.
+- Cache-busting: ?v=2 en todos los hrefs de favicon de todas las
+  páginas HTML (index, app, login, register, privacy, terms, 404) para
+  forzar al navegador a recargar el icono corregido | `ea80821` +
+  `894c094 fix(web): favicon pixeleado en la pestaña del navegador`
 
 Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 
