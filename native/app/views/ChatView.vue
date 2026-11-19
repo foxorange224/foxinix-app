@@ -7,9 +7,10 @@
     <GridLayout rows="auto,*,auto,auto" class="chat-page">
       <!-- ---------- cabecera ---------- -->
       <!-- W108: columnas +1 para el botón de info (la web lo lleva al
-           extremo derecho de .chat-head). El avatar y el nombre abren
+           extremo derecho de .chat-head). W109: +search y +add-member
+           (sólo grupo) antes del info. El avatar y el nombre abren
            el perfil en los directos (el de grupo es W114). -->
-      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto,auto">
+      <GridLayout row="0" class="chat-head" columns="auto,auto,*,auto,auto,auto,auto">
         <FoxIconBtn col="0" icon="back" bare :tint="muted"
                     accessibilityLabel="back" @tap="back" />
         <FoxAvatar col="1" :src="peerAvatar" :initial="peerInitial"
@@ -21,7 +22,14 @@
         </StackLayout>
         <Label v-if="store.ws !== 'on'" col="3" class="ws-pill"
                :text="wsLabel" textWrap="false" />
-        <FoxIconBtn col="4" icon="info" :active="store.infoOpen"
+        <!-- W109: buscar mensajes dentro del chat -->
+        <FoxIconBtn col="4" icon="search" bare :tint="muted"
+                    accessibilityLabel="buscar en el chat" @tap="toggleSearch" />
+        <!-- W109: agregar miembro (sólo grupos) -->
+        <FoxIconBtn v-if="chatType.value === 'group'" col="5" icon="userplus"
+                    bare :tint="muted" accessibilityLabel="agregar miembro"
+                    @tap="openAddMember" />
+        <FoxIconBtn col="6" icon="info" :active="store.infoOpen"
                     :tint="muted" accessibilityLabel="chat info"
                     @tap="toggleInfo" />
       </GridLayout>
@@ -49,7 +57,8 @@
                  Las columnas de avatar miden 36px (28 de cara + 8 de
                  hueco), como en la web. -->
             <GridLayout v-else class="msg"
-                        :class="{ tight: r.tight, mine: r.mine }"
+                        :class="{ tight: r.tight, mine: r.mine,
+                                  flash: flashMid.value === r.ref.id }"
                         columns="auto,*,auto"
                         :ref="(el) => setRowEl(r.ref.id, el)">
               <!-- Columna de avatar del remitente: la web reserva los
@@ -231,6 +240,13 @@
            orden (si estuviera después taparía la hoja del mensaje). -->
       <ChatInfoView v-if="store.infoOpen && chat" row="0" rowSpan="4" />
 
+      <!-- ---------- W109: buscar dentro del chat ----------
+           Va tras el panel de info (si ambos están abiertos, la búsqueda
+           queda encima) y antes de la hoja de acciones. -->
+      <SearchChatModal v-if="store.searchOpen" row="0" rowSpan="4"
+                       @close="store.searchOpen = false"
+                       @jump="onSearchJump" />
+
       <!-- ---------- W105: hoja de acciones del mensaje ----------
            Es la ÚLTIMA hija del GridLayout de la página: en NS no hay
            z-index, así que lo que va después se dibuja encima. Cubre
@@ -248,10 +264,12 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'nativescript-vue';
   import { Dialogs, Screen } from '@nativescript/core';
+  import { api } from '../core/api.js';
   import { store, toast } from '../core/store.js';
   import {
     openChat, sendText, closeChat, sendMedia, mediaUrl,
     loadMembers, loadOlder, toggleReaction, togglePin, editMessage,
+    mergeMessages,
   } from '../core/actions.js';
   import { t } from '../core/i18n.js';
   import { dayKey, dayLabel, fmtTime, connLine, dotState, tok } from '../fmt';
@@ -265,6 +283,7 @@
     startRecording, stopRecording, stopVoice, toggleVoice as toggleVoicePlay,
   } from '../voice';
   import ChatInfoView from './ChatInfoView.vue';
+  import SearchChatModal from './SearchChatModal.vue';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
   import MsgSheet from '../components/MsgSheet.vue';
@@ -989,6 +1008,9 @@
      se lo arrastra). */
   const stick = ref(true);
 
+  /* W109: id del mensaje que acaba de saltar (flash en la fila). */
+  const flashMid = ref(0);
+
   /* Elemento de cada fila (day-pill, sys-msg o msg — el último que se
      monta manda), para poder saltar hasta el mensaje. Los refs de NS
      apuntan al envoltorio; al desmontar la fila Vue llama con null y se
@@ -1030,7 +1052,7 @@
      (posición en pantalla) y, sumada al offset actual, da el
      desplazamiento que la deja en el medio; se recorta a los límites
      del scroll. Devuelve false si la fila todavía no está montada. */
-  function scrollToMsg(id: number): boolean {
+  function scrollToMsg(id: number, flash: boolean = false): boolean {
     const el: any = rowEls.get(id);
     const s: any = scroller.value;
     const sv = s ? (s.nativeView || s) : null;
@@ -1046,6 +1068,10 @@
       if (off < 0) off = 0;
       if (off > max) off = max;
       sv.scrollToVerticalOffset(off, false);
+      if (flash) {
+        flashMid.value = id;
+        setTimeout(() => { flashMid.value = 0; }, 400);
+      }
       return true;
     } catch (e) { return false; }
   }
@@ -1086,13 +1112,48 @@
   }
 
   function back() {
-    /* W108: la "atrás" cierra por capas — modal de fijados, modal de
-       archivos, panel de info y sólo después el chat (como Esc en la
-       web). */
+    /* W109: la búsqueda del chat cede antes que los modales de la info.
+       W108: la "atrás" cierra por capas — búsqueda, modal de fijados,
+       modal de archivos, panel de info y sólo después el chat. */
+    if (store.searchOpen) { store.searchOpen = false; return; }
     if (store.pinsModal) { store.pinsModal = false; return; }
     if (store.galModal) { store.galModal = false; return; }
     if (store.infoOpen) { store.infoOpen = false; return; }
     closeChat();
+  }
+
+  /* Abrir/cerrar la búsqueda de mensajes dentro del chat. */
+  function toggleSearch() {
+    store.searchOpen = !store.searchOpen;
+    if (store.searchOpen) store.infoOpen = false;
+  }
+
+  /* Abrir el modal de "agregar miembro" al grupo activo. */
+  function openAddMember() {
+    store.newChatMode = 'add';
+    store.newChatOpen = true;
+  }
+
+  /* Salto a un resultado de búsqueda: si el mensaje no está cargado,
+     traer una ventana alrededor (?before_seq) y fusionar, luego centrar
+     con flash. Igual que jumpResult de la web. */
+  async function onSearchJump(m: any) {
+    if (!m || !store.activeChatId) return;
+    const cid = store.activeChatId;
+    const arr = store.msgs && store.msgs[cid];
+    let found = false;
+    if (arr) for (let i = 0; i < arr.length; i++) if (arr[i].id === m.id) { found = true; break; }
+    if (!found) {
+      try {
+        const r = await api('GET', '/chats/' + cid +
+          '/messages?before_seq=' + (m.seq + 1) + '&limit=50');
+        mergeMessages(cid, (r && r.messages) || []);
+      } catch { return; }
+    }
+    store.searchOpen = false;
+    await nextTick();
+    scrollToMsg(m.id, true);
+    stick.value = false;
   }
 
   onMounted(async () => {
@@ -1129,6 +1190,8 @@
     if (voiceTick) { clearInterval(voiceTick); voiceTick = null; }
     onVoiceState(null);
     stopVoice();
+    /* W109: la búsqueda es de este chat; al desmontar se apaga. */
+    store.searchOpen = false;
   });
 
   /* Al llegar mensajes nuevos (por WebSocket) se baja al final — salvo

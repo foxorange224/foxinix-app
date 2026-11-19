@@ -21,10 +21,11 @@
       <!-- ---------- pestañas ---------- -->
       <GridLayout row="1" class="ppl-tabs" columns="*,*">
         <Label col="0" class="ppl-tab" :class="{ on: tab === 'active' }"
-               :text="t('Activos')" textWrap="false" @tap="tab = 'active'" />
+               :text="t('Activos')" textWrap="false"
+               @tap="store.peopleTab = 'active'" />
         <Label col="1" class="ppl-tab" :class="{ on: tab === 'req' }"
                :text="nReq ? t('Solicitudes ({n})', { n: nReq }) : t('Solicitudes')"
-               textWrap="false" @tap="tab = 'req'" />
+               textWrap="false" @tap="store.peopleTab = 'req'" />
       </GridLayout>
 
       <!-- ---------- buscador ---------- -->
@@ -119,6 +120,8 @@
 
             <Label v-if="!sent.length && !recv.length" class="fox-empty"
                    :text="t('No hay solicitudes pendientes')" textWrap="true" />
+            <Button v-if="!sent.length && !recv.length" class="btn"
+                    :text="t('Buscar personas')" @tap="store.peopleTab = 'active'" />
           </StackLayout>
         </StackLayout>
       </ScrollView>
@@ -139,7 +142,7 @@
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
 
-  const tab = ref<'active' | 'req'>('active');
+  const tab = computed(() => store.peopleTab);
   const q = ref('');
   const results = ref<any[]>([]);
   const searching = ref(false);

@@ -72,6 +72,18 @@ function setupBackButton(): void {
       ? (Application as any).AndroidApplication.activityBackPressedEvent
       : 'activityBackPressed';
     Application.android.on(evt, (args: any) => {
+      /* W109: los modales globales (solicitud enviada / nuevo chat)
+         ceden antes que cualquier otra cosa. */
+      if (store.requestSent) {
+        args.cancel = true;
+        store.requestSent = null;
+        return;
+      }
+      if (store.newChatOpen) {
+        args.cancel = true;
+        store.newChatOpen = false;
+        return;
+      }
       if (canGoBack()) {
         args.cancel = true;
         back();
@@ -79,8 +91,9 @@ function setupBackButton(): void {
       }
       if (view.value === 'chats' && store.activeChatId) {
         args.cancel = true;
-        /* W108: misma cascada que Esc en la web: primero los modales
-           de la info, después el panel y sólo al final el chat. */
+        /* W109: misma cascada que Esc en la web: búsqueda del chat,
+           modales de la info, panel y sólo al final el chat. */
+        if (store.searchOpen) { store.searchOpen = false; return; }
         if (store.pinsModal) { store.pinsModal = false; return; }
         if (store.galModal) { store.galModal = false; return; }
         if (store.infoOpen) { store.infoOpen = false; return; }

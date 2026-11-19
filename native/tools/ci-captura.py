@@ -940,6 +940,99 @@ def capture_chat_info(out_dir: str) -> None:
 # verdad (>100 px) en algún chat; si no, sube un PNG real y lo manda al
 # chat que va a abrir. Sólo escribe cuando de verdad falta.
 
+def capture_search_chat(out_dir: str, image_title: str) -> None:
+    """W109: buscar mensajes dentro del chat (26-buscar-chat,
+    27-resultado-buscar "zafiro", 28-salto-buscar).
+
+    Abre el chat con la imagen real, busca "zafiro" y salta al primer
+    resultado. El modal NO se cierra al saltar (mismo comportamiento que
+    la web); se cierra con la X antes de volver a la lista. """
+    print("== buscar en el chat ==")
+    xml = dump()
+    row = find_chat_row(xml, image_title) if image_title else None
+    if row is None:
+        print("!! no se encuentra el chat", repr(image_title)); return
+    if not tap(row): return
+    time.sleep(8)
+
+    # 26-buscar-chat: abrir el modal de búsqueda
+    xml = dump()
+    if not tap(find(xml, desc="buscar en el chat")):
+        print("!! no está el botón de buscar en el chat"); return
+    time.sleep(4)
+    shot(out_dir, "26-buscar-chat")
+
+    # escribir "zafiro" en el campo de búsqueda del modal
+    fields = edit_fields(dump())
+    if not fields:
+        print("!! no hay campo de búsqueda"); return
+    tap(fields[0]); clear_field(); type_text("zafiro"); hide_keyboard()
+    time.sleep(4)
+    shot(out_dir, "27-resultado-buscar")
+
+    # 28-salto-buscar: tocar el primer resultado (el modal se queda
+    # abierto, como en la web; el chat salta al mensaje detrás)
+    xml = dump()
+    res = find(xml, cls="TextView", contains="zafiro")
+    if res and tap(res):
+        time.sleep(4)
+        shot(out_dir, "28-salto-buscar")
+
+    # cerrar el modal de búsqueda (la X)
+    xml = dump()
+    if tap(find(xml, desc="cerrar búsqueda")):
+        time.sleep(3)
+    back_out(dump())  # conversación -> lista de chats
+
+
+def capture_add_member(out_dir: str, image_title: str) -> None:
+    """W109: agregar miembro al grupo (29-agregar-miembro).
+
+    Abre el grupo y toca el botón "agregar miembro" de la cabecera. Se
+    abre el modal y se cierra sin elegir a nadie (no muta estado). """
+    print("== agregar miembro ==")
+    xml = dump()
+    row = find_chat_row(xml, image_title) if image_title else None
+    if row is None:
+        print("!! no se encuentra el chat", repr(image_title)); return
+    if not tap(row): return
+    time.sleep(8)
+
+    xml = dump()
+    if not tap(find(xml, desc="agregar miembro")):
+        print("!! no está el botón de agregar miembro"); return
+    time.sleep(4)
+    shot(out_dir, "29-agregar-miembro")
+
+    # cerrar el modal (la X)
+    xml = dump()
+    if tap(find(xml, desc="cerrar")):
+        time.sleep(3)
+    back_out(dump())  # conversación -> lista de chats
+
+
+def capture_new_chat(out_dir: str) -> None:
+    """W109: chat nuevo (30-chat-nuevo, 31-nuevo-grupo-tab).
+
+    Desde la lista de chats toca "＋", ve el modal en modo DM, cambia a
+    la pestaña Grupo y cierra. """
+    print("== chat nuevo ==")
+    xml = dump()
+    if not tap(find(xml, desc="new chat")):
+        print("!! no está el botón de chat nuevo"); return
+    time.sleep(4)
+    shot(out_dir, "30-chat-nuevo")  # modal abierto, modo DM
+
+    xml = dump()
+    if tap(find(xml, text="Grupo")):
+        time.sleep(4)
+        shot(out_dir, "31-nuevo-grupo-tab")
+
+    xml = dump()
+    if tap(find(xml, desc="cerrar")):
+        time.sleep(3)
+
+
 def api(method: str, path: str, token: str = "", body: bytes | None = None,
         headers: dict | None = None, timeout: int = 60) -> tuple[int, bytes]:
     """Petición HTTP a la API. Devuelve (código, cuerpo)."""
@@ -1439,6 +1532,11 @@ def run() -> int:
         capture_chat_info(out_dir)
 
         back_out(dump())      # conversación → lista de chats
+
+        # W109: buscar en el chat, agregar miembro y chat nuevo.
+        capture_search_chat(out_dir, image_title)
+        capture_add_member(out_dir, image_title)
+        capture_new_chat(out_dir)
     else:
         print("no se encontró ninguna fila de chat para abrir")
         print("   textos:", " | ".join(texts(xml)))

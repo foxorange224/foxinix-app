@@ -15,8 +15,10 @@
                      verticalAlignment="center" />
         <!-- W104: nombre para TalkBack (sin esto, el lector de pantalla
              no dice nada en estos botones de solo icono). -->
-        <FoxIconBtn col="3" icon="plus" bare accessibilityLabel="people"
-                    @tap="goPeople" />
+        <!-- W109: ＋ abre "nuevo chat" en modo DM (modal global, no la
+             pantalla de Personas). -->
+        <FoxIconBtn col="3" icon="plus" bare accessibilityLabel="new chat"
+                    @tap="startNewChat" />
         <!-- W107: mi avatar abre "Tu perfil" (como el .mobile-me de la
              web); Ajustes vive en su pestaña de abajo. -->
         <FoxAvatar col="4" class="me-av" :src="meAvatar" :initial="meInitial"
@@ -95,7 +97,7 @@
   import { t } from '../core/i18n.js';
   import { fmtListTime, dotState, tok } from '../fmt';
   import { nativeLogout } from '../fox';
-  import { goMyProfile, goView } from '../nav';
+  import { goMyProfile } from '../nav';
   import FoxAvatar from '../components/FoxAvatar.vue';
   import FoxIconBtn from '../components/FoxIconBtn.vue';
 
@@ -229,9 +231,10 @@
     openChat(id);
   }
 
-  /* Panel de personas: amigos, solicitudes y búsqueda. */
-  function goPeople() {
-    goView('people');
+  /* W109: abrir el modal "nuevo chat" en modo DM. */
+  function startNewChat() {
+    store.newChatMode = 'dm';
+    store.newChatOpen = true;
   }
 
   onMounted(async () => {

@@ -55,6 +55,7 @@
   --st-dnd: #f23f43;
   --st-off: #80848e;
   --st-ring: #2b2d31;        /* aro del puntito: superficie contenedora */
+  --accent-wash: rgba(255, 117, 31, .18);  /* tinte suave del acento (W9) */
 
   color: #dbdee1;
 }
@@ -81,6 +82,7 @@
   --sel: #d7d9dc;
   --row-hover: rgba(6, 6, 7, .07);
   --st-ring: #f2f3f5;
+  --accent-wash: rgba(163, 63, 18, .14);  /* tinte suave del acento (W9) */
 
   color: #313338;
 }
@@ -99,6 +101,7 @@
   --sel: #333333;
   --row-hover: rgba(255, 255, 255, .075);
   --st-ring: #000000;
+  --accent-wash: rgba(255, 117, 31, .18);  /* tinte suave del acento (W9) */
 
   color: #e7e7e7;
 }
@@ -2465,4 +2468,172 @@ ActionBar {
   color: var(--t0);
   font-size: 14;
   font-weight: 700;
+}
+
+/* ================================================================
+   W109: buscar en el chat, nuevo chat y solicitud enviada.
+
+   Valores de landing/static/css/app.css (.sp-*, .spr-*, .m-*,
+   .results, .req-sent-*, .msg.flash). Reglas NS9: sin
+   position:fixed ni z-index — los modales van como últimos hijos con
+   rowSpan (se pintan encima por orden). Los modales usan la raíz
+   .newchat (3×3 con velo) y :width en JS para el ancho.
+   ================================================================ */
+
+/* raíz del modal: ocupa toda la pantalla para que el velo tape todo */
+.newchat {
+  width: 100%;
+  height: 100%;
+}
+
+/* pestañas Chat / Grupo (como .m-tabs de la web) */
+.m-tabs {
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+.m-tab {
+  padding: 8 0;
+  font-size: 14;
+  color: var(--t2);
+  text-align: center;
+}
+.m-tab.on {
+  color: var(--t1);
+  font-weight: 600;
+  border-bottom-width: 2;
+  border-bottom-color: var(--accent);
+}
+
+/* nombre del grupo (solo modo grupo) */
+.m-title-input {
+  width: 100%;
+  min-height: 36;
+  border: 0;
+  background: none;
+  color: var(--t1);
+  font-size: 15;
+  padding: 0 14;
+}
+
+/* buscador del modal nuevo-chat */
+.m-search {
+  padding: 8 12;
+  border-bottom-width: 1;
+  border-bottom-color: var(--border);
+}
+.m-search-input {
+  background-color: var(--bg);
+  border-width: 1;
+  border-color: var(--border);
+  border-radius: 12;
+  color: var(--t1);
+  font-size: 15;
+  height: 40;
+  padding: 0 12;
+  margin-left: 8;
+  margin-right: 6;
+}
+
+/* lista de resultados */
+.results {
+  max-height: 320;
+  overflow: auto;
+}
+
+/* ícono de elegido (grupo) o de acción (DM) a la derecha de la fila */
+.ri-check {
+  width: 18;
+  height: 18;
+  margin-left: 8;
+}
+
+/* estado vacío */
+.res-empty.dim {
+  opacity: .75;
+}
+
+/* ---------- búsqueda dentro del chat (sp-*) ---------- */
+.sp-body {
+  padding: 10 10;
+}
+.sp-res {
+  padding: 8 10;
+  border-radius: 8;
+  transition: background .12s;
+}
+.sp-res:pressed {
+  background-color: var(--panel2);
+}
+.spr-top {
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: 13;
+  margin-bottom: 2;
+}
+.spr-name {
+  color: var(--t0);
+  font-weight: 600;
+}
+.spr-time {
+  color: var(--t2);
+}
+.spr-text {
+  font-size: 13;
+  color: var(--t1);
+  word-break: break-word;
+}
+.sp-empty {
+  padding: 24 10;
+  text-align: center;
+  color: var(--t2);
+  font-size: 13;
+}
+
+/* ---------- solicitud enviada (req-sent-*) ---------- */
+.req-sent-head {
+  padding: 10 16 8 16;
+}
+.m-head-title {
+  color: var(--t0);
+  font-size: 16;
+  font-weight: 700;
+}
+.req-sent-body {
+  padding: 16 22 4 22;
+  text-align: center;
+}
+.req-sent-check {
+  width: 66;
+  height: 66;
+  margin: 0 auto 12;
+  border-radius: 33;
+  background-color: var(--accent-wash);
+  horizontal-align: center;
+}
+.req-sent-lead {
+  margin: 0 0 8;
+  color: var(--t0);
+  font-size: 15;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.req-sent-wait {
+  margin: 0;
+  color: var(--t2);
+  font-size: 13;
+  line-height: 1.5;
+}
+.req-sent-foot {
+  padding: 10 16 16 16;
+}
+.req-ok {
+  width: 120;
+  height: 40;
+  horizontal-align: center;
+}
+
+/* ---------- flash al saltar a un mensaje buscado ---------- */
+.msg.flash .bubble {
+  background-color: var(--accent-wash);
+  transition: background-color .4s;
 }

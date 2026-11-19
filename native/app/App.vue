@@ -36,6 +36,12 @@
          queden ENCIMA de todo (en NS no hay z-index: manda el orden).
          La barra queda por encima de la barra de navegación del sistema
          porque la raíz ya se quedó dentro de la zona segura. -->
+    <!-- W109: modales globales (nuevo chat y solicitud enviada) van
+         ANTES de los toasts para que queden encima (NS9: manda el orden). -->
+    <NewChatModal v-if="store.newChatOpen" row="0" rowSpan="2"
+                  @close="store.newChatOpen = false" />
+    <RequestSentModal v-if="store.requestSent" row="0" rowSpan="2"
+                      @close="store.requestSent = null" />
     <FoxTabBar v-if="showTabs" row="1" :tab="currentTab" @tab="onTab" />
     <NativeToasts row="0" rowSpan="2" :offset="showTabs ? 76 : 22" />
   </GridLayout>
@@ -66,10 +72,11 @@
      producción Vue no lo desenvuelve ($el queda siendo el ancla del
      fragmento, sin vista nativa) y la app se queda en negro. */
 
-  import { computed, onMounted } from 'nativescript-vue';
+  import { computed, onMounted, watch } from 'nativescript-vue';
   import { store } from './core/store.js';
   import { bootNative } from './fox';
   import { view, profileUserId, goView, backToChats } from './nav';
+  import { closeChat } from './core/actions.js';
   import LoginView from './views/LoginView.vue';
   import RegisterView from './views/RegisterView.vue';
   import VerifyView from './views/VerifyView.vue';
@@ -86,6 +93,8 @@
   import SettingsView from './views/SettingsView.vue';
   import NativeToasts from './components/NativeToasts.vue';
   import FoxTabBar from './components/FoxTabBar.vue';
+  import NewChatModal from './views/NewChatModal.vue';
+  import RequestSentModal from './views/RequestSentModal.vue';
 
   /* La ruta vive en el store compartido: el núcleo decide, la vista
      nativa obedece. */
@@ -126,5 +135,15 @@
 
   onMounted(() => {
     bootNative();
+  });
+
+  /* W109: "Solicitudes" desde RequestSentModal lleva a Personas →
+     pestaña Solicitudes y cierra el chat si lo hay abierto. */
+  watch(() => store.requestsJump, (nv) => {
+    if (nv) {
+      store.peopleTab = 'req';
+      closeChat();
+      goView('people');
+    }
   });
 </script>
