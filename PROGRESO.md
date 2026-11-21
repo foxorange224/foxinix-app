@@ -1,7 +1,7 @@
 # PROGRESO — Foxinix app nativa (NativeScript 9 + Vue) + web
 
 Última actualización: 2026-11-21
-Rama: `main` (W115 listo para push; CI al publicar)
+Rama: `main` (W115 con arreglo de compatibilidad nativa; CI al publicar)
 
 ## Estado de los hits (W-números)
 
@@ -11,7 +11,7 @@ Rama: `main` (W115 listo para push; CI al publicar)
 | W109 | Buscar en el chat, Nuevo chat, Solicitud enviada | 9e336bf + c9e2a44 (docs) | 23 PASS / 0 FAIL | verde (capturas 26-31) |
 | W110 | Menú chat-more ⋮ (fijar/desfijar, silenciar/activar) | 355d2fc + c9e2a44 (docs) | 9 PASS / 0 FAIL | verde (captura 33) |
 | W114 | Renombrar grupo desde chat-more ⋮ | d76c756 + 8717397 (docs) | 10 PASS / 0 FAIL | verde (captura 34) |
-| W115 | Política de contraseñas visible y coherente (web + nativa) | commit W115 (esta sesión) | 24 PASS backend + 8 PASS frontend + 17 PASS nativa | E2E real Firefox OK; CI al pushear |
+| W115 | Política de contraseñas visible y coherente (web + nativa) | commit W115 + fix de compatibilidad (esta sesión) | 24 PASS backend + 12 PASS frontend + 18 PASS nativa | E2E real Firefox OK; CI pendiente tras el fix |
 
 Web (landing):
 - Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)`
@@ -31,6 +31,13 @@ Web (landing):
   y la misma política aplica en reset/cambio del servidor. Test nuevo
   `server/tests/password_policy_test.py` + `tests/password_policy_test.mjs`.
   Backend desplegado y verificado en vivo (422 con mensaje claro).
+- W115 (fix): la primera versión usaba `\p{Lu}` y la APK nativa crasheaba
+  al arrancar ("Invalid property name"); el CI no lo detectaba porque el
+  barrido terminaba con código 0. La regla ahora usa
+  `toUpperCase`/`toLowerCase`, el símbolo se limita a la puntuación
+  habitual y `ci-captura.py` falla ante la pantalla de excepción de
+  NativeScript. La web se revalidó en Firefox (débil, sin símbolo y
+  fuerte).
 
 Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 
@@ -78,8 +85,9 @@ Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 - `README.md`, `native/README.md`, `docs/API.md`, `PROGRESO.md` (este archivo)
 
 ## Próxima acción inmediata
-1. Pushear W115 y vigilar el CI: al tocar `native/**`, se lanzan
-   `native-smoke` y `native-release-smoke` (APK debug/release + capturas).
+1. Pushear el fix de W115 y vigilar el CI: al tocar `native/**`, se
+   lanzan `native-smoke` y `native-release-smoke` (APK debug/release +
+   capturas). El smoke ahora falla si la app crashea.
 2. Sincronizar el espejo `Foxinix-main` cuando se vaya a publicar (sigue en
    W106): incluye favicon, novedades, og.png y W115.
 3. Publicar v0.2.6 solo cuando el usuario lo pida.

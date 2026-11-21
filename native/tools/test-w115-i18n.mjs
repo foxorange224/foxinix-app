@@ -45,6 +45,9 @@ for (const msg of [
   ok('regla incluye: ' + msg, webPw.includes(msg));
 }
 ok('expone PASSWORD_HINT', webPw.includes('export const PASSWORD_HINT'));
+/* El V8 de NativeScript 9 no compila \p{...}: si vuelve, la app crashea. */
+ok('sin escapes de propiedad Unicode (compatible con V8 nativo)',
+  !/\\p\{/.test(webPw));
 
 /* 3. RegisterView valida con el módulo y muestra la pista. */
 const reg = read(path.join(ROOT, 'app', 'views', 'RegisterView.vue'));
@@ -65,7 +68,7 @@ for (const key of [
   'La contraseña necesita al menos una minúscula',
   'La contraseña necesita al menos un número',
   'La contraseña necesita al menos un símbolo',
-  'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.',
+  'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo (!@#$%…).',
 ]) {
   ok('i18n tiene: ' + key, i18n.includes("'" + key + "'"));
 }

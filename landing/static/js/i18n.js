@@ -214,8 +214,8 @@ const EN = {
   'La contraseña necesita al menos una minúscula': 'The password must contain at least one lowercase letter',
   'La contraseña necesita al menos un número': 'The password must contain at least one number',
   'La contraseña necesita al menos un símbolo': 'The password must contain at least one symbol',
-  'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.':
-    'At least 8 characters, with uppercase, lowercase, number and symbol.',
+  'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo (!@#$%…).':
+    'At least 8 characters, with uppercase, lowercase, number and symbol (!@#$%…).',
   'Las contraseñas no coinciden': 'The passwords do not match',
   'Tres pasos y estás adentro': 'Three steps and you are in',
   'Correo electrónico': 'Email address',

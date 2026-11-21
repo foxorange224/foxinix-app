@@ -532,6 +532,13 @@ sincronizado desde `landing/static/js/password.js` con
 `sync-core.mjs`), valida antes de enviar y muestra la pista bajo el
 campo. Sin cambios de navegación ni de API.
 
+Ojo con el runtime: el V8 de NativeScript 9 **no compila** escapes de
+propiedad Unicode (`\p{...}`); la regla usa `toUpperCase`/`toLowerCase`.
+`native/tools/test-w115-i18n.mjs` comprueba que no vuelvan a aparecer.
+Además, `ci-captura.py` ahora detecta la pantalla de excepción de
+NativeScript y termina con código 1: antes el barrido seguía sin campos
+ni pestañas y el CI daba verde con la app crasheada.
+
 ## Comandos
 
 ```bash

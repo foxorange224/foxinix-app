@@ -30,7 +30,10 @@ Regla: el **primer registro es abierto**; el usuario queda `email_verified=false
 **Política de contraseñas (W115)** — igual en registro, reset y cambio: 8–200
 caracteres, con al menos una **mayúscula**, una **minúscula**, un **número** y un
 **símbolo**. Si falta algo → `422` con el mensaje exacto (la web y la app nativa lo
-validan antes con `landing/static/js/password.js`).
+validan antes con `landing/static/js/password.js`). El cliente exige un símbolo de
+la puntuación habitual (`!@#$%…`, también `¡¿€£¥…`); el servidor acepta cualquier
+carácter no alfanumérico, así que el cliente nunca envía una contraseña que el
+servidor vaya a rechazar por el símbolo.
 
 - Si el correo **o** el usuario pertenecen a una cuenta **sin verificar** (registro
   abandonado o cancelado por recarga), esa cuenta se **descarta** (media incluida) y se

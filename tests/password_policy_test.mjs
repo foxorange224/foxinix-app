@@ -16,6 +16,12 @@ const CASES = [
   ['demasiado larga', 'A'.repeat(199) + 'a1!',
     'La contraseña no puede superar los 200 caracteres'],
   ['acentuada', 'Ábcdef1!', ''],
+  ['letra acentuada no es símbolo', 'Abcdef1ñ',
+    'La contraseña necesita al menos un símbolo'],
+  ['ideograma no es símbolo', 'Abcdef1中',
+    'La contraseña necesita al menos un símbolo'],
+  ['símbolo ASCII', 'Abcdef1#', ''],
+  ['símbolo no ASCII admitido', 'Abcdef1€', ''],
 ];
 
 let fails = 0;

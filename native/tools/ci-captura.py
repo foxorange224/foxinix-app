@@ -361,6 +361,37 @@ def on_login_screen(xml: str) -> bool:
     return False
 
 
+def app_crashed(xml: str) -> bool:
+    """¿NativeScript muestra su pantalla de excepción?
+
+    Sin esto el barrido podía pasar con la app crasheada: no encontraba
+    campos ni pestañas, pero terminaba con código 0 y el CI daba verde.
+    """
+    return bool(
+        find(xml, contains="An uncaught Exception occurred")
+        or find(xml, contains="Cannot compile ES module")
+        or find(xml, contains="Invalid regular expression")
+    )
+
+
+def save_logcat(out_dir: str) -> None:
+    """Guarda el log de la app (sólo el suyo; el resto es ruido)."""
+    print("== logcat ==")
+    # OJO: el flag de logcat pide --pid=<pid> (con el igual); con el
+    # valor separado no filtra y devuelve vacío.
+    pid_out = sh("adb", "shell", "pidof", PKG).strip()
+    pid = pid_out.split()[0] if pid_out else ""
+    log = ""
+    if pid:
+        log = sh("adb", "logcat", "-d", "--pid=" + pid)
+    if not log:
+        log = sh("adb", "logcat", "-d", "-t", "2000")
+    tail = "\n".join(log.splitlines()[-120:])
+    print(tail)
+    with open(os.path.join(out_dir, "logcat.txt"), "w", encoding="utf-8") as f:
+        f.write(log)
+
+
 def visit_register(out_dir: str) -> None:
     """Abre el registro desde el login, saca la captura y vuelve.
 
@@ -1393,6 +1424,12 @@ def run() -> int:
     time.sleep(12)
 
     xml = dump()
+    if app_crashed(xml):
+        print("!! la app nativa crasheó al arrancar")
+        print("   textos:", " | ".join(texts(xml))[:1200])
+        shot(out_dir, "0-crash")
+        save_logcat(out_dir)
+        return 1
     print("== login ==")
 
     # Barrido: se visita el registro (y se vuelve) ANTES de rellenar:
@@ -1617,20 +1654,7 @@ def run() -> int:
     # --- W107: perfil propio (el avatar de la cabecera) ---
     capture_my_profile(out_dir)
 
-    print("== logcat ==")
-    # Sólo el log de la app: el resto es ruido del emulador.
-    # OJO: el flag de logcat pide --pid=<pid> (con el igual); con el
-    # valor separado no filtra y devuelve vacío.
-    pid = sh("adb", "shell", "pidof", PKG).strip().split()[0] if sh("adb", "shell", "pidof", PKG).strip() else ""
-    log = ""
-    if pid:
-        log = sh("adb", "logcat", "-d", "--pid=" + pid)
-    if not log:
-        log = sh("adb", "logcat", "-d", "-t", "2000")
-    tail = "\n".join(log.splitlines()[-120:])
-    print(tail)
-    with open(os.path.join(out_dir, "logcat.txt"), "w", encoding="utf-8") as f:
-        f.write(log)
+    save_logcat(out_dir)
     return 0
 
 
