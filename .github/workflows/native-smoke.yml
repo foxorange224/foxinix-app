@@ -111,6 +111,7 @@ jobs:
             python3 "$GITHUB_WORKSPACE/native/tools/ci-captura.py" capturas
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: foxinix-nativa-capturas
           path: capturas/*.png

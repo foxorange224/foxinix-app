@@ -127,6 +127,13 @@ jobs:
             grep -n "E Foxinix" capturas/logcat.txt || true
             FALLO=1
           fi
+          if grep -qE "An uncaught Exception occurred|Cannot compile ES module|Invalid regular expression" \
+              capturas/logcat.txt capturas/ui.xml 2>/dev/null; then
+            echo "::error::la app nativa crasheó al arrancar"
+            grep -nE "An uncaught Exception occurred|Cannot compile ES module|Invalid regular expression" \
+              capturas/logcat.txt capturas/ui.xml || true
+            FALLO=1
+          fi
           if [ ! -s capturas/ui.xml ]; then
             echo "::error::no se pudo leer la pantalla (la app está en blanco o en negro)"
             FALLO=1
