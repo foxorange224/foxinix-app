@@ -242,6 +242,12 @@ async function errDetail(res) {
         // Dinámico: se traduce ya armado (t() deja pasar el inglés).
         if (!d.message) detail = t('Espera {n}s antes de reintentar', { n: d.retry_after });
       }
+    } else if (Array.isArray(d) && d.length && d[0] && d[0].msg) {
+      /* W115: FastAPI responde 422 con una lista de validaciones
+         (`[{loc, msg, ...}]`). Antes se mostraba el genérico "Datos
+         inválidos"; ahora se enseña el primer mensaje real (p. ej. la
+         regla de contraseña que falta). */
+      detail = String(d[0].msg).replace(/^Value error, /, '');
     } else if (d) {
       detail = 'Datos inválidos';
     }

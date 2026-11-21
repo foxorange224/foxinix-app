@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 import chat_ui_test as ct  # noqa: E402  (helpers: register, http, send, run_shot)
 
 SHOTS = Path("/tmp/opencode")
-PASS = "w6pass12345"
+PASS = "W6pass123!"
 
 W_WAIT = """const sleep = ms => new Promise(r => setTimeout(r, ms));
   const wait = async (sel, ms = 12000) => {

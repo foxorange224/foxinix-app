@@ -40,6 +40,7 @@
             <TextField class="input" :hint="t('mínimo 8 caracteres')" secure="true"
                        :text="password" @textChange="password = $event.value"
                        :editable="!busy" />
+            <Label class="hint" :text="t(pwHint)" textWrap="true" />
           </StackLayout>
 
           <!-- ---------- repetir contraseña ---------- -->
@@ -66,10 +67,12 @@
   import { nativeRegister } from '../fox';
   import { go, store } from '../core/store.js';
   import { t } from '../core/i18n.js';
+  import { passwordError, PASSWORD_HINT } from '../core/password.js';
   import { tok } from '../fmt';
 
   const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   const USER_RE = /^[a-z0-9][a-z0-9_.]{2,19}$/;
+  const pwHint = PASSWORD_HINT;
 
   const email = ref('');
   const username = ref('');
@@ -86,7 +89,8 @@
     if (!USER_RE.test(username.value)) {
       return t('Usuario: 3-20 caracteres (letras, números, punto o guion bajo), empezando con letra o número');
     }
-    if (password.value.length < 8) return t('La contraseña necesita al menos 8 caracteres');
+    const pwErr = passwordError(password.value);
+    if (pwErr) return t(pwErr);
     if (password.value !== confirm.value) return t('Las contraseñas no coinciden');
     return '';
   }

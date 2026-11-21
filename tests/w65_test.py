@@ -460,7 +460,7 @@ def main():
 
         nuevo_bu = f"w65b2{tag}"
         st, r = ct.http("PUT", a.base + "/api/auth/username",
-                        {"username": nuevo_bu, "password": "foxpass12345"},
+                        {"username": nuevo_bu, "password": "Foxpass123!"},
                         token=B["access"])
         step("B cambia su @usuario", st == 200
              and (r.get("user") or {}).get("username") == nuevo_bu,

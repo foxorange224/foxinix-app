@@ -34,6 +34,7 @@ const SHELL = [
   '/static/js/store.js',
   '/static/js/i18n.js',
   '/static/js/api.js',
+  '/static/js/password.js',   // W115: política de contraseñas compartida
   '/static/js/actions.js',
   '/static/js/mediadl.js',    // W15: descarga con anillo de progreso
   '/static/js/downloads.js',  // W50: descargas persistentes (Cache + IndexedDB)

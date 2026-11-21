@@ -84,7 +84,7 @@ def wait_code(email, purpose="verify", timeout=8.0):
     return None
 
 
-def register(base, email, username, password="foxpass12345"):
+def register(base, email, username, password="Foxpass123!"):
     st, res = http("POST", base + "/api/auth/register",
                    {"email": email, "username": username, "password": password})
     if st != 201:

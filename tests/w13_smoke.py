@@ -71,7 +71,7 @@ def wait_code(email, timeout=8):
 
 def signup(uname, email):
     st, b = http("POST", "/api/auth/register",
-                 {"email": email, "username": uname, "password": "foxpass12345"})
+                 {"email": email, "username": uname, "password": "Foxpass123!"})
     assert st == 201, (st, b, "¿cooldown de registro por IP? Espera ~1 min")
     pending = json.loads(b)["tokens"]["access"]
     code = wait_code(email)

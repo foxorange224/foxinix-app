@@ -21,11 +21,16 @@ registro nuevo con el mismo correo (o usuario) la **reemplaza** enviando un cód
 
 ### `POST /api/auth/register` — 201
 ```json
-{"email": "ana@mail.com", "username": "ana", "password": "mínimo 8"}
+{"email": "ana@mail.com", "username": "ana", "password": "Abcdef1!"}
 ```
 → `{"user": {...}, "tokens": {"access", "refresh"}, "verification": {"required": true, "email_masked": "an*@mail.com", "expires_in": 600, "resend_after": 60, "attempts_left": 5}}`
 
 Regla: el **primer registro es abierto**; el usuario queda `email_verified=false`.
+
+**Política de contraseñas (W115)** — igual en registro, reset y cambio: 8–200
+caracteres, con al menos una **mayúscula**, una **minúscula**, un **número** y un
+**símbolo**. Si falta algo → `422` con el mensaje exacto (la web y la app nativa lo
+validan antes con `landing/static/js/password.js`).
 
 - Si el correo **o** el usuario pertenecen a una cuenta **sin verificar** (registro
   abandonado o cancelado por recarga), esa cuenta se **descarta** (media incluida) y se
@@ -80,16 +85,16 @@ Regla: el **primer registro es abierto**; el usuario queda `email_verified=false
 
 ### `POST /api/auth/forgot` → `{"ok": true, "retry_after": n}` (respuesta idéntica exista o no la cuenta)
 ### `POST /api/auth/reset`
-`{"identifier", "code", "password"}` → `{"ok": true, "tokens": {...}}` (invalida todos los tokens anteriores).
+`{"identifier", "code", "password"}` → `{"ok": true, "tokens": {...}}` (invalida todos los tokens anteriores). La `password` cumple la política W115.
 
 ### `POST /api/auth/password` — full (W6)
 ```json
-{"current_password": "...", "new_password": "mínimo 8"}
+{"current_password": "...", "new_password": "Abcdef1!"}
 ```
 → `{"ok": true, "user": {...}, "tokens": {...}}`
 - Sube el `token_version`: **todos** los tokens anteriores quedan inválidos; el servidor
   devuelve tokens frescos para que esta sesión siga viva.
-- Contraseña actual distinta → `400`.
+- Contraseña actual distinta → `400`. La `new_password` cumple la política W115.
 
 ### `POST /api/auth/email/change` — full (W6)
 ```json

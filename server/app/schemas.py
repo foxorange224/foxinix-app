@@ -10,6 +10,28 @@ USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.]{2,19}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def validate_password_strength(v: str) -> str:
+    """W115: política ÚNICA de contraseñas (registro, reset y cambio).
+
+    La web/nativa replica esta misma regla en `landing/static/js/password.js`;
+    si cambia una, cambiar la otra. Los mensajes son claves i18n en el
+    frontend, así que se mantienen idénticos a los de allí.
+    """
+    if len(v) < 8:
+        raise ValueError("La contraseña necesita al menos 8 caracteres")
+    if len(v) > 200:
+        raise ValueError("La contraseña no puede superar los 200 caracteres")
+    if not any(c.isupper() for c in v):
+        raise ValueError("La contraseña necesita al menos una mayúscula")
+    if not any(c.islower() for c in v):
+        raise ValueError("La contraseña necesita al menos una minúscula")
+    if not any(c.isdigit() for c in v):
+        raise ValueError("La contraseña necesita al menos un número")
+    if not any(not c.isalnum() for c in v):
+        raise ValueError("La contraseña necesita al menos un símbolo")
+    return v
+
+
 class RegisterIn(BaseModel):
     email: str
     username: str
@@ -34,19 +56,7 @@ class RegisterIn(BaseModel):
     @field_validator("password")
     @classmethod
     def _password(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("la contraseña debe tener al menos 8 caracteres")
-        if len(v) > 200:
-            raise ValueError("contraseña demasiado larga")
-        if not any(c.isupper() for c in v):
-            raise ValueError("la contraseña debe tener al menos una letra mayúscula")
-        if not any(c.islower() for c in v):
-            raise ValueError("la contraseña debe tener al menos una letra minúscula")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("la contraseña debe tener al menos un número")
-        if not any(not c.isalnum() for c in v):
-            raise ValueError("la contraseña debe tener al menos un símbolo (!@#$%^&* etc.)")
-        return v
+        return validate_password_strength(v)
 
 
 class UsernameIn(BaseModel):
@@ -91,7 +101,12 @@ class ForgotIn(BaseModel):
 class ResetIn(BaseModel):
     identifier: str = Field(min_length=1, max_length=254)
     code: str = Field(min_length=6, max_length=6)
-    password: str = Field(min_length=8, max_length=200)
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def _password(cls, v: str) -> str:
+        return validate_password_strength(v)
 
 
 class RefreshIn(BaseModel):
@@ -144,7 +159,12 @@ class ProfileIn(BaseModel):
 
 class ChangePasswordIn(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
-    new_password: str = Field(min_length=8, max_length=200)
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def _new_password(cls, v: str) -> str:
+        return validate_password_strength(v)
 
 
 class EmailChangeIn(BaseModel):

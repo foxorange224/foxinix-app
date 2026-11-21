@@ -6,6 +6,7 @@ import { isAnimWebp } from '../actions.js';
 import { t } from '../i18n.js';
 import { AvatarEditor } from './avatar-editor.js';
 import { FileAdapter } from '../platform/files.js';
+import { passwordError, PASSWORD_HINT } from '../password.js';
 
 const { ref, computed, onMounted, onUnmounted } = Vue;
 
@@ -132,7 +133,8 @@ export const RegisterView = {
       if (!EMAIL_RE.test(email.value)) return 'Introduce un correo válido';
       if (!USER_RE.test(username.value))
         return 'Usuario: 3-20 caracteres (letras, números, punto o guion bajo), empezando con letra o número';
-      if (password.value.length < 8) return 'La contraseña necesita al menos 8 caracteres';
+      const pwErr = passwordError(password.value);
+      if (pwErr) return pwErr;
       if (password.value !== confirm.value) return 'Las contraseñas no coinciden';
       return '';
     }
@@ -157,7 +159,7 @@ export const RegisterView = {
     }
 
     return { email, username: userVal, password, confirm, busy, err, submit,
-             goLogin: () => go('login') };
+             pwHint: PASSWORD_HINT, goLogin: () => go('login') };
   },
   data: () => ({ show: false }),
   template: `
@@ -194,6 +196,7 @@ export const RegisterView = {
               <svg class="ic ic-sm"><use :href="show ? '#i-eye-off' : '#i-eye'"></use></svg>
             </button>
           </div>
+          <span class="hint">{{ t(pwHint) }}</span>
         </div>
         <div class="field">
           <label for="r-pw2">{{ t('Repetir contraseña') }}</label>
@@ -557,7 +560,8 @@ export const ResetView = {
       err.value = '';
       if (!identifier.value) { err.value = 'Introduce tu correo electrónico'; return; }
       if (code.value.replace(/\D/g, '').length !== 6) { err.value = 'Introduce el código de 6 dígitos'; return; }
-      if (password.value.length < 8) { err.value = 'La contraseña necesita al menos 8 caracteres'; return; }
+      const pwErr = passwordError(password.value);
+      if (pwErr) { err.value = pwErr; return; }
       if (password.value !== confirm.value) { err.value = 'Las contraseñas no coinciden'; return; }
       busy.value = true;
       try {
@@ -576,7 +580,7 @@ export const ResetView = {
     }
 
     return { identifier, code, password, confirm, busy, err, submit,
-             goLogin: () => go('login') };
+             pwHint: PASSWORD_HINT, goLogin: () => go('login') };
   },
   template: `
   <div class="auth-wrap">
@@ -604,6 +608,7 @@ export const ResetView = {
           <label for="rs-pw">{{ t('Contraseña nueva') }}</label>
           <input id="rs-pw" class="input" type="password" v-model="password"
                  autocomplete="new-password" :placeholder="t('mínimo 8 caracteres')">
+          <span class="hint">{{ t(pwHint) }}</span>
         </div>
         <div class="field">
           <label for="rs-pw2">{{ t('Repetir contraseña') }}</label>

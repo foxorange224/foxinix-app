@@ -57,8 +57,8 @@ STEP1 = ("""
   if (!await wait('#r-mail')) return 'FAIL: no abrió /register';
   setVal('#r-mail', 'EMAIL');
   setVal('#r-user', 'USERNAME');
-  setVal('#r-pw', 'clave12345');
-  setVal('#r-pw2', 'clave12345');
+  setVal('#r-pw', 'Clave123!');
+  setVal('#r-pw2', 'Clave123!');
   $('form button[type=submit]').click();
   if (!await wait('#p-name')) return 'FAIL: no pasó al perfil → ' + err();
 
@@ -95,8 +95,8 @@ STEP3 = ("""
   if (!await wait('#r-mail')) return 'FAIL: no abrió /register';
   setVal('#r-mail', 'EMAIL');
   setVal('#r-user', 'USERNAME');
-  setVal('#r-pw', 'clave12345');
-  setVal('#r-pw2', 'clave12345');
+  setVal('#r-pw', 'Clave123!');
+  setVal('#r-pw2', 'Clave123!');
   $('form button[type=submit]').click();
   // Si no reemplazara la cuenta vieja, acá llega un 409 en .form-err.
   if (!await wait('#p-name')) return 'FAIL: no reemplazó la cuenta → ' + err();
@@ -115,7 +115,7 @@ STEP4 = ("""
   if (!l) return 'FAIL: no volvió al login (ruta=' + location.pathname + ')';
   if (localStorage.getItem('fm.session')) return 'FAIL: quedó la sesión pending';
   setVal('#l-id', 'USERNAME');
-  setVal('#l-pw', 'clave12345');
+  setVal('#l-pw', 'Clave123!');
   $('form button[type=submit]').click();
   const inp = await wait('.code-input', 10000);
   if (!inp) return 'FAIL: el login no retomó la verificación → ' + err();

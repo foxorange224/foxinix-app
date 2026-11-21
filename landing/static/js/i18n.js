@@ -209,6 +209,13 @@ const EN = {
   'Usuario: 3-20 caracteres (letras, números, punto o guion bajo), empezando con letra o número':
     'Username: 3-20 characters (letters, numbers, dot or underscore), starting with a letter or number',
   'La contraseña necesita al menos 8 caracteres': 'The password must be at least 8 characters',
+  'La contraseña no puede superar los 200 caracteres': 'The password cannot be longer than 200 characters',
+  'La contraseña necesita al menos una mayúscula': 'The password must contain at least one uppercase letter',
+  'La contraseña necesita al menos una minúscula': 'The password must contain at least one lowercase letter',
+  'La contraseña necesita al menos un número': 'The password must contain at least one number',
+  'La contraseña necesita al menos un símbolo': 'The password must contain at least one symbol',
+  'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.':
+    'At least 8 characters, with uppercase, lowercase, number and symbol.',
   'Las contraseñas no coinciden': 'The passwords do not match',
   'Tres pasos y estás adentro': 'Three steps and you are in',
   'Correo electrónico': 'Email address',

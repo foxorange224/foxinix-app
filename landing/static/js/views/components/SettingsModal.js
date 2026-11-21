@@ -17,6 +17,7 @@ import {
 import {
   FileAdapter, StorageAdapter,
 } from '../../platform/index.js';
+import { passwordError, PASSWORD_HINT } from '../../password.js';
 import { DomAdapter } from '../../platform/dom.js';
 import { MediaAdapter } from '../../platform/media.js';
 import {
@@ -376,13 +377,14 @@ export const SettingsModal = {
     const pwErr = Vue.ref('');
     const pwBusy = Vue.ref(false);
     const pwReady = Vue.computed(function () {
-      return !!pwCur.value && pwNew.value.length >= 8 && pwNew.value === pwRep.value;
+      return !!pwCur.value && passwordError(pwNew.value) === '' && pwNew.value === pwRep.value;
     });
 
     const changePw = async function () {
       pwErr.value = '';
-      if (pwNew.value.length < 8) {
-        pwErr.value = 'La contraseña nueva necesita 8 caracteres o más';
+      const pwPolicyErr = passwordError(pwNew.value);
+      if (pwPolicyErr) {
+        pwErr.value = pwPolicyErr;
         return;
       }
       if (pwNew.value !== pwRep.value) {
@@ -764,7 +766,7 @@ export const SettingsModal = {
       setEmo,   /* W40 */
       /* W20: panel de fondo + micrófono */
       openWallPanel, micDev, micDevices, micTesting, micLevel, pickMic, testMic,
-      pwCur, pwNew, pwRep, pwErr, pwBusy, pwReady, changePw,
+      pwCur, pwNew, pwRep, pwErr, pwBusy, pwReady, changePw, pwHint: PASSWORD_HINT,
       emNew, emCode, emMask, emStep, emErr, emBusy,
       sendEmCode, confirmEmCode, cancelEmCode,
       notifOn, notifPerm, notifLabel, notifTitle, askNotif,
@@ -1237,6 +1239,7 @@ export const SettingsModal = {
             <div class="field">
               <label>{{ t('Contraseña nueva') }}</label>
               <input class="input" type="password" v-model="pwNew" autocomplete="new-password">
+              <span class="hint">{{ t(pwHint) }}</span>
             </div>
             <div class="field">
               <label>{{ t('Repite la contraseña nueva') }}</label>

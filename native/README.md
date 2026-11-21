@@ -522,6 +522,16 @@ con el nombre actual, `PATCH /chats/:id {title}`, `loadChats()`, toast
   byte a byte con `RenameGroupModal` de la web, clases CSS, sin
   `position:fixed`/`z-index`, señales de navegación).
 
+## Política de contraseñas en el registro (W115)
+
+El servidor exige 8–200 caracteres con mayúscula, minúscula, número y
+símbolo; la app solo comprobaba la longitud y el `422` se veía como un
+error genérico. `RegisterView` ahora importa `passwordError` y
+`PASSWORD_HINT` de `app/core/password.js` (módulo compartido nuevo,
+sincronizado desde `landing/static/js/password.js` con
+`sync-core.mjs`), valida antes de enviar y muestra la pista bajo el
+campo. Sin cambios de navegación ni de API.
+
 ## Comandos
 
 ```bash

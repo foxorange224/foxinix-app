@@ -43,6 +43,8 @@ const ENTRIES = [
      usa en el selector de 3 pestañas. */
   'emoji.js',
   'stickers.js',
+  /* W115: política de contraseñas compartida con las vistas nativas. */
+  'password.js',
 ];
 
 /* Módulos de platform/ que la app nativa necesita (implementación NS). */

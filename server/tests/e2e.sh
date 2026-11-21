@@ -30,7 +30,7 @@ check() {  # check <desc> <expected_http> <actual_http>
 
 echo "== 1. registro ($UA) =="
 R1=$(curl -s -w "\n%{http_code}" -X POST $BASE/api/auth/register -H 'Content-Type: application/json' \
-  -d "{\"email\":\"ana$SUF\",\"username\":\"$UA\",\"password\":\"clave12345\"}")
+  -d "{\"email\":\"ana$SUF\",\"username\":\"$UA\",\"password\":\"Clave123!\"}")
 C1=$(echo "$R1" | tail -1); check "registro" 201 "$C1"
 TOKEN=$(echo "$R1" | head -n -1 | J "['tokens']['access']")
 
@@ -76,23 +76,23 @@ VER=$(echo "$R6" | head -n -1 | J "['verified']")
 
 echo "== 7. segundo usuario (bruno) =="
 R7=$(curl -s -X POST $BASE/api/auth/register -H 'Content-Type: application/json' \
-  -d "{\"email\":\"bruno$SUF\",\"username\":\"$UB\",\"password\":\"clave12345\"}")
+  -d "{\"email\":\"bruno$SUF\",\"username\":\"$UB\",\"password\":\"Clave123!\"}")
 TB=$(echo "$R7" | J "['tokens']['access']")
 sleep 1; CODEB=$(last_code)
 curl -s -X POST $BASE/api/auth/verify -H "Authorization: Bearer $TB" \
   -H 'Content-Type: application/json' -d "{\"code\":\"$CODEB\"}" > /dev/null
 TB=$(curl -s -X POST $BASE/api/auth/login -H 'Content-Type: application/json' \
-  -d "{\"identifier\":\"bruno$SUF\",\"password\":\"clave12345\"}" | J "['tokens']['access']")
+  -d "{\"identifier\":\"bruno$SUF\",\"password\":\"Clave123!\"}" | J "['tokens']['access']")
 echo "   OK bruno logueado con correo"
 
 echo "== 8. login con contraseña incorrecta =="
 C8=$(curl -s -o /dev/null -w "%{http_code}" -X POST $BASE/api/auth/login \
-  -H 'Content-Type: application/json' -d "{\"identifier\":\"$UA\",\"password\":\"mala12345\"}")
+  -H 'Content-Type: application/json' -d "{\"identifier\":\"$UA\",\"password\":\"Mala12345!\"}")
 check "login malo" 401 "$C8"
 
 echo "== 9. login con correo (recién verificado) =="
 C9=$(curl -s -o /dev/null -w "%{http_code}" -X POST $BASE/api/auth/login \
-  -H 'Content-Type: application/json' -d "{\"identifier\":\"ana$SUF\",\"password\":\"clave12345\"}")
+  -H 'Content-Type: application/json' -d "{\"identifier\":\"ana$SUF\",\"password\":\"Clave123!\"}")
 check "login por correo" 200 "$C9"
 
 echo "== 10. dm ana<->bruno =="
@@ -149,25 +149,25 @@ curl -s -X POST $BASE/api/auth/forgot -H 'Content-Type: application/json' \
 sleep 1; CODER=$(last_code)
 CR=$(curl -s -o /dev/null -w "%{http_code}" -X POST $BASE/api/auth/reset \
   -H 'Content-Type: application/json' \
-  -d "{\"identifier\":\"$UA\",\"code\":\"$CODER\",\"password\":\"nuevaclave99\"}")
+  -d "{\"identifier\":\"$UA\",\"code\":\"$CODER\",\"password\":\"Nuevaclave99!\"}")
 check "reset" 200 "$CR"
 C17=$(curl -s -o /dev/null -w "%{http_code}" -X POST $BASE/api/auth/login \
-  -H 'Content-Type: application/json' -d "{\"identifier\":\"$UA\",\"password\":\"nuevaclave99\"}")
+  -H 'Content-Type: application/json' -d "{\"identifier\":\"$UA\",\"password\":\"Nuevaclave99!\"}")
 check "login con contraseña nueva" 200 "$C17"
 C17b=$(curl -s -o /dev/null -w "%{http_code}" -X POST $BASE/api/auth/login \
-  -H 'Content-Type: application/json' -d "{\"identifier\":\"$UA\",\"password\":\"clave12345\"}")
+  -H 'Content-Type: application/json' -d "{\"identifier\":\"$UA\",\"password\":\"Clave123!\"}")
 check "contraseña vieja rechazada" 401 "$C17b"
 
 echo "== 18. registro duplicado (debe 409) =="
 C18=$(curl -s -o /dev/null -w "%{http_code}" -X POST $BASE/api/auth/register \
   -H 'Content-Type: application/json' \
-  -d "{\"email\":\"ana$SUF\",\"username\":\"otro$RUN\",\"password\":\"clave12345\"}")
+  -d "{\"email\":\"ana$SUF\",\"username\":\"otro$RUN\",\"password\":\"Clave123!\"}")
 check "email duplicado" 409 "$C18"
 
 echo "== 19. registro sin verificar no puede chatear =="
 RU="nuev$RUN"
 RN=$(curl -s -X POST $BASE/api/auth/register -H 'Content-Type: application/json' \
-  -d "{\"email\":\"n$SUF\",\"username\":\"$RU\",\"password\":\"clave12345\"}" | J "['tokens']['access']")
+  -d "{\"email\":\"n$SUF\",\"username\":\"$RU\",\"password\":\"Clave123!\"}" | J "['tokens']['access']")
 C19=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/api/chats" -H "Authorization: Bearer $RN")
 check "chats con cuenta sin verificar" 403 "$C19"
 

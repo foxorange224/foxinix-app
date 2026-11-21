@@ -1,7 +1,7 @@
 # PROGRESO — Foxinix app nativa (NativeScript 9 + Vue) + web
 
-Última actualización: 2026-11-19
-Rama: `main` (limpia, todo commiteado y pusheado)
+Última actualización: 2026-11-21
+Rama: `main` (W115 listo para push; CI al publicar)
 
 ## Estado de los hits (W-números)
 
@@ -11,6 +11,7 @@ Rama: `main` (limpia, todo commiteado y pusheado)
 | W109 | Buscar en el chat, Nuevo chat, Solicitud enviada | 9e336bf + c9e2a44 (docs) | 23 PASS / 0 FAIL | verde (capturas 26-31) |
 | W110 | Menú chat-more ⋮ (fijar/desfijar, silenciar/activar) | 355d2fc + c9e2a44 (docs) | 9 PASS / 0 FAIL | verde (captura 33) |
 | W114 | Renombrar grupo desde chat-more ⋮ | d76c756 + 8717397 (docs) | 10 PASS / 0 FAIL | verde (captura 34) |
+| W115 | Política de contraseñas visible y coherente (web + nativa) | commit W115 (esta sesión) | 24 PASS backend + 8 PASS frontend + 17 PASS nativa | E2E real Firefox OK; CI al pushear |
 
 Web (landing):
 - Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)`
@@ -22,6 +23,14 @@ Web (landing):
   páginas HTML (index, app, login, register, privacy, terms, 404) para
   forzar al navegador a recargar el icono corregido | `ea80821` +
   `894c094 fix(web): favicon pixeleado en la pestaña del navegador`
+- W115: el registro fallaba con 422 y "Datos inválidos" porque el
+  backend (desde f40e3ad) exige mayúscula/minúscula/número/símbolo y la
+  web solo validaba 8 caracteres. Nuevo `landing/static/js/password.js`
+  compartido (web + núcleo nativo), pista bajo el campo, validación en
+  registro/reset/cambio, `errDetail` muestra el mensaje real de FastAPI
+  y la misma política aplica en reset/cambio del servidor. Test nuevo
+  `server/tests/password_policy_test.py` + `tests/password_policy_test.mjs`.
+  Backend desplegado y verificado en vivo (422 con mensaje claro).
 
 Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 
@@ -59,15 +68,19 @@ Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 - CI: `native-smoke.yml` + `native-release-smoke.yml` se disparan con push a `main` en `native/**`.
 - No commitear `native/app/core/`.
 
-## Archivos creados/modificados en esta sesión (W110 + W114 + web landing)
-- `native/app/views/RenameGroupModal.vue`, `native/tools/test-w114-i18n.mjs` (W114)
-- `native/app/views/ChatView.vue`, `native/app/fox.ts`, `native/app/App.vue`, `native/app/uistate.js`, `native/app/app.css`, `native/tools/ci-captura.py`, `native/tools/test-w109-i18n.mjs`, `native/tools/test-w110-i18n.mjs`, `native/tools/test-w114-i18n.mjs` (W110+W114)
-- `README.md`, `native/README.md` (docs W109-W114)
-- `landing/index.html` (web: og.png + sección novedades)
-- `PROGRESO.md` (este archivo)
+## Archivos creados/modificados en esta sesión (W115 + web landing)
+- `landing/static/js/password.js` (nuevo: regla compartida web/nativa)
+- `landing/static/js/views/auth.js`, `landing/static/js/views/components/SettingsModal.js`, `landing/static/js/api.js`, `landing/static/js/i18n.js`, `landing/sw.js`
+- `server/app/schemas.py` (política única, aplicada a registro/reset/cambio) — desplegado en `/home/FoxOrange/chat-server/app/schemas.py` y `chat-server` reiniciado
+- `native/app/views/RegisterView.vue`, `native/tools/sync-core.mjs`
+- `server/tests/password_policy_test.py` (nuevo), `tests/password_policy_test.mjs` (nuevo)
+- Tests actualizados con contraseñas válidas: `tests/web_e2e.py`, `tests/chat_ui_test.py`, `tests/w6_ui_test.py`, `tests/w11_smoke.py`, `tests/w13_smoke.py`, `tests/w13_ui_test.py`, `tests/w59_test.py`, `tests/w65_test.py`, `server/tests/e2e.sh`, `server/tests/ws_test.py`
+- `README.md`, `native/README.md`, `docs/API.md`, `PROGRESO.md` (este archivo)
 
 ## Próxima acción inmediata
-Esperar confirmación del usuario para:
-a) Crear tag v0.2.6 + release de GitHub (publicar).
-b) Decidir sobre W112 (requiere trabajo de infraestructura WebRTC nativo grande).
-c) Seguir con mejoras a la web (otra sección, funcionalidad, etc.).
+1. Pushear W115 y vigilar el CI: al tocar `native/**`, se lanzan
+   `native-smoke` y `native-release-smoke` (APK debug/release + capturas).
+2. Sincronizar el espejo `Foxinix-main` cuando se vaya a publicar (sigue en
+   W106): incluye favicon, novedades, og.png y W115.
+3. Publicar v0.2.6 solo cuando el usuario lo pida.
+4. W112 sigue bloqueado por WebRTC nativo.

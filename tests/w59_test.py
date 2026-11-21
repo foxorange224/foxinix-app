@@ -270,15 +270,15 @@ def main():
       const confirm = panel.querySelector('.m-foot .btn:not(.btn-ghost)');
       const err = () => (panel.querySelector('.form-err') || {}).textContent || '';
       const out = {warn: !!panel.querySelector('.uname-warn')};
-      setVal(name, 'A!'); setVal(pw, 'foxpass12345'); await sleep(80); confirm.click(); await sleep(250);
+      setVal(name, 'A!'); setVal(pw, 'Foxpass123!'); await sleep(80); confirm.click(); await sleep(250);
       out.invalid = err();
       setVal(name, 'nueva_w59'); setVal(pw, 'incorrecta'); await sleep(80); confirm.click();
       let t0=Date.now(); while(Date.now()-t0<8000 && !/contraseña/i.test(err())) await sleep(120);
       out.wrong = err();
-      setVal(name, '{BU}'); setVal(pw, 'foxpass12345'); await sleep(80); confirm.click();
+      setVal(name, '{BU}'); setVal(pw, 'Foxpass123!'); await sleep(80); confirm.click();
       t0=Date.now(); while(Date.now()-t0<8000 && !/uso/i.test(err())) await sleep(120);
       out.dup = err();
-      setVal(name, '{NEW}'); setVal(pw, 'foxpass12345'); await sleep(80); confirm.click();
+      setVal(name, '{NEW}'); setVal(pw, 'Foxpass123!'); await sleep(80); confirm.click();
       t0=Date.now(); while(Date.now()-t0<10000 && (__fm.store.user||{}).username !== '{NEW}') await sleep(150);
       out.newName = (__fm.store.user||{}).username;
       out.changedAt = (__fm.store.user||{}).username_changed_at;

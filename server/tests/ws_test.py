@@ -14,7 +14,7 @@ WSBASE = os.environ.get("WSBASE", "ws://127.0.0.1:8899")
 async def main() -> int:
     async with httpx.AsyncClient(base_url=BASE) as c:
         async def login(identifier: str) -> dict:
-            for pw in ("clave12345", "nuevaclave99"):
+            for pw in ("Clave123!", "Nuevaclave99!"):
                 r = await c.post("/api/auth/login", json={"identifier": identifier, "password": pw})
                 if r.status_code == 200:
                     return r.json()
