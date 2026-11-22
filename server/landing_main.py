@@ -1,7 +1,8 @@
 """Servidor de landing y SPA para foxinix.qzz.io (puerto 8844).
 
 Sirve archivos estáticos del directorio landing/ y la SPA en
-/, /login/, /register/, /app/ con fallback de History API.
+/chat/, /login/, /register/ y /app/ (alias heredado) con fallback de
+History API.
 """
 from __future__ import annotations
 
@@ -263,6 +264,9 @@ app.mount("/tonos", StaticFiles(directory=str(TONES_DIR)), name="tones")
 _SPA_ROUTES = {
     "login": "login.html",
     "register": "register.html",
+    # W117: /chat es la URL canónica de la app web. /app sigue sirviendo
+    # el mismo shell para no romper enlaces e instalaciones anteriores.
+    "chat": "app.html",
     "app": "app.html",
     "profile": "app.html",
     "verify": "app.html",
@@ -324,7 +328,7 @@ async def serve(full_path: str):
         return f
 
     # 2) Ruta SPA conocida, con o sin barra final y con subrutas:
-    #    /app, /app/, /app/group/123 → app.html (nunca el index de landing)
+    #    /chat, /chat/, /chat/group/123 → app.html (nunca el index de landing)
     key = full_path.strip("/")
     head = key.split("/", 1)[0] if key else ""
     if head in _SPA_ROUTES:

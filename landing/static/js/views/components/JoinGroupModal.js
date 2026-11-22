@@ -1,4 +1,4 @@
-/* JoinGroupModal — unirse a un grupo por enlace (/app/group/<id de 12 dígitos>).
+/* JoinGroupModal — unirse a un grupo por enlace (/chat/group/<id de 12 dígitos>).
    Muestra la ficha pública y pide confirmación.
    Extraído de views/chat.js (Fase 3.1). */
 import Vue from '../../vue.js';

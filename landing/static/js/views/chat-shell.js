@@ -1944,9 +1944,9 @@ export const ChatShell = {
       if (!chat || !m) return '';
       let path;
       if (chat.type === 'dm' && chat.title && chat.title.id) {
-        path = '/app/user/' + chat.title.id;
+        path = '/chat/user/' + chat.title.id;
       } else {
-        path = '/app/group/' + chat.id;
+        path = '/chat/group/' + chat.id;
       }
       return DomAdapter.getLocationOrigin() + path + '?m=' + m.id;
     };

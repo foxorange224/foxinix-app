@@ -490,7 +490,7 @@
   const inviteLink = computed(() => {
     const c = chat.value;
     const id = (c && c.pub_id) || '';
-    return id ? WEB_BASE + '/app/group/' + id : '';
+    return id ? WEB_BASE + '/chat/group/' + id : '';
   });
 
   function toggleInvites(ev: any) {

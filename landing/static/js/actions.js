@@ -223,14 +223,14 @@ export function resolvePendingChat() {
     return true;
   }
   if (ref.kind === 'user' && raw) {
-    /* W65: /app/user/<id> sin MD. El perfil por ID decide: amistad →
+    /* W65: /chat/user/<id> sin MD. El perfil por ID decide: amistad →
        abrir/crear el DM; sin relación → solicitud automática + modal. */
     store.pendingUser = raw;
     resolveUserDeepLink(raw);
     return true;
   }
   if (ref.kind === 'group' && pubGroup) {
-    /* W68: /app/group/<pub12> sin estar en mi lista → info pública
+    /* W68: /chat/group/<pub12> sin estar en mi lista → info pública
        del grupo y, si permite enlaces, modal para unirse. */
     resolveGroupDeepLink(raw);
     return true;
@@ -312,7 +312,7 @@ async function resolveUserDeepLink(uid) {
   }
 }
 
-/* W68: resuelve /app/group/<pub12> para quien NO está en la lista de chats.
+/* W68: resuelve /chat/group/<pub12> para quien NO está en la lista de chats.
    El endpoint público decide: miembro (abrir) / enlaces abiertos (modal de
    unión) / cerrado (403). El resultado viaja a store.joinPrompt (modal). */
 let pendingGroupPub = '';   // token anti-carrera: navegación nueva lo cambia

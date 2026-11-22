@@ -8,7 +8,7 @@
      aleatorio por subida → el contenido de una ruta nunca cambia.
    Firefox 78 (Mypal) lo soporta; en orígenes http no seguros el registro
    falla en main.js y la app sigue funcionando sin SW. */
-const SHELL_CACHE = 'foxinix-shell-v133';  // v133 (W96): fallback ignoreSearch al cachear shell con URLs ?v=BUILD_ID; v132 (W95): primera visita siembra fm.appVersion en silencio; v131 (W94): barra de versión + snooze modal APK
+const SHELL_CACHE = 'foxinix-shell-v134';  // v134 (W117): el shell de la app se precachea en /chat y el fallback offline de /chat|/app lo usa; v133 (W96): fallback ignoreSearch al cachear shell con URLs ?v=BUILD_ID; v132 (W95): primera visita siembra fm.appVersion en silencio; v131 (W94): barra de versión + snooze modal APK
 /* Los emojis Twemoji/Noto viven en su PROPIO caché: cambiar la versión
    del shell ya no obliga a volver a descargar cientos de SVG. */
 const EMOJI_CACHE = 'foxinix-emoji-v1';
@@ -22,6 +22,7 @@ const MAX_MEDIA_BYTES = 512 * 1024 * 1024;   // 512 MB
 const MAX_MEDIA_ENTRIES = 500;
 const SHELL = [
   '/',
+  '/chat',               // W117: shell de la app (start_url del PWA)
   '/theme.js',           // tema de la portada antes del 1º pintado (data-theme)
   '/manifest.webmanifest',
   '/static/icon.svg',
@@ -301,9 +302,15 @@ self.addEventListener('fetch', function (e) {
            fallar: el contenido es el mismo archivo, solo cambia el
            versionado. */
         if (!hit) hit = await c.match(req, { ignoreSearch: true });
-        /* W22: las rutas reales (/app/user/5) no están en la caché como
-           documentos; el shell cacheado de '/' sirve de base offline. */
-        if (!hit && req.mode === 'navigate') hit = await c.match('/');
+        /* W22/W117: las rutas reales (/chat/user/5, /app/user/5) no están
+           en la caché como documentos; el shell cacheado de /chat sirve
+           de base offline. La portada sigue usando el shell de '/'. */
+        if (!hit && req.mode === 'navigate') {
+          const appNav = url.pathname === '/chat' || url.pathname.indexOf('/chat/') === 0 ||
+            url.pathname === '/app' || url.pathname.indexOf('/app/') === 0;
+          hit = await c.match(appNav ? '/chat' : '/');
+          if (!appNav && !hit) hit = await c.match('/chat');
+        }
         if (hit) return hit;
         return new Response('Sin conexión', {
           status: 503,

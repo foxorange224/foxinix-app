@@ -245,9 +245,10 @@ function guard(name) {
    aplica desde la URL (arranque y botón atrás/adelante):
 
      /login /register /profile /verify /forgot /reset   vistas públicas
-     /app                                                sin chat abierto
-     /app/user/<id del peer>                             chat DM
-     /app/group/<id del chat>                            grupo
+     /chat                                               sin chat abierto
+     /chat/user/<id del peer>                            chat DM
+     /chat/group/<id del chat>                           grupo
+     /app, /app/user/…, /app/group/…                     alias heredado (W117)
      ?settings=1                                         Ajustes abierto
      ?m=<id del mensaje>                                 salto (permalink)
 
@@ -262,7 +263,7 @@ const ROUTE_PATHS = {
   verify: '/verify',
   forgot: '/forgot',
   reset: '/reset',
-  app: '/app',
+  app: '/chat',   // W117: la app web vive en /chat; /app queda como alias
 };
 const KNOWN_ROUTES = Object.keys(ROUTE_PATHS);
 
@@ -320,22 +321,22 @@ function splitPath(p) {
 /** URL que corresponde al estado actual. */
 export function urlForState() {
   if (store.route !== 'app') return ROUTE_PATHS[store.route] || '/';
-  let path = '/app';
+  let path = '/chat';
   const chat = chatById(store.activeChatId);
   if (chat) {
     /* W68: el DM se direcciona por el ID público del PEER (16 dígitos) y
        el grupo por el suyo (12); el id interno queda como fallback para
        datos aún no serializados. */
     if (chat.type === 'dm' && chat.title && chat.title.id) {
-      path = '/app/user/' + (chat.title.pub_id || chat.title.id);
+      path = '/chat/user/' + (chat.title.pub_id || chat.title.id);
     } else {
-      path = '/app/group/' + (chat.pub_id || chat.id);
+      path = '/chat/group/' + (chat.pub_id || chat.id);
     }
   } else if (store.profile && store.profile.user && store.profile.user.id) {
     /* W65: el perfil abierto sin chat también es una vista direccionable.
        Así un enlace directo a alguien sin amistad conserva su URL y al
        recargar se vuelve a resolver (sin duplicar solicitudes). */
-    path = '/app/user/' + (store.profile.user.pub_id || store.profile.user.id);
+    path = '/chat/user/' + (store.profile.user.pub_id || store.profile.user.id);
   }
   const q = [];
   if (store.settingsOpen) {
@@ -401,7 +402,7 @@ function applyState(p) {
     if (store.user) route = 'app';
     else if (store.hasSession) route = 'boot';
     else route = 'login';
-  } else if (seg[0] === 'app') {
+  } else if (seg[0] === 'chat' || seg[0] === 'app') {
     route = 'app';
     /* W68: el segmento es el ID público (16 dígitos usuario / 12 grupo)
        o, en enlaces viejos, el id interno. Se guarda el string CRUDO:
@@ -428,7 +429,7 @@ function applyState(p) {
     /* Con sesión iniciada el login no existe: de vuelta al chat. */
     route = 'app';
     chatRef = null;
-    writeUrl('/app', 'replace');
+    writeUrl('/chat', 'replace');
   } else if (route === 'app' && !store.hasSession) {
     route = 'login';
     chatRef = null;
@@ -439,7 +440,12 @@ function applyState(p) {
     /* sin sesión, la raíz canónica es /login (evita '/' y '/login' vivos) */
     writeUrl('/login', 'replace');
   } else if (route === 'app' && !seg.length) {
-    writeUrl('/app', 'replace');
+    writeUrl('/chat', 'replace');
+  } else if (route === 'app' && seg[0] === 'app') {
+    /* W117: enlace heredado /app/… → URL canónica /chat/…, sin recargar.
+       Se conserva la subruta y la query (?settings, ?m). */
+    const qs = p.indexOf('?') >= 0 ? p.slice(p.indexOf('?')) : '';
+    writeUrl('/chat' + sp.path.slice(4) + qs, 'replace');
   }
 
   store.route = route;
@@ -469,7 +475,7 @@ function applyState(p) {
       store.pendingPath = chatRef;   // lo abre actions.resolvePendingChat
     } else {
       store.pendingPath = null;
-      store.profile = null;          // volver a /app cierra el perfil
+      store.profile = null;          // volver a /chat cierra el perfil
       if (store.activeChatId) store.activeChatId = 0;   // volver al panel
     }
   } else {
@@ -487,8 +493,20 @@ function applyState(p) {
 export function syncPath() {
   const hash = DomAdapter.getLocationHash();
   if (hash && hash !== '#/') {
-    const legacy = hash.replace(/^#\/?/, '').split('?')[0];
-    const target = KNOWN_ROUTES.indexOf(legacy) >= 0 ? ROUTE_PATHS[legacy] : '/';
+    const raw = hash.replace(/^#\/?/, '');
+    const iq = raw.indexOf('?');
+    const legacy = iq >= 0 ? raw.slice(0, iq) : raw;
+    const qs = iq >= 0 ? raw.slice(iq) : '';
+    let target;
+    /* W117: GitHub Pages reescribe /chat/… y el alias /app/… como hash;
+       se conserva la subruta para que el deep link no pierda el chat. */
+    if (legacy === 'chat' || legacy.indexOf('chat/') === 0) {
+      target = '/chat' + legacy.slice(4) + qs;
+    } else if (legacy === 'app' || legacy.indexOf('app/') === 0) {
+      target = '/chat' + legacy.slice(3) + qs;
+    } else {
+      target = (KNOWN_ROUTES.indexOf(legacy) >= 0 ? ROUTE_PATHS[legacy] : '/') + qs;
+    }
     DomAdapter.replaceState(null, '', target);
   }
   nav = [locPath()];

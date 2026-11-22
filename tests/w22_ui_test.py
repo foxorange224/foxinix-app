@@ -2,10 +2,10 @@
 """E2E W22: rutas reales (sin #), imagen con cuadro reservado, voz con el
 anillo en el lugar del play, sidebar y lightbox.
 
-  1. rutas: abrir chat DM → /app/user/<id del peer>; grupo →
-     /app/group/<id del chat>; Ajustes → ?settings=1; cerrar lo limpia;
+  1. rutas: abrir chat DM → /chat/user/<id del peer>; grupo →
+     /chat/group/<id del chat>; Ajustes → ?settings=1; cerrar lo limpia;
      atrás cierra el chat SIN pasar por el login
-  2. deep link: /login con sesión rebota a /app; /app/user/<peer> reabre
+  2. deep link: /login con sesión rebota a /chat; /chat/user/<peer> reabre
      el chat sin recargar
   3. imagen con resolución: el marco .imgbox reserva el ancho/alto
      (300×225 para 400×300) y termina cargada sin difuminado
@@ -79,8 +79,8 @@ JS_RUTAS = """(async () => {
   const dm = __fm.store.chats.filter(function (c) { return c.type === 'dm'; })[0];
   if (!dm) return 'FAIL: sin chat DM sembrado';
   const peerId = dm.title.id;
-  if (location.pathname !== '/app/user/' + peerId) {
-    return 'FAIL: ruta DM=' + location.pathname + ' (esperaba /app/user/' + peerId + ')';
+  if (location.pathname !== '/chat/user/' + peerId) {
+    return 'FAIL: ruta DM=' + location.pathname + ' (esperaba /chat/user/' + peerId + ')';
   }
   if (location.search) return 'FAIL: la ruta trae query de más: ' + location.search;
   /* abrir Ajustes → ?settings=1 sin recargar */
@@ -89,22 +89,22 @@ JS_RUTAS = """(async () => {
   gear.click();
   if (!await wait('.modal.settings', 5000)) return 'FAIL: no abrió Ajustes';
   await sleep(250);
-  if (location.pathname + location.search !== '/app/user/' + peerId + '?settings=1') {
+  if (location.pathname + location.search !== '/chat/user/' + peerId + '?settings=1') {
     return 'FAIL: ruta con ajustes=' + location.pathname + location.search;
   }
   /* cerrar Ajustes → la query se limpia y el chat sigue abierto */
   document.querySelector('.modal.settings header .icon-btn').click();
   await sleep(350);
   if (location.search) return 'FAIL: cerrar ajustes dejó ' + location.search;
-  if (location.pathname !== '/app/user/' + peerId) return 'FAIL: perdió la ruta';
+  if (location.pathname !== '/chat/user/' + peerId) return 'FAIL: perdió la ruta';
   if (__fm.store.activeChatId === 0) return 'FAIL: el chat se cerró con los ajustes';
-  /* atrás → cierra el chat y queda /app (NUNCA el login) */
+  /* atrás → cierra el chat y queda /chat (NUNCA el login) */
   history.back();
   await sleep(450);
-  if (location.pathname !== '/app') return 'FAIL: atrás dejó ' + location.pathname;
+  if (location.pathname !== '/chat') return 'FAIL: atrás dejó ' + location.pathname;
   if (__fm.store.activeChatId !== 0) return 'FAIL: atrás no cerró el chat';
   if (document.querySelector('#l-id')) return 'FAIL: el atrás mandó al login';
-  /* grupo → /app/group/<id del chat> */
+  /* grupo → /chat/group/<id del chat> */
   const g = __fm.store.chats.filter(function (c) { return c.type === 'group'; })[0];
   if (!g) return 'FAIL: sin grupo sembrado';
   const gi = Array.prototype.slice.call(document.querySelectorAll('.chat-list .chat-item'))
@@ -112,25 +112,25 @@ JS_RUTAS = """(async () => {
   if (!gi) return 'FAIL: el grupo no está en la lista';
   gi.click();
   await sleep(450);
-  if (location.pathname !== '/app/group/' + g.id) {
-    return 'FAIL: ruta grupo=' + location.pathname + ' (esperaba /app/group/' + g.id + ')';
+  if (location.pathname !== '/chat/group/' + g.id) {
+    return 'FAIL: ruta grupo=' + location.pathname + ' (esperaba /chat/group/' + g.id + ')';
   }
   return 'OK rutas: DM peer, ?settings, atrás sin login, grupo';
 })()"""
 
-# JS2: deep link — /login con sesión rebota; /app/user/<peer> reabre el chat.
+# JS2: deep link — /login con sesión rebota; /chat/user/<peer> reabre el chat.
 JS_DEEP = """(async () => {
   """ + W_WAIT + """
-  /* /login con sesión → rebota al /app (nada de pantalla de entrada) */
+  /* /login con sesión → rebota al /chat (nada de pantalla de entrada) */
   history.pushState(null, '', '/login');
   window.dispatchEvent(new PopStateEvent('popstate'));
   await sleep(450);
-  if (location.pathname !== '/app') return 'FAIL: /login con sesión quedó en ' + location.pathname;
+  if (location.pathname !== '/chat') return 'FAIL: /login con sesión quedó en ' + location.pathname;
   if (__fm.store.route !== 'app') return 'FAIL: la ruta interna quedó en ' + __fm.store.route;
-  /* /app/user/<peer> con sesión → reabre ese chat */
+  /* /chat/user/<peer> con sesión → reabre ese chat */
   const dm = __fm.store.chats.filter(function (c) { return c.type === 'dm'; })[0];
   if (!dm) return 'FAIL: sin chat DM sembrado';
-  history.pushState(null, '', '/app/user/' + dm.title.id);
+  history.pushState(null, '', '/chat/user/' + dm.title.id);
   window.dispatchEvent(new PopStateEvent('popstate'));
   const t0 = Date.now();
   while (Date.now() - t0 < 8000 && __fm.store.activeChatId !== dm.id) await sleep(120);
@@ -138,8 +138,17 @@ JS_DEEP = """(async () => {
     return 'FAIL: no reabrió el chat (activeChatId=' + __fm.store.activeChatId + ')';
   }
   if (!await wait('.msgs .msg')) return 'FAIL: sin mensajes tras el deep link';
-  if (location.pathname !== '/app/user/' + dm.title.id) return 'FAIL: la ruta cambió';
-  return 'OK deep link reabre /app/user/' + dm.title.id;
+  if (location.pathname !== '/chat/user/' + dm.title.id) return 'FAIL: la ruta cambió';
+  /* W117: el enlace heredado /app/user/<peer> se canonicaliza a /chat sin
+     recargar y sin cerrar el chat. */
+  history.pushState(null, '', '/app/user/' + dm.title.id);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  await sleep(450);
+  if (location.pathname !== '/chat/user/' + dm.title.id) {
+    return 'FAIL: alias /app no canonicalizó: ' + location.pathname;
+  }
+  if (__fm.store.activeChatId !== dm.id) return 'FAIL: el alias cerró el chat';
+  return 'OK deep link reabre /chat/user/' + dm.title.id + ' y /app canonicaliza';
 })()"""
 
 # JS3: imagen con resolución reservada.
@@ -312,7 +321,7 @@ JS_JUMP = """(async () => {
   if (!mm) return 'FAIL: el salto no dejó ?m= (' + location.pathname + location.search + ')';
   const mId = parseInt(mm[1], 10);
   if (__fm.store.jumpMsg !== mId) return 'FAIL: store.jumpMsg=' + __fm.store.jumpMsg;
-  if (location.pathname !== '/app/user/' + dm.title.id) {
+  if (location.pathname !== '/chat/user/' + dm.title.id) {
     return 'FAIL: el salto cambió la ruta a ' + location.pathname;
   }
   /* y el mensaje quedó visible con el destello */

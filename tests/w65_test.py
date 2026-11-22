@@ -161,7 +161,7 @@ JS_EDGE = """(async () => {
     ['blocked', «FID», 'Bloqueado', true]
   ];
   for (const [rel, id, label, disabled] of cases) {
-    history.replaceState(null, '', '/app/user/' + id);
+    history.replaceState(null, '', '/chat/user/' + id);
     window.dispatchEvent(new PopStateEvent('popstate'));
     const p = await wait(() => __fm.store.profile && __fm.store.profile.user &&
       __fm.store.profile.user.id === id, 14000);
@@ -179,7 +179,7 @@ JS_EDGE = """(async () => {
     __fm.store.profile = null;
     await sleep(200);
   }
-  history.replaceState(null, '', '/app/user/«AID»');
+  history.replaceState(null, '', '/chat/user/«AID»');
   window.dispatchEvent(new PopStateEvent('popstate'));
   const me = await wait(() => __fm.store.meProfileOpen, 12000);
   out.yo = { abierto: !!me, modal: !!document.querySelector('.meprof'),
@@ -230,7 +230,7 @@ JS_SETTINGS = """(async () => {
     ['shortcuts', 'atajos'], ['account', 'cuenta']
   ];
   for (const [slug, tab] of cases) {
-    history.replaceState(null, '', '/app?settings=' + slug);
+    history.replaceState(null, '', '/chat?settings=' + slug);
     window.dispatchEvent(new PopStateEvent('popstate'));
     await sleep(220);
     out.slugs[slug] = {
@@ -502,7 +502,7 @@ def main():
 
         js = (JS_DEEP.replace("«WAIT»", W_WAIT)
               .replace("«CID»", str(ids[CU])))
-        ok, res, log = shot(a.base + f"/app/user/{ids[CU]}?v=w65-deep",
+        ok, res, log = shot(a.base + f"/chat/user/{ids[CU]}?v=w65-deep",
                             SHOTS / "w65-2-deeplink.png", js=js, wait=900,
                             timeout=260)
         d = jparse(res)
@@ -516,15 +516,15 @@ def main():
              and d.get("check") is True, d)
         step("el perfil queda en 'sent' y la URL no salta antes de tiempo",
              d.get("relation") == "sent" and d.get("sentStore") is True
-             and d.get("urlAntes") == f"/app/user/{ids[CU]}", d)
+             and d.get("urlAntes") == f"/chat/user/{ids[CU]}", d)
         step("el enlace Solicitudes abre Personas → Solicitudes",
              d.get("modalTrasLink") is False
-             and d.get("urlTrasLink") == "/app"
+             and d.get("urlTrasLink") == "/chat"
              and d.get("pestana") == "req" and d.get("people") is True
              and d.get("sentC") is True, d)
 
         js = JS_FRIEND.replace("«WAIT»", W_WAIT)
-        ok, res, log = shot(a.base + f"/app/user/{ids[BU]}?v=w65-friend",
+        ok, res, log = shot(a.base + f"/chat/user/{ids[BU]}?v=w65-friend",
                             SHOTS / "w65-3-amigo.png", js=js, wait=900,
                             timeout=260)
         d = jparse(res)

@@ -1,7 +1,7 @@
 # PROGRESO — Foxinix app nativa (NativeScript 9 + Vue) + web
 
 Última actualización: 2026-11-22
-Rama: `main` (W116: el Ausente automático no sobrevive al cierre)
+Rama: `main` (W117: la app web y el PWA viven en /chat)
 
 ## Estado de los hits (W-números)
 
@@ -13,6 +13,7 @@ Rama: `main` (W116: el Ausente automático no sobrevive al cierre)
 | W114 | Renombrar grupo desde chat-more ⋮ | d76c756 + 8717397 (docs) | 10 PASS / 0 FAIL | verde (captura 34) |
 | W115 | Política de contraseñas visible y coherente (web + nativa) | `dc3ac38` + `d4f9df3` + `5e903d5` | 24 PASS backend + 12 PASS frontend + 18 PASS nativa | verde (release); capturas canceladas por emulador colgado |
 | W116 | El “Ausente” automático no sobrevive al cierre de la app | `c94572c` | `server/tests/auto_presence_test.py` (auto, manual y dos pestañas) | desplegado y verificado en producción el 2026-11-22; Firefox headless sin errores JS |
+| W117 | La app web y el PWA de Android entran en `/chat`, no en la raíz (landing). `/app` y sus subrutas son alias heredado que canonicaliza a `/chat` sin recargar. `manifest.start_url: "/chat"` (`id: "/"`, `scope: "/"`); SW v134 precachea `/chat`; router web y enlaces web+nativa a `/chat`. | (sin commitear aún) | W22/W65/W28/W29 pasados a `/chat`; W22 añade `/app`→`/chat` | verificado en Firefox headless real contra `foxinix.qzz.io` (anexo: sesiones e IDs en /tmp/opencode/w117-*.js/.json) |
 
 Web (landing):
 - Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)`
@@ -76,7 +77,8 @@ Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 ## Reglas del proyecto (mantener)
 - Sin Firebase; servicio en primer plano propio (ya existe).
 - Todo bajo esquema W-números; un cambio por vez, verificando.
-- URLs `/login` `/register` `/app` `/privacy` `/terms` sin barra final.
+- URLs `/chat` `/login` `/register` `/privacy` `/terms` sin barra final;
+  `/app` y sus subrutas quedan como alias heredado que canonicaliza a `/chat`.
 - La web es la fuente de verdad: donde las decisiones resumidas y el CSS web difieran, manda el CSS web.
 - `native/app/core/` es generado por `tools/sync-core.mjs` — NO editar a mano ni commitear.
 - CI: `native-smoke.yml` + `native-release-smoke.yml` se disparan con push a `main` en `native/**`.
@@ -101,3 +103,19 @@ Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
   `online`; Ausente manual → persiste; con dos conexiones sólo limpia la última.
 - La web pública sirve el JS nuevo (cache-busting) y la app cargó en Firefox
   headless sin errores JS.
+
+## Despliegue W117 (en servidor, pendiente de commit/push)
+- server/landing_main.py copiado a /home/FoxOrange/chat-server/landing_main.py
+  y landing-server reiniciado (puerto 8844).
+- Verificado en vivo: landing-server local y https://foxinix.qzz.io sirven
+  /chat, /chat/user/1, /app con 200; /chat monta la app real, /chat/user/<pub>
+  abre el DM, /app/user/<pub> canonicaliza a /chat sin recargar, grupo equivalente;
+  manifest.start_url="/chat"; /sw.js v134; sin errores JS en Firefox headless.
+- Los estaticos de landing/ se sirven tal cual desde el checkout (no requieren
+  reinicio); solo landing_main.py necesita reinicio del servicio.
+
+## Proxima accion inmediata
+1. Commitear y pushear W117 (main). No publicar v0.2.6 ni tocar W112.
+2. Sincronizar el espejo Foxinix-main cuando se vaya a publicar (sigue en W106).
+3. Publicar v0.2.6 solo cuando el usuario lo pida.
+4. W112 sigue bloqueado por WebRTC nativo.

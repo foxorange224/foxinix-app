@@ -81,7 +81,7 @@ export const MeProfileModal = {
       saveStatus(myPreset.value, '');
     };
     /* W68: copiar mi ID público (16 dígitos) para compartir el enlace
-       /app/user/<id> y que otra persona pueda enviar solicitud. */
+       /chat/user/<id> y que otra persona pueda enviar solicitud. */
     const copyMyId = function () {
       if (store.user && store.user.pub_id) {
         copyText(store.user.pub_id);
@@ -138,7 +138,7 @@ export const MeProfileModal = {
             <div class="pf-idbelow">
               <div class="pp-name">{{ store.user.display_name || store.user.username }}</div>
               <div class="pp-user">@{{ store.user.username }}</div>
-              <!-- W68: ID público copiable (enlace /app/user/<id>) -->
+              <!-- W68: ID público copiable (enlace /chat/user/<id>) -->
               <button class="pf-pubid" type="button" v-if="store.user.pub_id"
                 :title="t('Copiar ID')" @click="copyMyId">
                 <span class="pf-pubid-l">{{ t('ID') }}</span>

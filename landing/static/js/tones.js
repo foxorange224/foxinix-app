@@ -65,7 +65,7 @@ export function findTone(kind, id) {
   return null;
 }
 
-/* URL absoluta: la app usa rutas reales (/app/user/5), así que una ruta
+/* URL absoluta: la app usa rutas reales (/chat/user/5), así que una ruta
    relativa "tonos/..." se resolvería contra la ruta actual y fallaría. */
 export function toneSrc(file) {
   if (!file) return '';

@@ -201,7 +201,7 @@ export const ChatInfoPanel = {
     const inviteLink = Vue.computed(function () {
       const c = chat.value;
       const id = c && (c.pub_id || '');
-      return id ? DomAdapter.getLocationOrigin() + '/app/group/' + id : '';
+      return id ? DomAdapter.getLocationOrigin() + '/chat/group/' + id : '';
     });
     const toggleInvites = function (e) {
       const c = chat.value;
@@ -478,7 +478,7 @@ export const ChatInfoPanel = {
             </div>
           </template>
           <!-- W68: enlace de invitación (solo owner/admin): el ID
-               público de 12 dígitos permite unirse por /app/group/<id> -->
+               público de 12 dígitos permite unirse por /chat/group/<id> -->
           <div class="mi-sec gi-sec" v-if="canInvite">
             <span>{{ t('Enlace de invitación') }}</span>
           </div>

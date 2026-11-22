@@ -178,7 +178,7 @@ export const ProfilePanel = {
             <div class="pf-idbelow">
               <div class="pp-name">{{ store.profile.user.display_name }}</div>
               <div class="pp-user">@{{ store.profile.user.username }}</div>
-              <!-- W68: ID público copiable (enlace /app/user/<id>) -->
+              <!-- W68: ID público copiable (enlace /chat/user/<id>) -->
               <button class="pf-pubid" type="button" v-if="store.profile.user.pub_id"
                 :title="t('Copiar ID')" @click="copyPubId">
                 <span class="pf-pubid-l">{{ t('ID') }}</span>

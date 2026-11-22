@@ -10,7 +10,7 @@ Siembra A y B (DM) y maneja Firefox headless (BiDi):
   3. un audio adjunto (.mp3) renderiza controles <audio> en la burbuja
      (no la fila de descarga ni un <video> negro)
   4. un access token vencido/corrupto se recupera con el refresh y la
-     app sigue en /app sin re-login (falso "Sesión expirada")
+     app sigue en /chat sin re-login (falso "Sesión expirada")
   5. el título del documento muestra "(1) Foxinix" con no leídos y
      vuelve a "Foxinix" al abrir el chat
   6. una solicitud de amistad recibida aparece como globo rojo en el

@@ -364,7 +364,7 @@ def main():
       if (!mi) return 'FAIL: sin item "Copiar enlace al mensaje"';
       mi.click();
       await sleep(400);
-      const expected = location.origin + '/app/user/«BID»?m=«MID»';
+      const expected = location.origin + '/chat/user/«BID»?m=«MID»';
       const toasts = (document.querySelector('.toasts') || { textContent: '' })
         .textContent;
       return JSON.stringify({ copied: window.__copied, expected: expected,
@@ -374,14 +374,14 @@ def main():
     ok2, res2, log2 = shot(a.base + "/", SHOTS / "w28-2-enlace.png",
                            js=js2, wait=1500)
     d2 = json.loads(res2) if res2 and res2.startswith("{") else {}
-    step("el menú copia el enlace /app/user/<peer>?m=<id>",
+    step("el menú copia el enlace /chat/user/<peer>?m=<id>",
          ok2 and bool(d2.get("copied")) and d2.get("copied") == d2.get("expected"),
          d2 or log2[-400:])
     step("aparece el toast 'Enlace copiado'", d2.get("toast") is True, d2)
 
     # =================== 3. el enlace abre el chat + salto ============
     print("→ paso3 el enlace entra al chat con salto al mensaje")
-    deep = f"{a.base}/app/user/{B['user']['id']}?m={mid}"
+    deep = f"{a.base}/chat/user/{B['user']['id']}?m={mid}"
     ct.run_shot(deep.replace(f"?m={mid}", ""), SHOTS / "w28-x.png",
                 js=sess_js(A))
     js3 = """(async () => {
