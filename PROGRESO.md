@@ -1,7 +1,7 @@
 # PROGRESO — Foxinix app nativa (NativeScript 9 + Vue) + web
 
-Última actualización: 2026-11-21
-Rama: `main` (W115 con arreglo de compatibilidad nativa; CI al publicar)
+Última actualización: 2026-11-22
+Rama: `main` (W116: el Ausente automático no sobrevive al cierre)
 
 ## Estado de los hits (W-números)
 
@@ -11,7 +11,8 @@ Rama: `main` (W115 con arreglo de compatibilidad nativa; CI al publicar)
 | W109 | Buscar en el chat, Nuevo chat, Solicitud enviada | 9e336bf + c9e2a44 (docs) | 23 PASS / 0 FAIL | verde (capturas 26-31) |
 | W110 | Menú chat-more ⋮ (fijar/desfijar, silenciar/activar) | 355d2fc + c9e2a44 (docs) | 9 PASS / 0 FAIL | verde (captura 33) |
 | W114 | Renombrar grupo desde chat-more ⋮ | d76c756 + 8717397 (docs) | 10 PASS / 0 FAIL | verde (captura 34) |
-| W115 | Política de contraseñas visible y coherente (web + nativa) | commit W115 + fix de compatibilidad (esta sesión) | 24 PASS backend + 12 PASS frontend + 18 PASS nativa | E2E real Firefox OK; CI pendiente tras el fix |
+| W115 | Política de contraseñas visible y coherente (web + nativa) | `dc3ac38` + `d4f9df3` + `5e903d5` | 24 PASS backend + 12 PASS frontend + 18 PASS nativa | verde (release); capturas canceladas por emulador colgado |
+| W116 | El “Ausente” automático no sobrevive al cierre de la app | commit W116 | `server/tests/auto_presence_test.py` (auto, manual y dos pestañas) | prueba real contra servidor local |
 
 Web (landing):
 - Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)`
@@ -38,6 +39,12 @@ Web (landing):
   habitual y `ci-captura.py` falla ante la pantalla de excepción de
   NativeScript. La web se revalidó en Firefox (débil, sin símbolo y
   fuerte).
+- W116: el "Ausente" automático de W98 se quedaba pegado al cerrar la
+  pestaña porque `autoAway` sólo vivía en memoria. Ahora el perfil guarda
+  `status_auto`: el auto-away lo pone a 1, cualquier cambio manual lo deja
+  en 0 y el servidor lo devuelve a `online` cuando se cierra la última
+  WebSocket (o al arrancar). Un "Ausente" manual sigue persistiendo. La
+  web cancela el auto-away en vuelo al elegir un estado a mano.
 
 Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 
@@ -75,20 +82,17 @@ Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 - CI: `native-smoke.yml` + `native-release-smoke.yml` se disparan con push a `main` en `native/**`.
 - No commitear `native/app/core/`.
 
-## Archivos creados/modificados en esta sesión (W115 + web landing)
-- `landing/static/js/password.js` (nuevo: regla compartida web/nativa)
-- `landing/static/js/views/auth.js`, `landing/static/js/views/components/SettingsModal.js`, `landing/static/js/api.js`, `landing/static/js/i18n.js`, `landing/sw.js`
-- `server/app/schemas.py` (política única, aplicada a registro/reset/cambio) — desplegado en `/home/FoxOrange/chat-server/app/schemas.py` y `chat-server` reiniciado
-- `native/app/views/RegisterView.vue`, `native/tools/sync-core.mjs`
-- `server/tests/password_policy_test.py` (nuevo), `tests/password_policy_test.mjs` (nuevo)
-- Tests actualizados con contraseñas válidas: `tests/web_e2e.py`, `tests/chat_ui_test.py`, `tests/w6_ui_test.py`, `tests/w11_smoke.py`, `tests/w13_smoke.py`, `tests/w13_ui_test.py`, `tests/w59_test.py`, `tests/w65_test.py`, `server/tests/e2e.sh`, `server/tests/ws_test.py`
-- `README.md`, `native/README.md`, `docs/API.md`, `PROGRESO.md` (este archivo)
+## Archivos creados/modificados en esta sesión (W116)
+- `server/app/db.py` (columna `status_auto` + migración), `server/app/schemas.py`, `server/app/routers/auth.py`, `server/app/routers/ws.py`, `server/app/main.py`
+- `landing/static/js/presence.js` (marca `status_auto`, cancela auto-away al elegir estado)
+- `landing/static/js/views/components/MeProfileModal.js`, `MeProfileEditModal.js`
+- `server/tests/auto_presence_test.py` (nuevo)
+- `README.md`, `docs/API.md`, `PROGRESO.md` (este archivo)
 
 ## Próxima acción inmediata
-1. Pushear el fix de W115 y vigilar el CI: al tocar `native/**`, se
-   lanzan `native-smoke` y `native-release-smoke` (APK debug/release +
-   capturas). El smoke ahora falla si la app crashea.
-2. Sincronizar el espejo `Foxinix-main` cuando se vaya a publicar (sigue en
-   W106): incluye favicon, novedades, og.png y W115.
-3. Publicar v0.2.6 solo cuando el usuario lo pida.
-4. W112 sigue bloqueado por WebRTC nativo.
+1. Probar y desplegar W116 en `/home/FoxOrange/chat-server` (reiniciar `chat-server`).
+2. Verificar en vivo con una cuenta de prueba: auto-away → cerrar última pestaña
+   → vuelve a En línea; Ausente manual → persiste.
+3. Sincronizar el espejo `Foxinix-main` cuando se vaya a publicar (sigue en W106).
+4. Publicar v0.2.6 solo cuando el usuario lo pida.
+5. W112 sigue bloqueado por WebRTC nativo.

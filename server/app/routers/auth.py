@@ -303,6 +303,10 @@ def update_profile(body: ProfileIn, user: dict = Depends(pending_user)) -> dict[
     if body.status_preset is not None:
         sets.append("status_preset = ?")
         params.append(body.status_preset)
+        # W116: solo el auto-away puede marcar el preset como automático.
+        # Un cambio manual (web o nativa) omite el campo y lo vuelve manual.
+        sets.append("status_auto = ?")
+        params.append(1 if body.status_auto else 0)
     if "avatar_media_id" in body.model_fields_set:
         if body.avatar_media_id is None:
             sets.append("avatar_media_id = NULL")  # quitar avatar
@@ -431,6 +435,26 @@ def _presence_to_peers(user_id: int, online: bool) -> None:
     )
     for r in rows:
         hub.emit_to_user(r["uid"], {"type": "presence", "user_id": user_id, "online": online})
+
+
+def clear_auto_presence(user_id: int) -> bool:
+    """W116: retira un "Ausente" automático cuando el usuario se queda sin
+    conexiones (cerró la última pestaña/dispositivo) o al arrancar el server.
+
+    Un "Ausente" manual tiene status_auto=0 y no se toca. El UPDATE
+    condicional evita pisar un cambio manual que haya ganado la carrera.
+    """
+    changed = db.run(
+        "UPDATE users SET status_preset = 'online', status_auto = 0"
+        " WHERE id = ? AND status_auto = 1",
+        (user_id,),
+    )
+    if not changed:
+        return False
+    fresh = _get_user_by("id", str(user_id))
+    if fresh:
+        hub.emit_to_peers(user_id, {"type": "profile", "user": _peer_user(fresh)})
+    return True
 
 
 # ---------------------------------------------------------------- verificación

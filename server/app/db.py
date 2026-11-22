@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS users (
     bio            TEXT NOT NULL DEFAULT '',
     status_text    TEXT NOT NULL DEFAULT '',
     status_preset  TEXT NOT NULL DEFAULT 'online',  -- online | busy | dnd | invisible (W6/W10)
+    status_auto    INTEGER NOT NULL DEFAULT 0,       -- W116: 1 = busy lo puso la inactividad
     pending_email  TEXT NOT NULL DEFAULT '',  -- correo nuevo esperando código (W6)
     avatar_media_id INTEGER,
     banner_media_id INTEGER,                  -- W58: portada del perfil
@@ -268,6 +269,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     existing = {r["name"] for r in conn.execute("PRAGMA table_info(users)")}
     if "status_preset" not in existing:
         conn.execute("ALTER TABLE users ADD COLUMN status_preset TEXT NOT NULL DEFAULT ''")
+    # W116: distingue el "Ausente" automático por inactividad del elegido a
+    # mano. Las bases viejas quedan en 0 (manual): no se puede adivinar cuál
+    # de los busy existentes puso W98.
+    if "status_auto" not in existing:
+        conn.execute("ALTER TABLE users ADD COLUMN status_auto INTEGER NOT NULL DEFAULT 0")
     if "pending_email" not in existing:
         conn.execute("ALTER TABLE users ADD COLUMN pending_email TEXT NOT NULL DEFAULT ''")
     if "banner_media_id" not in existing:

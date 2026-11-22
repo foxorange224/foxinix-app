@@ -6,6 +6,7 @@ import {
   api, saveSession, session, uploadMedia,
 } from '../../api.js';
 import { t } from '../../i18n.js';
+import { markManualPresence } from '../../presence.js';
 import { FileAdapter } from '../../platform/index.js';
 import { DomAdapter } from '../../platform/dom.js';
 import { store } from '../../store.js';
@@ -199,6 +200,9 @@ export const MeProfileEditModal = {
     };
 
     const save = async function () {
+      /* W116: guardar el perfil también envía el preset visible; cuenta
+         como elección manual y cancela cualquier auto-away pendiente. */
+      markManualPresence();
       err.value = '';
       if (name.value.length > 50) { err.value = 'El nombre supera los 50 caracteres'; return; }
       if (charCount(bio.value) > 300) { err.value = 'La bio supera los 300 caracteres'; return; }

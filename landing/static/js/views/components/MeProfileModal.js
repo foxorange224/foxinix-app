@@ -4,6 +4,7 @@ import {
   api, saveSession, session,
 } from '../../api.js';
 import { t } from '../../i18n.js';
+import { markManualPresence } from '../../presence.js';
 import {
   store, toast,
 } from '../../store.js';
@@ -42,6 +43,9 @@ export const MeProfileModal = {
       menuOpen.value = !menuOpen.value;
     };
     const saveStatus = async function (preset, text) {
+      /* W116: esto es una elección manual; el auto-away en vuelo no debe
+         pisarla al volver de la inactividad. */
+      markManualPresence();
       statusErr.value = '';
       statusBusy.value = true;
       try {

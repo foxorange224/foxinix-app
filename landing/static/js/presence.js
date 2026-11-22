@@ -22,6 +22,9 @@ const ACT_EVENTS = ['mousemove', 'click', 'keydown', 'wheel', 'touchstart', 'scr
 
 let timer = null;
 let autoAway = false;
+/* W116: cada cambio manual de estado invalida cualquier auto-away que
+   estuviera en vuelo (p. ej. el PUT de "busy" o su restauración a online). */
+let manualEpoch = 0;
 
 function currentPreset() {
   return (store.user && store.user.status_preset) || 'online';
@@ -33,9 +36,14 @@ function applyLocal(preset) {
   saveSession();
 }
 
-/* Guarda el preset en el servidor y refleja la respuesta. */
-function pushPreset(preset) {
-  return api('PUT', '/auth/profile', { status_preset: preset }, { retry401: true })
+/* Guarda el preset en el servidor y refleja la respuesta.
+   W116: `auto` sólo va en true para el "Ausente" por inactividad; así el
+   servidor puede retirarlo al cerrar la última pestaña sin tocar un
+   "Ausente" elegido a mano. */
+function pushPreset(preset, auto) {
+  const body = { status_preset: preset };
+  if (auto) body.status_auto = true;
+  return api('PUT', '/auth/profile', body, { retry401: true })
     .then(function (r) {
       if (r && r.user) {
         store.user = Object.assign({}, store.user, r.user);
@@ -75,15 +83,17 @@ function goAway() {
   if (autoAway) return;
   if (currentPreset() !== 'online') { schedule(); return; } // estado manual: no se toca
   if (store.call && store.call.state === 'active') { schedule(); return; } // en llamada
+  const epoch = manualEpoch;
   fetchServerPreset().then(function (server) {
     /* Confirmado con el servidor antes de actuar: si allí ya hay otro
        estado (No molestar puesto desde otro dispositivo, dnd a mano…),
        respetarlo. Sin respuesta se procede como antes — el PUT tiene
        su propio catch. */
+    if (epoch !== manualEpoch) { schedule(); return; } // el usuario eligió estado
     if (server !== null && server !== 'online') { schedule(); return; }
     if (autoAway || currentPreset() !== 'online') { schedule(); return; }
     autoAway = true;
-    pushPreset('busy').catch(function () {
+    pushPreset('busy', true).catch(function () {
       autoAway = false;   // no se pudo guardar: seguimos viéndose "En línea"
       schedule();
     });
@@ -94,16 +104,25 @@ function onActivity() {
   schedule();
   if (!autoAway) return;
   autoAway = false;
+  const epoch = manualEpoch;
   fetchServerPreset().then(function (server) {
     /* Si en el servidor ya no es 'busy' (cambio a mano o desde otro
        dispositivo), no tocarlo. Sin respuesta se usa el último
        conocimiento local: 'busy' = lo puso este módulo. */
+    if (epoch !== manualEpoch) return; // estado manual en paralelo
     if (server !== null && server !== 'busy') return;
     if (server === null && currentPreset() !== 'busy') return;
     pushPreset('online').catch(function () {
       autoAway = true;    // reintento en la próxima actividad
     });
   });
+}
+
+/** W116: el usuario eligió un estado a mano. Cancela la marca local de
+    auto-away y cualquier restauración que estuviera en vuelo. */
+export function markManualPresence() {
+  manualEpoch++;
+  autoAway = false;
 }
 
 /** Arranca la detección (idempotente). Llamar una vez con la app montada. */

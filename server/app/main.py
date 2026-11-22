@@ -404,6 +404,11 @@ def _file_hash(rel: str) -> str:
 async def _startup() -> None:
     global _BUILD_ID
     db.init_db()
+    # W116: al arrancar no hay ninguna WebSocket conectada, así que todo
+    # "Ausente" automático que quedara en la base es obsoleto (caída o
+    # reinicio del server). Los estados manuales no se tocan.
+    db.run("UPDATE users SET status_preset = 'online', status_auto = 0"
+           " WHERE status_auto = 1")
     hub.bind_loop()
     asyncio.create_task(cleanup.cleanup_loop())
     for rel in _STATIC_FILES:

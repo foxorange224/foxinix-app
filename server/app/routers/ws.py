@@ -11,7 +11,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from .. import security, db, auth
 from ..realtime import hub
-from .auth import _peer_user
+from .auth import _peer_user, clear_auto_presence
 
 log = logging.getLogger("foxmsg.ws")
 router = APIRouter(tags=["ws"])
@@ -511,4 +511,8 @@ async def ws_endpoint(ws: WebSocket) -> None:
     finally:
         await hub.disconnect(uid, ws)
         if not hub.is_online(uid):
+            # W116: si el "Ausente" lo puso la inactividad, no debe quedar
+            # pegado al cerrar la última pestaña/dispositivo. Un estado
+            # manual (status_auto=0) se conserva.
+            clear_auto_presence(uid)
             await _drop_user_calls(uid)

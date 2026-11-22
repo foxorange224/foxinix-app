@@ -124,6 +124,9 @@ class ProfileIn(BaseModel):
     bio: Optional[str] = Field(default=None, max_length=300)
     status_text: Optional[str] = Field(default=None, max_length=80)
     status_preset: Optional[str] = None  # '' | online | busy | dnd | invisible (W6)
+    # W116: solo el auto-away por inactividad lo manda en true. Cualquier
+    # cambio manual de estado lo omite y vuelve a marcar el preset como manual.
+    status_auto: bool = False
     avatar_media_id: Optional[int] = None  # null = quitar avatar
     banner_media_id: Optional[int] = None  # W58: null = quitar portada
     # W61: punto focal vertical (0 = arriba, 100 = abajo) de la portada.

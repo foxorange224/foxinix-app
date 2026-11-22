@@ -43,11 +43,17 @@ servidor vaya a rechazar por el símbolo.
 ### `PUT /api/auth/profile` — pending o full
 ```json
 {"display_name": "Ana Pérez", "bio": "...", "status_text": "...",
- "status_preset": "online", "avatar_media_id": 1, "banner_media_id": 2}
+ "status_preset": "online", "status_auto": false,
+ "avatar_media_id": 1, "banner_media_id": 2}
 ```
 - `display_name` opcional (si vacío se usa el `username`), `bio` opcional ≤150, `status_text` ≤80.
 - `status_preset` (W6): `"" | "online" | "busy" | "dnd" | "invisible"`. `invisible` además
   avisa a los contactos que dejo de aparecer en línea (`online: false` en sus briefs).
+- `status_auto` (W116): sólo lo manda `true` el cliente al aplicar el **Ausente automático
+  por inactividad** (W98). Cualquier cambio manual de estado debe omitirlo (o mandarlo
+  `false`): así el servidor lo marca como manual y no lo borra al cerrar la app. Si el
+  usuario cierra su **última** WebSocket, el servidor devuelve un `status_auto=true` a
+  `online`; los `status_auto=true` que queden al arrancar también se limpian.
 - `avatar_media_id`: id de un archivo subido por vos; `null` explícito → quitar avatar.
 - `banner_media_id` (W58): id de un archivo **imagen** subido por vos para la portada del
   perfil; `null` explícito → quitarla. Si el id no existe, es de otro usuario o no es una
