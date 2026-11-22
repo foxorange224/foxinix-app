@@ -12,7 +12,7 @@ Rama: `main` (W116: el Ausente automático no sobrevive al cierre)
 | W110 | Menú chat-more ⋮ (fijar/desfijar, silenciar/activar) | 355d2fc + c9e2a44 (docs) | 9 PASS / 0 FAIL | verde (captura 33) |
 | W114 | Renombrar grupo desde chat-more ⋮ | d76c756 + 8717397 (docs) | 10 PASS / 0 FAIL | verde (captura 34) |
 | W115 | Política de contraseñas visible y coherente (web + nativa) | `dc3ac38` + `d4f9df3` + `5e903d5` | 24 PASS backend + 12 PASS frontend + 18 PASS nativa | verde (release); capturas canceladas por emulador colgado |
-| W116 | El “Ausente” automático no sobrevive al cierre de la app | commit W116 | `server/tests/auto_presence_test.py` (auto, manual y dos pestañas) | prueba real contra servidor local |
+| W116 | El “Ausente” automático no sobrevive al cierre de la app | `c94572c` | `server/tests/auto_presence_test.py` (auto, manual y dos pestañas) | desplegado y verificado en producción el 2026-11-22; Firefox headless sin errores JS |
 
 Web (landing):
 - Mejoras al sitio público: og.png versión `?v=20261119`, sección "Novedades de Foxinix", copyright automático ya en app.js | `97bf422 feat(web): mejoras al sitio público (landing)`
@@ -90,9 +90,14 @@ Pendientes de hitos: **W112 (llamadas WebRTC)**. (W113 no existe en el plan.)
 - `README.md`, `docs/API.md`, `PROGRESO.md` (este archivo)
 
 ## Próxima acción inmediata
-1. Probar y desplegar W116 en `/home/FoxOrange/chat-server` (reiniciar `chat-server`).
-2. Verificar en vivo con una cuenta de prueba: auto-away → cerrar última pestaña
-   → vuelve a En línea; Ausente manual → persiste.
-3. Sincronizar el espejo `Foxinix-main` cuando se vaya a publicar (sigue en W106).
-4. Publicar v0.2.6 solo cuando el usuario lo pida.
-5. W112 sigue bloqueado por WebRTC nativo.
+1. Sincronizar el espejo `Foxinix-main` cuando se vaya a publicar (sigue en W106).
+2. Publicar v0.2.6 solo cuando el usuario lo pida.
+3. W112 sigue bloqueado por WebRTC nativo.
+
+## Despliegue W116 (2026-11-22)
+- Backend copiado a `/home/FoxOrange/chat-server/app/` y `chat-server` reiniciado;
+  `/api/health` responde y la migración `status_auto` quedó aplicada.
+- Verificación en vivo con `nsprobe`: auto-away → cerrar la última WebSocket →
+  `online`; Ausente manual → persiste; con dos conexiones sólo limpia la última.
+- La web pública sirve el JS nuevo (cache-busting) y la app cargó en Firefox
+  headless sin errores JS.
